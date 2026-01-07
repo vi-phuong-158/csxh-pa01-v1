@@ -1,0 +1,713 @@
+/* ============================================
+   SECURITY PROFILE 360 - GLASSMORPHISM THEME
+   Phong cách Kính mờ (Glassmorphism)
+   Tối ưu cho độ tương phản và dễ đọc
+   ============================================ */
+
+/* Import Google Fonts - Inter cho typography hiện đại */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ============================================
+   CSS VARIABLES - Biến màu sắc và hiệu ứng
+   ============================================ */
+:root {
+    /* Gradient Background - Tối hơn để chữ nổi bật */
+    --bg-gradient-1: #0a0a1a;
+    --bg-gradient-2: #1a1a3e;
+    --bg-gradient-3: #151530;
+
+    /* Glassmorphism Colors - Tăng độ mờ */
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-bg-hover: rgba(255, 255, 255, 0.15);
+    --glass-bg-strong: rgba(255, 255, 255, 0.12);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-shadow: rgba(0, 0, 0, 0.4);
+
+    /* Text Colors - Tăng độ sáng */
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
+    --text-muted: #b0b0b0;
+    --text-label: #f0f0f0;
+
+    /* Accent Colors */
+    --accent-primary: #667eea;
+    --accent-secondary: #764ba2;
+    --accent-success: #00d9a5;
+    --accent-warning: #ffc107;
+    --accent-danger: #ff6b6b;
+    --accent-info: #17a2b8;
+
+    /* Blur Effect */
+    --blur-amount: 20px;
+
+    /* Border Radius */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-xl: 30px;
+
+    /* Sidebar Width */
+    --sidebar-width: 320px;
+}
+
+/* ============================================
+   MAIN BACKGROUND - Gradient động
+   ============================================ */
+.stApp {
+    background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%) !important;
+    background-attachment: fixed !important;
+    min-height: 100vh;
+}
+
+/* Animated background orbs */
+.stApp::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(0, 217, 165, 0.06) 0%, transparent 40%);
+    animation: float 25s ease-in-out infinite;
+    z-index: -1;
+    pointer-events: none;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    25% {
+        transform: translate(2%, 2%) rotate(1deg);
+    }
+
+    50% {
+        transform: translate(-1%, 3%) rotate(-1deg);
+    }
+
+    75% {
+        transform: translate(3%, -2%) rotate(1deg);
+    }
+}
+
+/* ============================================
+   SIDEBAR - Thanh điều hướng bên trái
+   ============================================ */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, rgba(10, 10, 26, 0.98) 0%, rgba(26, 26, 62, 0.98) 100%) !important;
+    backdrop-filter: blur(var(--blur-amount)) !important;
+    -webkit-backdrop-filter: blur(var(--blur-amount)) !important;
+    border-right: 1px solid var(--glass-border) !important;
+    width: var(--sidebar-width) !important;
+}
+
+[data-testid="stSidebar"]>div:first-child {
+    background: transparent !important;
+    padding: 1.5rem 1rem !important;
+}
+
+/* Sidebar Title */
+[data-testid="stSidebar"] .stMarkdown h1 {
+    color: var(--text-primary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 800 !important;
+    font-size: 1.4rem !important;
+    text-align: center;
+    margin-bottom: 1.5rem !important;
+    text-shadow: 0 2px 15px rgba(102, 126, 234, 0.4);
+    letter-spacing: 0.5px;
+}
+
+/* Sidebar Radio Buttons - Navigation với chiều rộng bằng nhau */
+[data-testid="stSidebar"] .stRadio>div {
+    gap: 0.5rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+[data-testid="stSidebar"] .stRadio>div>label {
+    background: var(--glass-bg) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 1rem 1.2rem !important;
+    color: #ffffff !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+}
+
+/* Force text color inside radio labels */
+[data-testid="stSidebar"] .stRadio>div>label span,
+[data-testid="stSidebar"] .stRadio>div>label p,
+[data-testid="stSidebar"] .stRadio>div>label div,
+[data-testid="stSidebar"] .stRadio label span {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+}
+
+[data-testid="stSidebar"] .stRadio>div>label:hover {
+    background: var(--glass-bg-hover) !important;
+    border-color: var(--accent-primary) !important;
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2) !important;
+}
+
+[data-testid="stSidebar"] .stRadio>div>label[data-checked="true"],
+[data-testid="stSidebar"] .stRadio div[data-checked="true"]>label {
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%) !important;
+    border-color: transparent !important;
+    box-shadow: 0 5px 25px rgba(102, 126, 234, 0.5) !important;
+}
+
+/* Hide radio circle */
+[data-testid="stSidebar"] .stRadio input[type="radio"] {
+    display: none !important;
+}
+
+/* Force all text in sidebar to be white */
+[data-testid="stSidebar"] * {
+    color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] .stMarkdown h3 {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 1.1rem !important;
+}
+
+/* ============================================
+   MAIN CONTENT - Khu vực nội dung chính
+   ============================================ */
+.main .block-container {
+    padding: 2rem 2.5rem !important;
+    max-width: 1400px !important;
+}
+
+/* ============================================
+   GLASSMORPHISM CONTAINERS
+   ============================================ */
+/* Glass Card Container */
+.element-container {
+    margin-bottom: 0.5rem;
+}
+
+/* Metric Cards */
+[data-testid="stMetric"] {
+    background: var(--glass-bg-strong) !important;
+    backdrop-filter: blur(var(--blur-amount)) !important;
+    -webkit-backdrop-filter: blur(var(--blur-amount)) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 1.5rem !important;
+    box-shadow: 0 8px 32px var(--glass-shadow) !important;
+    transition: all 0.3s ease !important;
+}
+
+[data-testid="stMetric"]:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px var(--glass-shadow) !important;
+    border-color: var(--accent-primary) !important;
+}
+
+[data-testid="stMetric"] label {
+    color: var(--text-label) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+[data-testid="stMetric"] [data-testid="stMetricValue"] {
+    color: var(--text-primary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 800 !important;
+    font-size: 2.8rem !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Expander / Accordion */
+.streamlit-expanderHeader {
+    background: var(--glass-bg-strong) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: var(--radius-md) !important;
+    color: var(--text-primary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+}
+
+.streamlit-expanderContent {
+    background: var(--glass-bg) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-top: none !important;
+    border-radius: 0 0 var(--radius-md) var(--radius-md) !important;
+}
+
+/* ============================================
+   TYPOGRAPHY - Font chữ to rõ, dễ đọc
+   ============================================ */
+.stMarkdown h1 {
+    color: var(--text-primary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 800 !important;
+    font-size: 2.5rem !important;
+    margin-bottom: 0.5rem !important;
+    text-shadow: 0 3px 15px rgba(0, 0, 0, 0.4);
+    letter-spacing: -0.5px;
+}
+
+.stMarkdown h2 {
+    color: var(--text-primary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 1.8rem !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 0.8rem !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.stMarkdown h3 {
+    color: var(--text-primary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 1.4rem !important;
+    margin-top: 1rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.stMarkdown h4 {
+    color: var(--text-label) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 1.15rem !important;
+    margin-top: 1rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.stMarkdown h5 {
+    color: var(--text-label) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    margin-top: 0.8rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.stMarkdown p,
+.stMarkdown li {
+    color: var(--text-secondary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1.05rem !important;
+    line-height: 1.7 !important;
+}
+
+/* ============================================
+   FORM ELEMENTS - Input, Select, Button
+   Tăng độ tương phản và dễ đọc
+   ============================================ */
+/* Label chung cho tất cả form elements */
+.stTextInput label,
+.stSelectbox label,
+.stDateInput label,
+.stTextArea label,
+.stNumberInput label,
+.stRadio label,
+.stCheckbox label {
+    color: var(--text-label) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    margin-bottom: 0.3rem !important;
+}
+
+/* Text Input */
+.stTextInput>div>div>input {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: var(--radius-md) !important;
+    color: #1a1a2e !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1.05rem !important;
+    font-weight: 500 !important;
+    padding: 0.9rem 1rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.stTextInput>div>div>input::placeholder {
+    color: #666666 !important;
+    font-weight: 400 !important;
+}
+
+.stTextInput>div>div>input:focus {
+    border-color: var(--accent-primary) !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Select Box */
+.stSelectbox>div>div {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: var(--radius-md) !important;
+}
+
+.stSelectbox>div>div>div {
+    color: #1a1a2e !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1.05rem !important;
+    font-weight: 500 !important;
+}
+
+/* Date Input */
+.stDateInput>div>div>input {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: var(--radius-md) !important;
+    color: #1a1a2e !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1.05rem !important;
+    font-weight: 500 !important;
+    padding: 0.9rem 1rem !important;
+}
+
+/* Text Area */
+.stTextArea textarea {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: var(--radius-md) !important;
+    color: #1a1a2e !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1.05rem !important;
+    font-weight: 500 !important;
+    padding: 0.9rem 1rem !important;
+}
+
+.stTextArea textarea::placeholder {
+    color: #666666 !important;
+    font-weight: 400 !important;
+}
+
+/* Number Input */
+.stNumberInput>div>div>input {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: var(--radius-md) !important;
+    color: #1a1a2e !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1.05rem !important;
+    font-weight: 500 !important;
+}
+
+/* Buttons */
+.stButton>button {
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%) !important;
+    border: none !important;
+    border-radius: var(--radius-md) !important;
+    color: var(--text-primary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+    padding: 0.9rem 2rem !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.35) !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.stButton>button:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5) !important;
+}
+
+.stButton>button:active {
+    transform: translateY(-1px) !important;
+}
+
+/* Download Button */
+.stDownloadButton>button {
+    background: linear-gradient(135deg, var(--accent-success) 0%, #00b894 100%) !important;
+    box-shadow: 0 5px 20px rgba(0, 217, 165, 0.35) !important;
+}
+
+.stDownloadButton>button:hover {
+    box-shadow: 0 10px 30px rgba(0, 217, 165, 0.5) !important;
+}
+
+/* ============================================
+   DATA DISPLAY - Tables, DataFrames
+   ============================================ */
+.stDataFrame {
+    background: var(--glass-bg-strong) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: var(--radius-lg) !important;
+    overflow: hidden !important;
+}
+
+.stDataFrame [data-testid="stDataFrameResizable"] {
+    background: transparent !important;
+}
+
+/* Table Header */
+.stDataFrame thead th {
+    background: rgba(102, 126, 234, 0.25) !important;
+    color: var(--text-primary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    border-bottom: 1px solid var(--glass-border) !important;
+    padding: 1rem 0.8rem !important;
+}
+
+/* Table Rows */
+.stDataFrame tbody td {
+    color: var(--text-secondary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.95rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 0.8rem !important;
+}
+
+.stDataFrame tbody tr:hover td {
+    background: var(--glass-bg-hover) !important;
+}
+
+/* ============================================
+   TABS - Tab navigation
+   ============================================ */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0.5rem;
+    background: var(--glass-bg-strong) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 0.6rem !important;
+    border: 1px solid var(--glass-border) !important;
+}
+
+.stTabs [data-baseweb="tab"] {
+    background: transparent !important;
+    border-radius: var(--radius-md) !important;
+    color: var(--text-secondary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    padding: 0.9rem 1.5rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.stTabs [data-baseweb="tab"]:hover {
+    color: var(--text-primary) !important;
+    background: var(--glass-bg-hover) !important;
+}
+
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%) !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Tab highlight bar */
+.stTabs [data-baseweb="tab-highlight"] {
+    display: none !important;
+}
+
+/* Tab panel content */
+.stTabs [data-baseweb="tab-panel"] {
+    padding-top: 1.5rem !important;
+}
+
+/* ============================================
+   ALERTS & MESSAGES
+   ============================================ */
+.stAlert {
+    background: var(--glass-bg-strong) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: var(--radius-md) !important;
+    backdrop-filter: blur(var(--blur-amount)) !important;
+}
+
+.stAlert>div {
+    color: var(--text-primary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+}
+
+/* Success Alert */
+div[data-testid="stAlert"][data-baseweb="notification"] {
+    background: rgba(0, 217, 165, 0.15) !important;
+    border-left: 4px solid var(--accent-success) !important;
+}
+
+/* Info Alert */
+.stInfo {
+    background: rgba(23, 162, 184, 0.15) !important;
+    border-left: 4px solid var(--accent-info) !important;
+}
+
+/* Warning Alert */
+.stWarning {
+    background: rgba(255, 193, 7, 0.15) !important;
+    border-left: 4px solid var(--accent-warning) !important;
+}
+
+/* Error Alert */
+.stError {
+    background: rgba(255, 107, 107, 0.15) !important;
+    border-left: 4px solid var(--accent-danger) !important;
+}
+
+/* ============================================
+   DIVIDER
+   ============================================ */
+hr {
+    border: none !important;
+    height: 1px !important;
+    background: linear-gradient(90deg, transparent, var(--glass-border), transparent) !important;
+    margin: 1.5rem 0 !important;
+}
+
+/* ============================================
+   COLUMNS - Cân đối các cột
+   ============================================ */
+[data-testid="column"] {
+    padding: 0 0.5rem !important;
+}
+
+/* ============================================
+   FILE UPLOADER
+   ============================================ */
+.stFileUploader {
+    background: var(--glass-bg) !important;
+    border: 2px dashed var(--glass-border) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 1.5rem !important;
+}
+
+.stFileUploader:hover {
+    border-color: var(--accent-primary) !important;
+    background: var(--glass-bg-hover) !important;
+}
+
+/* ============================================
+   SCROLLBAR - Custom scrollbar
+   ============================================ */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+    border-radius: 10px;
+    border: 2px solid transparent;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
+}
+
+/* ============================================
+   RESPONSIVE - Responsive design
+   ============================================ */
+@media (max-width: 768px) {
+    .main .block-container {
+        padding: 1rem !important;
+    }
+
+    .stMarkdown h1 {
+        font-size: 1.8rem !important;
+    }
+
+    [data-testid="stMetric"] [data-testid="stMetricValue"] {
+        font-size: 2rem !important;
+    }
+
+    [data-testid="stSidebar"] {
+        width: 280px !important;
+    }
+}
+
+/* ============================================
+   FORM SECTION STYLING
+   ============================================ */
+/* Form Section Header */
+.form-section-header {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, transparent 100%);
+    padding: 0.8rem 1rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--accent-primary);
+}
+
+/* ============================================
+   SIDEBAR METRIC STYLING
+   ============================================ */
+[data-testid="stSidebar"] [data-testid="stMetric"] {
+    background: rgba(102, 126, 234, 0.1) !important;
+    padding: 1rem !important;
+    border-radius: var(--radius-md) !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stMetric"] label {
+    font-size: 0.85rem !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stMetric"] [data-testid="stMetricValue"] {
+    font-size: 2rem !important;
+}
+
+/* ============================================
+   CUSTOM GLASS CARD CLASS
+   ============================================ */
+.glass-card {
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--blur-amount));
+    -webkit-backdrop-filter: blur(var(--blur-amount));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: 0 8px 32px var(--glass-shadow);
+}
+
+/* ============================================
+   CHECKBOX & RADIO STYLING
+   ============================================ */
+.stCheckbox>label>span {
+    color: var(--text-secondary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1rem !important;
+}
+
+/* ============================================
+   Hide Streamlit branding
+   ============================================ */
+#MainMenu {
+    visibility: hidden;
+}
+
+footer {
+    visibility: hidden;
+}
+
+header {
+    visibility: hidden;
+}
+
+/* Show deploy button for development */
+/* .stDeployButton {display: block !important;} */
