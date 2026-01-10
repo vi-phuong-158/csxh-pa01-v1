@@ -111,6 +111,125 @@
     padding: 1.5rem 1rem !important;
 }
 
+/* Sidebar Collapse/Expand Button - Nút đóng/mở sidebar */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+}
+
+button[data-testid="stSidebarCollapseButton"],
+button[kind="sidebarCollapse"],
+[data-testid="stSidebar"] button[kind="header"] {
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 50% !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+    visibility: visible !important;
+}
+
+button[data-testid="stSidebarCollapseButton"]:hover,
+button[kind="sidebarCollapse"]:hover {
+    transform: scale(1.1) !important;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6) !important;
+}
+
+button[data-testid="stSidebarCollapseButton"] svg,
+button[kind="sidebarCollapse"] svg {
+    color: white !important;
+    fill: white !important;
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* Nút mở sidebar khi đã đóng */
+[data-testid="stSidebarNav"] button,
+[data-testid="collapsedControl"] button {
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 8px !important;
+    padding: 10px !important;
+    visibility: visible !important;
+    display: flex !important;
+}
+
+[data-testid="collapsedControl"] button svg {
+    color: white !important;
+    fill: white !important;
+}
+
+/* Nút expand sidebar khi collapsed - cực kỳ rõ ràng */
+[data-testid="stSidebarCollapsedControl"] {
+    position: fixed !important;
+    top: 10px !important;
+    left: 10px !important;
+    z-index: 9999 !important;
+    display: block !important;
+    visibility: visible !important;
+}
+
+[data-testid="stSidebarCollapsedControl"] button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: 2px solid white !important;
+    border-radius: 10px !important;
+    padding: 12px 16px !important;
+    min-width: 50px !important;
+    min-height: 50px !important;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6),
+        0 0 30px rgba(102, 126, 234, 0.3) !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+[data-testid="stSidebarCollapsedControl"] button:hover {
+    transform: scale(1.15) !important;
+    box-shadow: 0 6px 25px rgba(102, 126, 234, 0.8) !important;
+}
+
+[data-testid="stSidebarCollapsedControl"] button svg {
+    color: white !important;
+    fill: white !important;
+    width: 24px !important;
+    height: 24px !important;
+}
+
+/* Selector rộng hơn cho nút mở sidebar - Streamlit versions khác nhau */
+button[aria-label*="sidebar"],
+button[aria-label*="Expand"],
+button[aria-label*="menu"],
+[data-testid="baseButton-headerNoPadding"],
+section[data-testid="stSidebar"]+div button:first-of-type,
+.stApp>header button:first-of-type {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: 2px solid white !important;
+    border-radius: 10px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+button[aria-label*="sidebar"] svg,
+button[aria-label*="Expand"] svg,
+button[aria-label*="menu"] svg {
+    color: white !important;
+    fill: white !important;
+}
+
 /* Sidebar Title */
 [data-testid="stSidebar"] .stMarkdown h1 {
     color: var(--text-primary) !important;
@@ -711,3 +830,186 @@ header {
 
 /* Show deploy button for development */
 /* .stDeployButton {display: block !important;} */
+
+/* ============================================
+   EXPANDER - Nút mở rộng (Thêm liên hệ, tài khoản, phương tiện)
+   ============================================ */
+/* Expander container */
+div[data-testid="stExpander"] {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.15) 100%) !important;
+    border: 1px solid rgba(102, 126, 234, 0.5) !important;
+    border-radius: var(--radius-md) !important;
+    backdrop-filter: blur(10px) !important;
+    margin: 10px 0 !important;
+    overflow: hidden;
+}
+
+/* Expander header (nút bấm) */
+div[data-testid="stExpander"]>details>summary {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.2) 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    padding: 12px 16px !important;
+    border-radius: var(--radius-md) !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Expander header hover */
+div[data-testid="stExpander"]>details>summary:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.5) 0%, rgba(118, 75, 162, 0.35) 100%) !important;
+    border-color: rgba(102, 126, 234, 0.8) !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Expander icon (mũi tên) */
+div[data-testid="stExpander"]>details>summary svg {
+    color: white !important;
+    fill: white !important;
+}
+
+/* Expander content (nội dung bên trong) */
+div[data-testid="stExpander"]>details>div {
+    background: rgba(20, 20, 40, 0.6) !important;
+    border-top: 1px solid rgba(102, 126, 234, 0.3) !important;
+    padding: 16px !important;
+}
+
+/* Expander khi mở */
+div[data-testid="stExpander"]>details[open] {
+    border-color: rgba(102, 126, 234, 0.7) !important;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2) !important;
+}
+
+div[data-testid="stExpander"]>details[open]>summary {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.3) 100%) !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+/* ============================================
+   TABS - Styling cho st.tabs
+   ============================================ */
+/* Tab container */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px !important;
+    background: rgba(20, 20, 40, 0.6) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 8px !important;
+}
+
+/* Tab buttons - mặc định */
+.stTabs [data-baseweb="tab"] {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: var(--radius-sm) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-weight: 500 !important;
+    padding: 10px 16px !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Tab buttons - hover */
+.stTabs [data-baseweb="tab"]:hover {
+    background: rgba(102, 126, 234, 0.2) !important;
+    border-color: rgba(102, 126, 234, 0.5) !important;
+    color: white !important;
+}
+
+/* Tab buttons - active/selected */
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.7) 100%) !important;
+    border-color: transparent !important;
+    color: white !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+}
+
+/* Tab buttons - NOT selected (fix highlight issue) */
+.stTabs [data-baseweb="tab"][aria-selected="false"] {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow: none !important;
+}
+
+/* Tab content panel */
+.stTabs [data-baseweb="tab-panel"] {
+    padding-top: 16px !important;
+}
+
+/* Remove default tab highlight indicator */
+.stTabs [data-baseweb="tab-highlight"] {
+    display: none !important;
+}
+
+/* Nested tabs (tabs trong tabs) styling */
+.stTabs .stTabs [data-baseweb="tab-list"] {
+    background: rgba(30, 30, 60, 0.4) !important;
+}
+
+.stTabs .stTabs [data-baseweb="tab"] {
+    font-size: 0.9rem !important;
+    padding: 8px 12px !important;
+}
+
+/* ============================================
+   FILE UPLOADER & TÀI LIỆU ĐÍNH KÈM
+   ============================================ */
+
+/* File uploader container */
+[data-testid="stFileUploader"] {
+    background: rgba(30, 30, 60, 0.6) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 1rem !important;
+}
+
+/* File uploader text */
+[data-testid="stFileUploader"] label,
+[data-testid="stFileUploader"] span,
+[data-testid="stFileUploader"] p {
+    color: #ffffff !important;
+}
+
+/* File uploader drag area */
+[data-testid="stFileUploader"] section {
+    border-color: rgba(102, 126, 234, 0.5) !important;
+    background: rgba(40, 40, 80, 0.4) !important;
+}
+
+[data-testid="stFileUploader"] section:hover {
+    border-color: rgba(102, 126, 234, 0.8) !important;
+    background: rgba(50, 50, 90, 0.5) !important;
+}
+
+/* File name display */
+[data-testid="stFileUploader"] [data-testid="stMarkdownContainer"] {
+    color: #ffffff !important;
+}
+
+/* Uploaded file info */
+[data-testid="stFileUploader"] small,
+[data-testid="stFileUploader"] [class*="uploadedFileName"] {
+    color: #e0e0e0 !important;
+}
+
+/* Expander for "Upload tài liệu mới" */
+.stExpander {
+    background: rgba(30, 30, 60, 0.5) !important;
+    border: 1px solid rgba(102, 126, 234, 0.3) !important;
+    border-radius: var(--radius-md) !important;
+}
+
+.stExpander summary {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+.stExpander [data-testid="stExpanderDetails"] {
+    background: rgba(20, 20, 50, 0.3) !important;
+}
+
+/* Caption text color */
+.stCaption,
+[data-testid="stCaptionContainer"] {
+    color: #b0b0ff !important;
+}

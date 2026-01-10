@@ -184,3 +184,22 @@ DANH_SACH_NGAN_HANG = [
     "MB Bank", "ACB", "Sacombank", "VPBank", "TPBank", "HDBank",
     "SHB", "OCB", "VIB", "MSB", "Eximbank", "LienVietPostBank", "Khác"
 ]
+
+# Loại tài liệu đính kèm
+LOAI_TAI_LIEU_OPTIONS = [
+    "Báo cáo xác minh",
+    "Ảnh chân dung",
+    "CMND/CCCD (bản scan)",
+    "Hộ chiếu (bản scan)",
+    "Biên bản làm việc",
+    "Hợp đồng/Thỏa thuận",
+    "Ảnh liên quan",
+    "Tài liệu nghiệp vụ",
+    "Khác"
+]
+
+# File extensions được phép upload
+ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif']
+
+# Giới hạn dung lượng file (MB)
+MAX_FILE_SIZE_MB = 10

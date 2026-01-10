@@ -33,3 +33,13 @@ test_*.xlsx
 # Temp files
 *.tmp
 *.log
+docx_content.txt
+
+# Uploads folder (user files)
+uploads/
+
+# Documentation files (optional - remove if you want to include)
+*.docx
+Issue.docx
+Bao-cao-*.docx
+Ke-hoach-*.docx

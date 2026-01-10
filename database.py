@@ -95,6 +95,23 @@ def create_tables():
         )
     """)
 
+    # Bảng nhân thân (Bố, Mẹ, Vợ/Chồng, Quan hệ khác)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS nhan_than (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cccd TEXT NOT NULL,
+            loai_quan_he TEXT NOT NULL,
+            ho_ten TEXT,
+            cccd_nhan_than TEXT,
+            ngay_sinh DATE,
+            nghe_nghiep TEXT,
+            noi_o TEXT,
+            ghi_chu TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
+        )
+    """)
+
     # ========================================
     # BẢNG ĐẶC THÙ - TẦNG 2 (Yếu tố nước ngoài & Nghiệp vụ)
     # ========================================
@@ -110,13 +127,34 @@ def create_tables():
             FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
         )
     """)
+
+    # ========================================
+    # BẢNG TÀI LIỆU ĐÍNH KÈM
+    # ========================================
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS tai_lieu (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cccd TEXT NOT NULL,
+            ten_file_goc TEXT,
+            ten_file_luu TEXT,
+            duong_dan TEXT,
+            loai_tai_lieu TEXT,
+            mo_ta TEXT,
+            dung_luong INTEGER,
+            dinh_dang TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
+        )
+    """)
     
     # Tạo index để tăng tốc truy vấn
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_lien_he_cccd ON lien_he(cccd)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tai_chinh_cccd ON tai_chinh(cccd)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_phuong_tien_cccd ON phuong_tien(cccd)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_nhan_than_cccd ON nhan_than(cccd)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_ho_so_dac_thu_cccd ON ho_so_dac_thu(cccd)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_ho_so_dac_thu_loai_hinh ON ho_so_dac_thu(loai_hinh)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_tai_lieu_cccd ON tai_lieu(cccd)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_ho_ten ON doi_tuong(ho_ten)")
 
     conn.commit()
