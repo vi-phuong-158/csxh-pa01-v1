@@ -7,6 +7,7 @@ Xử lý nhập liệu hàng loạt từ file Excel đa sheet
 import pandas as pd
 import io
 import re
+import logging
 from datetime import datetime
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -18,6 +19,28 @@ from constants import (
     DANH_SACH_QUOC_GIA, LOAI_HINH_TO_CHUC_NN, HINH_THUC_DU_HOC, 
     KET_QUA_XAC_MINH, DANH_SACH_NGAN_HANG
 )
+
+# Logging
+logger = logging.getLogger(__name__)
+
+
+# ============================================
+# HELPER FUNCTIONS
+# ============================================
+def normalize_cccd(value) -> str:
+    """
+    Chuẩn hóa CCCD: xử lý trường hợp Excel đọc như số (mất leading zeros).
+    """
+    if pd.isna(value):
+        return ""
+    s = str(value).strip()
+    # Loại bỏ .0 nếu Excel đọc như số float
+    if s.endswith('.0'):
+        s = s[:-2]
+    # Pad leading zeros nếu là số hợp lệ và thiếu chữ số
+    if s.isdigit() and len(s) < 12:
+        s = s.zfill(12)
+    return s
 
 
 # ============================================
@@ -73,45 +96,103 @@ CSXH_TEMPLATES = {
     }
 }
 
-def create_excel_template(loai_csxh=None):
-    """
-    Tạo file Excel mẫu với 5 sheets cho import dữ liệu
-    Args:
-        loai_csxh: Loại hình CSXH cụ thể (None = tất cả loại)
-    Returns: bytes của file Excel
-    """
-    wb = Workbook()
-    
-    # Style chung
+# Cấu hình cho các loại dữ liệu nhập liệu khác
+TEMPLATE_DEFINITIONS = {
+    "doi_tuong": {
+        "name": "Thông tin đối tượng",
+        "headers": ["CCCD (*)", "Họ và tên (*)", "Ngày sinh (dd/mm/yyyy)", 
+                   "Giới tính", "Tỉnh/TP", "Xã/Phường",
+                   "Phân loại nghề nghiệp", "Chi tiết nơi làm việc", "Ghi chú chung"],
+        "sample": ["001234567890", "Nguyễn Văn A", "01/01/1990", "Nam", 
+                   "Phú Thọ", "Phường Thanh Miếu", "Cơ quan nhà nước", 
+                   "Công an tỉnh Phú Thọ", "Ghi chú mẫu"]
+    },
+    "lien_he": {
+        "name": "Thông tin liên hệ",
+        "headers": ["CCCD (*)", "Loại liên hệ", "Giá trị (*)", "Ghi chú"],
+        "sample": ["001234567890", "Số điện thoại", "0912345678", "SĐT chính"]
+    },
+    "than_nhan": {  # Mới thêm theo yêu cầu
+        "name": "Thân nhân",
+        "headers": ["CCCD (*)", "Họ tên thân nhân", "Quan hệ", "Năm sinh", 
+                   "Nghề nghiệp/Nơi làm việc", "Địa chỉ", "Ghi chú"],
+        "sample": ["001234567890", "Nguyễn Văn B", "Bố đẻ", "1960", 
+                   "Hưu trí", "Việt Trì, Phú Thọ", ""]
+    },
+    "tai_chinh": {
+        "name": "Tài chính & Ngân hàng",
+        "headers": ["CCCD (*)", "Ngân hàng", "Số tài khoản (*)", "Chủ tài khoản", "Ghi chú"],
+        "sample": ["001234567890", "Vietcombank", "1234567890123", "NGUYEN VAN A", "TK chính"]
+    },
+    "phuong_tien": {
+        "name": "Phương tiện đí lại",
+        "headers": ["CCCD (*)", "Loại xe", "Biển kiểm soát (*)", "Tên phương tiện", "Ghi chú"],
+        "sample": ["001234567890", "Ô tô", "19A-12345", "Toyota Vios 2022", "Xe cá nhân"]
+    },
+    "qua_trinh_hoat_dong": { # Mới thêm
+        "name": "Quá trình hoạt động",
+        "headers": ["CCCD (*)", "Thời gian (từ năm-đến năm)", "Nội dung hoạt động", "Ghi chú"],
+        "sample": ["001234567890", "2010-2015", "Học sinh trường THPT Chuyên Hùng Vương", ""]
+    }
+}
+
+def style_header_row(ws, headers):
     header_font = Font(bold=True, color="FFFFFF")
     header_fill = PatternFill(start_color="667eea", end_color="667eea", fill_type="solid")
-    thin_border = Border(
-        left=Side(style='thin'),
-        right=Side(style='thin'),
-        top=Side(style='thin'),
-        bottom=Side(style='thin')
-    )
+    thin_border = Border(left=Side('thin'), right=Side('thin'), top=Side('thin'), bottom=Side('thin'))
     
-    def style_header(ws, headers, row=1):
-        """Áp dụng style cho header"""
-        for col, header in enumerate(headers, 1):
-            cell = ws.cell(row=row, column=col, value=header)
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = Alignment(horizontal='center', vertical='center')
-            cell.border = thin_border
-            ws.column_dimensions[cell.column_letter].width = max(15, len(header) + 5)
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+        cell.border = thin_border
+        ws.column_dimensions[cell.column_letter].width = max(15, len(header) + 5)
+
+def create_excel_template(import_type="all", csxh_type=None):
+    """
+    Tạo file Excel mẫu
+    Args:
+        import_type: 'all' (5 sheet) hoặc key trong TEMPLATE_DEFINITIONS ('doi_tuong', 'lien_he'...)
+        csxh_type: Loại CSXH cụ thể (nếu import_type='ho_so_dac_thu')
+    """
+    wb = Workbook()
+
+    if import_type == "all":
+        # ... Logic cũ tạo 5 sheet ...
+        create_full_template(wb, csxh_type)
+    elif import_type == "ho_so_dac_thu":
+        # Tạo sheet CSXH lẻ
+        if csxh_type and csxh_type in CSXH_TEMPLATES:
+            tpl = CSXH_TEMPLATES[csxh_type]
+            ws = wb.active
+            ws.title = "Hồ sơ CSXH"
+            style_header_row(ws, tpl['headers'])
+            ws.append(tpl['sample'])
+            ws.cell(row=4, column=1, value=f"Loại hình: {csxh_type}")
+        else:
+            # CSXH Tổng hợp
+            create_csxh_general_sheet(wb)
+    elif import_type in TEMPLATE_DEFINITIONS:
+        # Tạo sheet đơn cho các loại khác
+        tpl = TEMPLATE_DEFINITIONS[import_type]
+        ws = wb.active
+        ws.title = tpl['name']
+        style_header_row(ws, tpl['headers'])
+        ws.append(tpl['sample'])
+        ws.cell(row=5, column=1, value="(*) cột bắt buộc. CCCD dùng để định danh đối tượng.")
     
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+def create_full_template(wb, csxh_type):
+    # Logic cũ của create_excel_template nhưng tách ra hàm riêng để tái sử dụng
     # ========== SHEET 1: ĐỐI TƯỢNG ==========
     ws1 = wb.active
     ws1.title = "1. Đối tượng"
-    headers_1 = [
-        "CCCD (*)", "Họ và tên (*)", "Ngày sinh (dd/mm/yyyy)", 
-        "Giới tính", "Tỉnh/TP", "Xã/Phường",
-        "Phân loại nghề nghiệp", "Chi tiết nơi làm việc", "Ghi chú chung"
-    ]
-    style_header(ws1, headers_1)
-    
+    # ... Copy logic cũ vào đây hoặc giữ nguyên logic cũ trong hàm create_excel_template gốc và chỉ sửa phần đầu
     # Dòng mẫu
     ws1.append(["001234567890", "Nguyễn Văn A", "01/01/1990", "Nam", 
                 "Phú Thọ", "Phường Thanh Miếu", "Cơ quan nhà nước", 
@@ -128,7 +209,7 @@ def create_excel_template(loai_csxh=None):
     headers_2 = [
         "CCCD (*)", "Loại liên hệ", "Giá trị (*)", "Ghi chú"
     ]
-    style_header(ws2, headers_2)
+    style_header_row(ws2, headers_2)
     ws2.append(["001234567890", "Số điện thoại", "0912345678", "SĐT chính"])
     ws2.append(["001234567890", "Facebook", "facebook.com/nguyenvana", ""])
     ws2.append(["001234567891", "Số điện thoại", "0987654321", ""])
@@ -139,7 +220,7 @@ def create_excel_template(loai_csxh=None):
     headers_3 = [
         "CCCD (*)", "Ngân hàng", "Số tài khoản (*)", "Chủ tài khoản", "Ghi chú"
     ]
-    style_header(ws3, headers_3)
+    style_header_row(ws3, headers_3)
     ws3.append(["001234567890", "Vietcombank", "1234567890123", "NGUYEN VAN A", "TK chính"])
     ws3.append(["001234567890", "Techcombank", "9876543210", "NGUYEN VAN A", "TK phụ"])
     
@@ -148,19 +229,19 @@ def create_excel_template(loai_csxh=None):
     headers_4 = [
         "CCCD (*)", "Loại xe", "Biển kiểm soát (*)", "Tên phương tiện", "Ghi chú"
     ]
-    style_header(ws4, headers_4)
+    style_header_row(ws4, headers_4)
     ws4.append(["001234567890", "Ô tô", "19A-12345", "Toyota Vios 2022", "Xe cá nhân"])
     ws4.append(["001234567891", "Xe máy", "19B1-67890", "Honda Wave", ""])
     ws4.cell(row=5, column=1, value="Loại xe: Ô tô, Xe máy, Xe tải, Xe khách, Khác")
     
     # ========== SHEET 5: HỒ SƠ CSXH ==========
-    if loai_csxh and loai_csxh in CSXH_TEMPLATES:
+    if csxh_type and csxh_type in CSXH_TEMPLATES:
         # Tạo sheet theo loại cụ thể
-        template = CSXH_TEMPLATES[loai_csxh]
+        template = CSXH_TEMPLATES[csxh_type]
         ws5 = wb.create_sheet(f"5. {template['name']}")
-        style_header(ws5, template['headers'])
+        style_header_row(ws5, template['headers'])
         ws5.append(template['sample'])
-        ws5.cell(row=4, column=1, value=f"Loại hình: {loai_csxh}")
+        ws5.cell(row=4, column=1, value=f"Loại hình: {csxh_type}")
     else:
         # Tạo sheet tổng hợp (tất cả loại)
         ws5 = wb.create_sheet("5. Hồ sơ CSXH (Tổng hợp)")
@@ -170,7 +251,7 @@ def create_excel_template(loai_csxh=None):
             "Thời gian (từ năm)", "Thời gian (đến năm)",
             "Nội dung chi tiết", "Cơ quan xác minh", "Kết quả", "Ghi chú"
         ]
-        style_header(ws5, headers_5)
+        style_header_row(ws5, headers_5)
         
         # Mẫu cho từng loại
         ws5.append(["001234567890", "Hon_Nhan_NN", "Trung Quốc", "WANG Xiaoming", 
@@ -178,30 +259,22 @@ def create_excel_template(loai_csxh=None):
         
         ws5.cell(row=4, column=1, value="--- HƯỚNG DẪN LOẠI HÌNH ---")
         ws5.cell(row=5, column=1, value="Hon_Nhan_NN | Lam_Viec_NN | Hoc_Tap_Cong_Tac_NN | Vi_Pham_NN | Xac_Minh")
-    
-    # Lưu vào buffer
-    buffer = io.BytesIO()
-    wb.save(buffer)
-    buffer.seek(0)
-    
-    return buffer.getvalue()
 
-
-# ============================================
-# VALIDATE DỮ LIỆU
-# ============================================
-
-def validate_excel_data(excel_file):
+def validate_excel_data(excel_file, import_type='all'):
     """
     Đọc và validate dữ liệu từ file Excel
-    Returns: dict với kết quả validate cho từng sheet
+    Args:
+        excel_file: File object
+        import_type: Loại import ('all', 'doi_tuong', 'lien_he'...)
     """
     results = {
         'doi_tuong': {'data': None, 'errors': [], 'valid_count': 0, 'error_rows': []},
         'lien_he': {'data': None, 'errors': [], 'valid_count': 0, 'error_rows': []},
+        'than_nhan': {'data': None, 'errors': [], 'valid_count': 0, 'error_rows': []}, # Mới
         'tai_chinh': {'data': None, 'errors': [], 'valid_count': 0, 'error_rows': []},
         'phuong_tien': {'data': None, 'errors': [], 'valid_count': 0, 'error_rows': []},
         'ho_so_dac_thu': {'data': None, 'errors': [], 'valid_count': 0, 'error_rows': []},
+        'qua_trinh_hoat_dong': {'data': None, 'errors': [], 'valid_count': 0, 'error_rows': []}, # Mới
     }
     
     try:
@@ -216,9 +289,18 @@ def validate_excel_data(excel_file):
         existing_cccds = set(row[0] for row in cursor.fetchall())
         conn.close()
         
-        # ===== SHEET 1: ĐỐI TƯỢNG =====
-        if len(sheet_names) >= 1:
-            df = pd.read_excel(xls, sheet_name=0, skiprows=0)
+        
+        # Hàm helper để check xem nên đọc sheet nào
+        def should_read(sheet_key, index):
+            if import_type == 'all':
+                return len(sheet_names) > index
+            return import_type == sheet_key and len(sheet_names) > 0
+
+        # ===== SHEET: ĐỐI TƯỢNG =====
+        if should_read('doi_tuong', 0):
+            # Nếu import lẻ, luôn đọc sheet 0. Nếu all, đọc sheet 0.
+            target_sheet = 0 if import_type != 'all' else 0
+            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
             df = df.iloc[1:]  # Bỏ dòng mẫu
             df = df.dropna(how='all')  # Bỏ dòng trống
             
@@ -244,7 +326,8 @@ def validate_excel_data(excel_file):
                     elif len(cccd) != 12:
                         row_errors.append(f"Dòng {idx+1}: CCCD phải đủ 12 số (hiện có {len(cccd)} số)")
                     elif cccd in existing_cccds:
-                        row_errors.append(f"Dòng {idx+1}: CCCD {cccd} đã tồn tại trong hệ thống")
+                        # Cho phép tiếp tục để bổ sung dữ liệu (sẽ dùng INSERT OR IGNORE)
+                        pass
                     elif cccd in new_cccds:
                         row_errors.append(f"Dòng {idx+1}: CCCD {cccd} bị trùng trong file")
                     
@@ -302,11 +385,11 @@ def validate_excel_data(excel_file):
                 results['doi_tuong']['valid_count'] = len(valid_rows)
                 results['doi_tuong']['new_cccds'] = new_cccds
         
-        # ===== SHEET 2: LIÊN HỆ =====
-        valid_cccds = existing_cccds.union(results['doi_tuong'].get('new_cccds', set()))
-        
-        if len(sheet_names) >= 2:
-            df = pd.read_excel(xls, sheet_name=1, skiprows=0)
+        # ===== SHEET: LIÊN HỆ =====
+        if should_read('lien_he', 1):
+            valid_cccds = existing_cccds.union(results['doi_tuong'].get('new_cccds', set()))
+            target_sheet = 0 if import_type != 'all' else 1
+            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
             df = df.iloc[1:]
             df = df.dropna(how='all')
             
@@ -339,10 +422,46 @@ def validate_excel_data(excel_file):
                 results['lien_he']['data'] = pd.DataFrame(valid_rows) if valid_rows else None
                 results['lien_he']['errors'] = errors
                 results['lien_he']['valid_count'] = len(valid_rows)
+
+        # ===== SHEET: THÂN NHÂN (New) =====
+        if should_read('than_nhan', 99): # 99 vì không bao giờ nằm trong All
+            target_sheet = 0
+            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
+            df = df.iloc[1:]
+            df = df.dropna(how='all')
+            
+            if len(df) > 0:
+                df.columns = ['cccd', 'ho_ten', 'quan_he', 'nam_sinh', 'nghe_nghiep', 'dia_chi', 'ghi_chu']
+                errors = []
+                valid_rows = []
+                
+                for idx, row in df.iterrows():
+                    row_errors = []
+                    cccd = str(row['cccd']).strip() if pd.notna(row['cccd']) else ""
+                    ho_ten = str(row['ho_ten']).strip() if pd.notna(row['ho_ten']) else ""
+                    quan_he = str(row['quan_he']).strip() if pd.notna(row['quan_he']) else ""
+                    
+                    if cccd not in valid_cccds:
+                        row_errors.append(f"Dòng {idx+1}: CCCD {cccd} không tồn tại")
+                    if not ho_ten:
+                        row_errors.append(f"Dòng {idx+1}: Thiếu họ tên thân nhân")
+                    
+                    if row_errors:
+                        errors.extend(row_errors)
+                        error_row = row.to_dict()
+                        error_row['LY_DO_LOI'] = '; '.join(row_errors)
+                        results['than_nhan']['error_rows'].append(error_row)
+                    else:
+                        valid_rows.append(row)
+                
+                results['than_nhan']['data'] = pd.DataFrame(valid_rows) if valid_rows else None
+                results['than_nhan']['errors'] = errors
+                results['than_nhan']['valid_count'] = len(valid_rows)
         
-        # ===== SHEET 3: TÀI CHÍNH =====
-        if len(sheet_names) >= 3:
-            df = pd.read_excel(xls, sheet_name=2, skiprows=0)
+        # ===== SHEET: TÀI CHÍNH =====
+        if should_read('tai_chinh', 2):
+            target_sheet = 0 if import_type != 'all' else 2
+            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
             df = df.iloc[1:]
             df = df.dropna(how='all')
             
@@ -376,9 +495,10 @@ def validate_excel_data(excel_file):
                 results['tai_chinh']['errors'] = errors
                 results['tai_chinh']['valid_count'] = len(valid_rows)
         
-        # ===== SHEET 4: PHƯƠNG TIỆN =====
-        if len(sheet_names) >= 4:
-            df = pd.read_excel(xls, sheet_name=3, skiprows=0)
+        # ===== SHEET: PHƯƠNG TIỆN =====
+        if should_read('phuong_tien', 3):
+            target_sheet = 0 if import_type != 'all' else 3
+            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
             df = df.iloc[1:]
             df = df.dropna(how='all')
             
@@ -412,19 +532,19 @@ def validate_excel_data(excel_file):
                 results['phuong_tien']['errors'] = errors
                 results['phuong_tien']['valid_count'] = len(valid_rows)
         
-        # ===== SHEET 5: HỒ SƠ CSXH =====
-        valid_loai_hinh = ['Hon_Nhan_NN', 'Lam_Viec_NN', 'Hoc_Tap_Cong_Tac_NN', 'Vi_Pham_NN', 'Xac_Minh']
-        
-        if len(sheet_names) >= 5:
-            df = pd.read_excel(xls, sheet_name=4, skiprows=0)
+        if should_read('ho_so_dac_thu', 4):
+            target_sheet = 0 if import_type != 'all' else 4
+            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
             df = df.iloc[1:]
             df = df.dropna(how='all')
             
-            # Lọc bỏ các dòng hướng dẫn (bắt đầu bằng "---" hoặc "-")
+            # ... (Logic existing for CSXH) ...
+            valid_loai_hinh = ['Hon_Nhan_NN', 'Lam_Viec_NN', 'Hoc_Tap_Cong_Tac_NN', 'Vi_Pham_NN', 'Xac_Minh']
             if len(df) > 0:
+                # Filter headers
                 df = df[~df.iloc[:, 0].astype(str).str.startswith('---')]
                 df = df[~df.iloc[:, 0].astype(str).str.startswith('-')]
-            
+
             if len(df) > 0:
                 df.columns = ['cccd', 'loai_hinh', 'quoc_tich', 'ten_to_chuc',
                              'thoi_gian_tu', 'thoi_gian_den', 'noi_dung_chi_tiet',
@@ -443,17 +563,12 @@ def validate_excel_data(excel_file):
                     if not loai_hinh:
                         row_errors.append(f"Dòng {idx+1}: Thiếu loại hình")
                     elif loai_hinh not in valid_loai_hinh:
-                        row_errors.append(f"Dòng {idx+1}: Loại hình '{loai_hinh}' không hợp lệ (cần: {', '.join(valid_loai_hinh)})")
-                    
-                    # Kiểm tra quốc gia (nếu là loại liên quan đến nước ngoài)
-                    if loai_hinh in ['Hon_Nhan_NN', 'Lam_Viec_NN', 'Hoc_Tap_Cong_Tac_NN', 'Vi_Pham_NN']:
-                        if quoc_tich and quoc_tich not in DANH_SACH_QUOC_GIA:
-                            row_errors.append(f"Dòng {idx+1}: Quốc gia '{quoc_tich}' không nằm trong danh sách chuẩn")
+                        row_errors.append(f"Dòng {idx+1}: Loại hình '{loai_hinh}' không hợp lệ")
                     
                     if row_errors:
                         errors.extend(row_errors)
                         error_row = row.to_dict()
-                        error_row['LY_DO_LOI'] = '; '.join([e.split(': ', 1)[1] if ': ' in e else e for e in row_errors])
+                        error_row['LY_DO_LOI'] = '; '.join(row_errors)
                         results['ho_so_dac_thu']['error_rows'].append(error_row)
                     else:
                         valid_rows.append(row)
@@ -461,6 +576,40 @@ def validate_excel_data(excel_file):
                 results['ho_so_dac_thu']['data'] = pd.DataFrame(valid_rows) if valid_rows else None
                 results['ho_so_dac_thu']['errors'] = errors
                 results['ho_so_dac_thu']['valid_count'] = len(valid_rows)
+        
+        # ===== SHEET: QUÁ TRÌNH HOẠT ĐỘNG (New) =====
+        if should_read('qua_trinh_hoat_dong', 99):
+            target_sheet = 0
+            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
+            df = df.iloc[1:]
+            df = df.dropna(how='all')
+            
+            if len(df) > 0:
+                df.columns = ['cccd', 'thoi_gian', 'noi_dung', 'ghi_chu']
+                errors = []
+                valid_rows = []
+                
+                for idx, row in df.iterrows():
+                    row_errors = []
+                    cccd = str(row['cccd']).strip() if pd.notna(row['cccd']) else ""
+                    noi_dung = str(row['noi_dung']).strip() if pd.notna(row['noi_dung']) else ""
+                    
+                    if cccd not in valid_cccds:
+                        row_errors.append(f"Dòng {idx+1}: CCCD {cccd} không tồn tại")
+                    if not noi_dung:
+                        row_errors.append(f"Dòng {idx+1}: Thiếu nội dung hoạt động")
+                    
+                    if row_errors:
+                        errors.extend(row_errors)
+                        error_row = row.to_dict()
+                        error_row['LY_DO_LOI'] = '; '.join(row_errors)
+                        results['qua_trinh_hoat_dong']['error_rows'].append(error_row)
+                    else:
+                        valid_rows.append(row)
+                
+                results['qua_trinh_hoat_dong']['data'] = pd.DataFrame(valid_rows) if valid_rows else None
+                results['qua_trinh_hoat_dong']['errors'] = errors
+                results['qua_trinh_hoat_dong']['valid_count'] = len(valid_rows)
         
     except Exception as e:
         results['doi_tuong']['errors'].append(f"Lỗi đọc file: {str(e)}")
@@ -526,10 +675,10 @@ def export_error_excel(validation_results):
                 cell.font = header_font
                 ws.column_dimensions[cell.column_letter].width = max(15, len(str(col_name)) + 5)
             
-            # Viết dữ liệu
-            for row_idx, row in df.iterrows():
+            # Viết dữ liệu - sử dụng enumerate để có row number chính xác
+            for row_num, (_, row) in enumerate(df.iterrows(), start=2):
                 for col_idx, value in enumerate(row.values, 1):
-                    cell = ws.cell(row=row_idx + 2, column=col_idx, value=value)
+                    cell = ws.cell(row=row_num, column=col_idx, value=value)
                     # Highlight cột lý do lỗi
                     if df.columns[col_idx - 1] == 'LY_DO_LOI':
                         cell.font = Font(color="dc3545", bold=True)
@@ -549,10 +698,9 @@ def export_error_excel(validation_results):
 # BULK INSERT VỚI TRANSACTION
 # ============================================
 
-def bulk_import_all(validated_data):
+def bulk_import_all(validated_data, update_existing=False):
     """
-    Import tất cả dữ liệu đã validate vào database với transaction
-    Sử dụng executemany để tối ưu hiệu năng
+    Thực hiện import dữ liệu đã validate vào database (Transaction nguyên tử)
     Nếu có lỗi bất kỳ đâu -> rollback toàn bộ
     Returns: (success, message, stats)
     """
@@ -562,9 +710,11 @@ def bulk_import_all(validated_data):
     stats = {
         'doi_tuong': 0,
         'lien_he': 0,
+        'than_nhan': 0,
         'tai_chinh': 0,
         'phuong_tien': 0,
-        'ho_so_dac_thu': 0
+        'ho_so_dac_thu': 0,
+        'qua_trinh_hoat_dong': 0
     }
 
     # Helper function to get value safely
@@ -609,12 +759,33 @@ def bulk_import_all(validated_data):
                 ))
 
             if data_list:
-                cursor.executemany("""
-                    INSERT INTO doi_tuong 
-                    (cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_tinh, dia_chi_xa, 
-                     phan_loai_nghe_nghiep, chi_tiet_nghe_nghiep, ghi_chu_chung)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, data_list)
+                if update_existing:
+                    # UPSERT Logic: Cập nhật thông tin nếu trùng CCCD
+                    sql = """
+                        INSERT INTO doi_tuong 
+                        (cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_tinh, dia_chi_xa, 
+                         phan_loai_nghe_nghiep, chi_tiet_nghe_nghiep, ghi_chu_chung)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(cccd) DO UPDATE SET
+                        ho_ten=excluded.ho_ten,
+                        ngay_sinh=excluded.ngay_sinh,
+                        gioi_tinh=excluded.gioi_tinh,
+                        dia_chi_tinh=excluded.dia_chi_tinh,
+                        dia_chi_xa=excluded.dia_chi_xa,
+                        phan_loai_nghe_nghiep=excluded.phan_loai_nghe_nghiep,
+                        chi_tiet_nghe_nghiep=excluded.chi_tiet_nghe_nghiep,
+                        ghi_chu_chung=excluded.ghi_chu_chung,
+                        updated_at=CURRENT_TIMESTAMP
+                    """
+                else:
+                    # Skip duplicate rows
+                    sql = """
+                        INSERT OR IGNORE INTO doi_tuong 
+                        (cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_tinh, dia_chi_xa, 
+                         phan_loai_nghe_nghiep, chi_tiet_nghe_nghiep, ghi_chu_chung)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """
+                cursor.executemany(sql, data_list)
                 stats['doi_tuong'] = len(data_list)
         
         # ===== INSERT LIÊN HỆ =====
@@ -635,6 +806,28 @@ def bulk_import_all(validated_data):
                     VALUES (?, ?, ?, ?)
                 """, data_list)
                 stats['lien_he'] = len(data_list)
+        
+        # ===== INSERT THÂN NHÂN =====
+        if 'than_nhan' in validated_data and validated_data['than_nhan']['data'] is not None:
+            df = validated_data['than_nhan']['data']
+            data_list = []
+            for _, row in df.iterrows():
+                data_list.append((
+                    str(row['cccd']).strip(),
+                    str(row['ho_ten']).strip(),
+                    get_val(row, 'quan_he'),
+                    get_val(row, 'nam_sinh'),
+                    get_val(row, 'nghe_nghiep'),
+                    get_val(row, 'dia_chi'),
+                    get_val(row, 'ghi_chu')
+                ))
+            
+            if data_list:
+                cursor.executemany("""
+                    INSERT INTO than_nhan (cccd, ho_ten, quan_he, nam_sinh, nghe_nghiep, dia_chi, ghi_chu)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, data_list)
+                stats['than_nhan'] = len(data_list)
         
         # ===== INSERT TÀI CHÍNH =====
         if validated_data['tai_chinh']['data'] is not None:
@@ -705,6 +898,25 @@ def bulk_import_all(validated_data):
                     VALUES (?, ?, ?, ?)
                 """, data_list)
                 stats['ho_so_dac_thu'] = len(data_list)
+
+        # ===== INSERT QUÁ TRÌNH HOẠT ĐỘNG =====
+        if 'qua_trinh_hoat_dong' in validated_data and validated_data['qua_trinh_hoat_dong']['data'] is not None:
+            df = validated_data['qua_trinh_hoat_dong']['data']
+            data_list = []
+            for _, row in df.iterrows():
+                data_list.append((
+                    str(row['cccd']).strip(),
+                    get_val(row, 'thoi_gian'),
+                    str(row['noi_dung']).strip(),
+                    get_val(row, 'ghi_chu')
+                ))
+            
+            if data_list:
+                cursor.executemany("""
+                    INSERT INTO qua_trinh_hoat_dong (cccd, thoi_gian, noi_dung, ghi_chu)
+                    VALUES (?, ?, ?, ?)
+                """, data_list)
+                stats['qua_trinh_hoat_dong'] = len(data_list)
         
         # Commit transaction
         conn.commit()

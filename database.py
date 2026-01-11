@@ -147,6 +147,21 @@ def create_tables():
         )
     """)
     
+    # ========================================
+    # BẢNG QUÁ TRÌNH HOẠT ĐỘNG
+    # ========================================
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS qua_trinh_hoat_dong (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cccd TEXT NOT NULL,
+            thoi_gian TEXT,
+            noi_dung TEXT,
+            ghi_chu TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
+        )
+    """)
+
     # Tạo index để tăng tốc truy vấn
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_lien_he_cccd ON lien_he(cccd)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tai_chinh_cccd ON tai_chinh(cccd)")
@@ -154,6 +169,7 @@ def create_tables():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_nhan_than_cccd ON nhan_than(cccd)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_ho_so_dac_thu_cccd ON ho_so_dac_thu(cccd)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_ho_so_dac_thu_loai_hinh ON ho_so_dac_thu(loai_hinh)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_qua_trinh_hoat_dong_cccd ON qua_trinh_hoat_dong(cccd)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tai_lieu_cccd ON tai_lieu(cccd)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_ho_ten ON doi_tuong(ho_ten)")
 
@@ -167,47 +183,108 @@ def create_tables():
     print("   - tai_chinh (Tai khoan ngan hang)")
     print("   - phuong_tien (Phuong tien)")
     print("   - ho_so_dac_thu (Yeu to nuoc ngoai & Nghiep vu)")
+    print("   - qua_trinh_hoat_dong (Qua trinh hoat dong)")
+
+def save_qua_trinh_hoat_dong(cccd, thoi_gian, noi_dung, ghi_chu=""):
+    """Lưu thông tin quá trình hoạt động"""
+    if not noi_dung:
+        return
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO qua_trinh_hoat_dong (cccd, thoi_gian, noi_dung, ghi_chu)
+            VALUES (?, ?, ?, ?)
+        """, (cccd, thoi_gian, noi_dung, ghi_chu))
+        conn.commit()
+    finally:
+        conn.close()
+
+def get_qua_trinh_hoat_dong(cccd):
+    """Lấy danh sách quá trình hoạt động theo CCCD"""
+    conn = get_connection()
+    try:
+        # Sắp xếp theo ID giảm dần (mới nhất lên đầu) hoặc có thể parse thời gian nếu cần
+        # Ở đây để đơn giản ta sort theo created_at/id
+        query = "SELECT * FROM qua_trinh_hoat_dong WHERE cccd = ? ORDER BY id DESC"
+        # Trả về list of sqlite3.Row -> có thể convert sang dict hoặc DataFrame
+        # Để nhất quán với usage trong views (pandas read_sql), ta có thể dùng pandas ở view
+        # Tuy nhiên user yêu cầu hàm này SELECT dữ liệu.
+        # Ở đay trả về list dict cho linh hoạt
+        cursor = conn.cursor()
+        cursor.execute(query, (cccd,))
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+def delete_qua_trinh_hoat_dong(qt_id: int) -> bool:
+    """Xóa quá trình hoạt động theo ID"""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM qua_trinh_hoat_dong WHERE id = ?", (qt_id,))
+        conn.commit()
+        return True
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Lỗi xóa quá trình hoạt động: {e}")
+        return False
+    finally:
+        conn.close()
+
+import logging
+import re
+
+# Logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 def verify_database():
     """Kiểm tra cấu trúc database đã tạo"""
     conn = get_connection()
-    cursor = conn.cursor()
-    
-    # Lấy danh sách các bảng
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-    tables = cursor.fetchall()
-    
-    print("\n[i] Cau truc Database:")
-    print("=" * 50)
-    
-    for table in tables:
-        table_name = table[0]
-        if table_name.startswith("sqlite_"):
-            continue
+    try:
+        cursor = conn.cursor()
+        
+        # Lấy danh sách các bảng
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+        tables = cursor.fetchall()
+        
+        logger.info("Cấu trúc Database:")
+        
+        for table in tables:
+            table_name = table[0]
+            if table_name.startswith("sqlite_"):
+                continue
             
-        print(f"\n[TABLE] {table_name}")
-        
-        # Lấy thông tin các cột
-        cursor.execute(f"PRAGMA table_info({table_name})")
-        columns = cursor.fetchall()
-        
-        for col in columns:
-            col_id, col_name, col_type, not_null, default_val, is_pk = col
-            pk_marker = "[PK]" if is_pk else "    "
-            null_marker = "NOT NULL" if not_null else ""
-            default_marker = f"DEFAULT {default_val}" if default_val else ""
-            line = f"   {pk_marker} {col_name}: {col_type} {null_marker} {default_marker}".strip()
-            # Encode to ASCII to avoid Unicode errors on Windows console
-            print(line.encode('ascii', 'replace').decode('ascii'))
-    
-    conn.close()
+            # SECURITY: Sanitize table_name để tránh SQL injection
+            if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', table_name):
+                logger.warning(f"Invalid table name detected: {table_name}")
+                continue
+                
+            logger.info(f"[TABLE] {table_name}")
+            
+            # Lấy thông tin các cột - sau khi đã validate table_name
+            cursor.execute(f"PRAGMA table_info({table_name})")
+            columns = cursor.fetchall()
+            
+            for col in columns:
+                col_id, col_name, col_type, not_null, default_val, is_pk = col
+                pk_marker = "[PK]" if is_pk else "    "
+                null_marker = "NOT NULL" if not_null else ""
+                default_marker = f"DEFAULT {default_val}" if default_val else ""
+                logger.debug(f"   {pk_marker} {col_name}: {col_type} {null_marker} {default_marker}")
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":
-    print("[*] Khoi tao Database Security Profile 360...")
-    print("=" * 50)
+    logger.info("Khởi tạo Database Security Profile 360...")
     create_tables()
     verify_database()
-    print("\n" + "=" * 50)
-    print("[OK] Hoan tat! Database da san sang su dung.")
+    logger.info("Hoàn tất! Database đã sẵn sàng sử dụng.")
+

@@ -23,11 +23,11 @@
     --glass-border: rgba(255, 255, 255, 0.2);
     --glass-shadow: rgba(0, 0, 0, 0.4);
 
-    /* Text Colors - Tăng độ sáng */
+    /* Text Colors - Tăng độ sáng (Toàn bộ trắng để tương phản trên nền đen) */
     --text-primary: #ffffff;
-    --text-secondary: #e0e0e0;
-    --text-muted: #b0b0b0;
-    --text-label: #f0f0f0;
+    --text-secondary: #ffffff;
+    --text-muted: #e0e0e0;
+    --text-label: #ffffff;
 
     /* Accent Colors */
     --accent-primary: #667eea;
@@ -53,26 +53,104 @@
 /* ============================================
    MAIN BACKGROUND - Gradient động
    ============================================ */
+/* ============================================
+   MAIN BACKGROUND - Nền Đơn Giản
+   ============================================ */
 .stApp {
-    background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%) !important;
-    background-attachment: fixed !important;
-    min-height: 100vh;
+    /* Nền màu tối đơn giản, độ tương phản cao */
+    background: #0e1117 !important;
+    background-image: none !important;
 }
 
-/* Animated background orbs */
+/* Ẩn các hiệu ứng nền động (animated orbs) nếu có, để tránh rối mắt */
 .stApp::before {
-    content: '';
-    position: fixed;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(0, 217, 165, 0.06) 0%, transparent 40%);
-    animation: float 25s ease-in-out infinite;
-    z-index: -1;
-    pointer-events: none;
+    display: none !important;
+}
+
+/* ============================================
+   GLOBAL TEXT OVERRIDE - Force White Text
+   ============================================ */
+/* Bắt buộc tất cả văn bản màu trắng cho các thành phần chính */
+.stApp,
+.stApp>header,
+.stApp>div,
+.stApp footer,
+.stMarkdown,
+.stMarkdown p,
+.stMarkdown li,
+.stMarkdown span,
+.stMarkdown h1,
+.stMarkdown h2,
+.stMarkdown h3,
+.stMarkdown h4,
+.stMarkdown h5,
+.stMarkdown h6,
+.stText,
+.stCodeBlock,
+.stCaption,
+label,
+p {
+    color: #ffffff !important;
+}
+
+/*
+   FIX DROPDOWN & INPUTS
+   Dropdown menu của Streamlit (BaseWeb) thường bị ảnh hưởng bởi global style.
+   Cần set lại màu chữ cho dropdown menu và các ô input.
+*/
+
+/* 1. Các ô nhập liệu (Input, SelectBox, DateInput...) có nền sáng -> Chữ phải màu ĐEN */
+input,
+textarea,
+select,
+.stSelectbox [data-baseweb="select"] div {
+    color: #000000 !important;
+}
+
+/* Cụ thể hơn cho Streamlit Input Widgets */
+.stTextInput>div>div>input,
+.stSelectbox>div>div>div,
+.stDateInput>div>div>input,
+.stTextArea textarea,
+.stNumberInput>div>div>input {
+    color: #1a1a2e !important;
+    -webkit-text-fill-color: #1a1a2e !important;
+    /* Dành cho Chrome/Safari */
+    font-weight: 600 !important;
+}
+
+/* 2. Dropdown Menu Items (Danh sách xổ xuống) */
+/* Container của dropdown menu */
+[data-baseweb="popover"],
+[data-baseweb="menu"],
+[role="listbox"] {
+    background-color: #ffffff !important;
+    /* Nền trắng cho menu dropdown */
+}
+
+/* Các item trong menu dropdown -> Chữ phải ĐEN */
+[data-baseweb="popover"] li,
+[data-baseweb="popover"] div,
+[data-baseweb="popover"] span,
+[data-baseweb="menu"] li,
+[data-baseweb="menu"] div,
+[role="option"],
+[role="option"] div,
+[role="option"] span {
+    color: #000000 !important;
+}
+
+/* Hover state cho dropdown item */
+[role="option"]:hover,
+[role="option"][aria-selected="true"] {
+    background-color: #f0f0f0 !important;
+}
+
+/* Placeholder */
+input::placeholder,
+textarea::placeholder {
+    color: #666666 !important;
+    -webkit-text-fill-color: #666666 !important;
 }
 
 @keyframes float {
@@ -429,8 +507,17 @@ button[aria-label*="menu"] svg {
 .stMarkdown li {
     color: var(--text-secondary) !important;
     font-family: 'Inter', sans-serif !important;
-    font-size: 1.05rem !important;
+    font-size: 1.05rem;
+    /* Removed !important to allow overrides */
     line-height: 1.7 !important;
+}
+
+/* Sidebar Paragraphs (Subtitle, Footer) - Fix font size */
+[data-testid="stSidebar"] .stMarkdown p,
+[data-testid="stSidebar"] .stMarkdown div {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+    color: #e0e0e0 !important;
 }
 
 /* ============================================
@@ -566,6 +653,7 @@ button[aria-label*="menu"] svg {
 
 /* ============================================
    DATA DISPLAY - Tables, DataFrames
+   Dark Glassmorphism Theme
    ============================================ */
 .stDataFrame {
     background: var(--glass-bg-strong) !important;
@@ -578,10 +666,19 @@ button[aria-label*="menu"] svg {
     background: transparent !important;
 }
 
-/* Table Header */
-.stDataFrame thead th {
-    background: rgba(102, 126, 234, 0.25) !important;
-    color: var(--text-primary) !important;
+/* DataFrame container - làm tối nền */
+.stDataFrame>div,
+.stDataFrame [data-testid="glideDataEditor"],
+.stDataFrame [data-testid="stDataFrameResizable"]>div {
+    background: rgba(20, 20, 45, 0.95) !important;
+}
+
+/* Table Header - Header với gradient */
+.stDataFrame thead th,
+.stDataFrame [role="columnheader"],
+.stDataFrame [data-testid="glideDataEditor"] [role="columnheader"] {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.35) 0%, rgba(118, 75, 162, 0.25) 100%) !important;
+    color: #ffffff !important;
     font-family: 'Inter', sans-serif !important;
     font-weight: 700 !important;
     font-size: 0.95rem !important;
@@ -589,17 +686,46 @@ button[aria-label*="menu"] svg {
     padding: 1rem 0.8rem !important;
 }
 
-/* Table Rows */
-.stDataFrame tbody td {
-    color: var(--text-secondary) !important;
+/* Table Rows - Các hàng dữ liệu */
+.stDataFrame tbody td,
+.stDataFrame [role="gridcell"],
+.stDataFrame [data-testid="glideDataEditor"] [role="gridcell"] {
+    background: rgba(25, 25, 55, 0.9) !important;
+    color: #e0e0e0 !important;
     font-family: 'Inter', sans-serif !important;
     font-size: 0.95rem !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     padding: 0.8rem !important;
 }
 
-.stDataFrame tbody tr:hover td {
-    background: var(--glass-bg-hover) !important;
+/* Table Row Hover */
+.stDataFrame tbody tr:hover td,
+.stDataFrame [role="row"]:hover [role="gridcell"] {
+    background: rgba(102, 126, 234, 0.15) !important;
+    color: #ffffff !important;
+}
+
+/* Glide DataEditor specific - Streamlit's new data editor */
+[data-testid="glideDataEditor"] {
+    background: rgba(20, 20, 45, 0.95) !important;
+    border-radius: var(--radius-md) !important;
+}
+
+[data-testid="glideDataEditor"] canvas {
+    background: transparent !important;
+}
+
+/* DataFrame scroll area */
+.stDataFrame [data-testid="stDataFrameResizable"]>div>div {
+    background: rgba(20, 20, 45, 0.95) !important;
+}
+
+/* Cell text colors */
+.stDataFrame td,
+.stDataFrame th,
+.stDataFrame [role="cell"],
+.stDataFrame [role="columnheader"] span {
+    color: #ffffff !important;
 }
 
 /* ============================================
