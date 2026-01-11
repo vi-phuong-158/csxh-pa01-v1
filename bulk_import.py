@@ -552,6 +552,7 @@ def export_error_excel(validation_results):
 def bulk_import_all(validated_data):
     """
     Import tất cả dữ liệu đã validate vào database với transaction
+    Sử dụng executemany để tối ưu hiệu năng
     Nếu có lỗi bất kỳ đâu -> rollback toàn bộ
     Returns: (success, message, stats)
     """
@@ -565,6 +566,11 @@ def bulk_import_all(validated_data):
         'phuong_tien': 0,
         'ho_so_dac_thu': 0
     }
+
+    # Helper function to get value safely
+    def get_val(row, col):
+        val = row.get(col)
+        return str(val).strip() if pd.notna(val) else None
     
     try:
         # Bắt đầu transaction
@@ -573,109 +579,132 @@ def bulk_import_all(validated_data):
         # ===== INSERT ĐỐI TƯỢNG =====
         if validated_data['doi_tuong']['data'] is not None:
             df = validated_data['doi_tuong']['data']
+            data_list = []
+
             for _, row in df.iterrows():
                 # Xử lý ngày sinh
                 ngay_sinh = None
-                if pd.notna(row['ngay_sinh']):
+                raw_ns = row.get('ngay_sinh')
+                if pd.notna(raw_ns):
                     try:
-                        if isinstance(row['ngay_sinh'], str):
-                            ngay_sinh = datetime.strptime(row['ngay_sinh'], '%d/%m/%Y').strftime('%Y-%m-%d')
-                        else:
-                            ngay_sinh = row['ngay_sinh'].strftime('%Y-%m-%d')
-                    except:
-                        pass
-                
-                cursor.execute("""
+                        if isinstance(raw_ns, str):
+                            # Validate đã đảm bảo format hoặc data sạch, nhưng vẫn cần try/except để an toàn
+                            ngay_sinh = datetime.strptime(raw_ns, '%d/%m/%Y').strftime('%Y-%m-%d')
+                        elif hasattr(raw_ns, 'strftime'):
+                            ngay_sinh = raw_ns.strftime('%Y-%m-%d')
+                    except ValueError as e:
+                        # Không nuốt lỗi (silent fail)
+                        raise ValueError(f"Lỗi xử lý ngày sinh cho CCCD {row.get('cccd')}: {str(e)}")
+
+                data_list.append((
+                    str(row['cccd']).strip(),
+                    get_val(row, 'ho_ten'),
+                    ngay_sinh,
+                    get_val(row, 'gioi_tinh'),
+                    get_val(row, 'dia_chi_tinh') or 'Phú Thọ',
+                    get_val(row, 'dia_chi_xa'),
+                    get_val(row, 'phan_loai_nghe_nghiep'),
+                    get_val(row, 'chi_tiet_nghe_nghiep'),
+                    get_val(row, 'ghi_chu_chung')
+                ))
+
+            if data_list:
+                cursor.executemany("""
                     INSERT INTO doi_tuong 
                     (cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_tinh, dia_chi_xa, 
                      phan_loai_nghe_nghiep, chi_tiet_nghe_nghiep, ghi_chu_chung)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    str(row['cccd']).strip(),
-                    str(row['ho_ten']).strip() if pd.notna(row['ho_ten']) else None,
-                    ngay_sinh,
-                    str(row['gioi_tinh']).strip() if pd.notna(row['gioi_tinh']) else None,
-                    str(row['dia_chi_tinh']).strip() if pd.notna(row['dia_chi_tinh']) else 'Phú Thọ',
-                    str(row['dia_chi_xa']).strip() if pd.notna(row['dia_chi_xa']) else None,
-                    str(row['phan_loai_nghe_nghiep']).strip() if pd.notna(row['phan_loai_nghe_nghiep']) else None,
-                    str(row['chi_tiet_nghe_nghiep']).strip() if pd.notna(row['chi_tiet_nghe_nghiep']) else None,
-                    str(row['ghi_chu_chung']).strip() if pd.notna(row['ghi_chu_chung']) else None
-                ))
-                stats['doi_tuong'] += 1
+                """, data_list)
+                stats['doi_tuong'] = len(data_list)
         
         # ===== INSERT LIÊN HỆ =====
         if validated_data['lien_he']['data'] is not None:
             df = validated_data['lien_he']['data']
+            data_list = []
             for _, row in df.iterrows():
-                cursor.execute("""
+                data_list.append((
+                    str(row['cccd']).strip(),
+                    get_val(row, 'loai_lien_he'),
+                    str(row['gia_tri']).strip(),
+                    get_val(row, 'ghi_chu')
+                ))
+
+            if data_list:
+                cursor.executemany("""
                     INSERT INTO lien_he (cccd, loai_lien_he, gia_tri, ghi_chu)
                     VALUES (?, ?, ?, ?)
-                """, (
-                    str(row['cccd']).strip(),
-                    str(row['loai_lien_he']).strip() if pd.notna(row['loai_lien_he']) else None,
-                    str(row['gia_tri']).strip(),
-                    str(row['ghi_chu']).strip() if pd.notna(row['ghi_chu']) else None
-                ))
-                stats['lien_he'] += 1
+                """, data_list)
+                stats['lien_he'] = len(data_list)
         
         # ===== INSERT TÀI CHÍNH =====
         if validated_data['tai_chinh']['data'] is not None:
             df = validated_data['tai_chinh']['data']
+            data_list = []
             for _, row in df.iterrows():
-                cursor.execute("""
+                data_list.append((
+                    str(row['cccd']).strip(),
+                    get_val(row, 'ngan_hang'),
+                    str(row['so_tai_khoan']).strip(),
+                    get_val(row, 'chu_tai_khoan'),
+                    get_val(row, 'ghi_chu')
+                ))
+
+            if data_list:
+                cursor.executemany("""
                     INSERT INTO tai_chinh (cccd, ngan_hang, so_tai_khoan, chu_tai_khoan, ghi_chu)
                     VALUES (?, ?, ?, ?, ?)
-                """, (
-                    str(row['cccd']).strip(),
-                    str(row['ngan_hang']).strip() if pd.notna(row['ngan_hang']) else None,
-                    str(row['so_tai_khoan']).strip(),
-                    str(row['chu_tai_khoan']).strip() if pd.notna(row['chu_tai_khoan']) else None,
-                    str(row['ghi_chu']).strip() if pd.notna(row['ghi_chu']) else None
-                ))
-                stats['tai_chinh'] += 1
+                """, data_list)
+                stats['tai_chinh'] = len(data_list)
         
         # ===== INSERT PHƯƠNG TIỆN =====
         if validated_data['phuong_tien']['data'] is not None:
             df = validated_data['phuong_tien']['data']
+            data_list = []
             for _, row in df.iterrows():
-                cursor.execute("""
+                data_list.append((
+                    str(row['cccd']).strip(),
+                    get_val(row, 'loai_xe'),
+                    str(row['bien_kiem_soat']).strip(),
+                    get_val(row, 'ten_phuong_tien'),
+                    get_val(row, 'ghi_chu')
+                ))
+
+            if data_list:
+                cursor.executemany("""
                     INSERT INTO phuong_tien (cccd, loai_xe, bien_kiem_soat, ten_phuong_tien, ghi_chu)
                     VALUES (?, ?, ?, ?, ?)
-                """, (
-                    str(row['cccd']).strip(),
-                    str(row['loai_xe']).strip() if pd.notna(row['loai_xe']) else None,
-                    str(row['bien_kiem_soat']).strip(),
-                    str(row['ten_phuong_tien']).strip() if pd.notna(row['ten_phuong_tien']) else None,
-                    str(row['ghi_chu']).strip() if pd.notna(row['ghi_chu']) else None
-                ))
-                stats['phuong_tien'] += 1
+                """, data_list)
+                stats['phuong_tien'] = len(data_list)
         
         # ===== INSERT HỒ SƠ CSXH =====
         if validated_data['ho_so_dac_thu']['data'] is not None:
             df = validated_data['ho_so_dac_thu']['data']
+            data_list = []
+            import json
             for _, row in df.iterrows():
-                # Tạo dict chứa thông tin chi tiết
-                import json
                 noi_dung_dict = {
-                    'quoc_tich': str(row['quoc_tich']).strip() if pd.notna(row['quoc_tich']) else '',
-                    'ten_to_chuc': str(row['ten_to_chuc']).strip() if pd.notna(row['ten_to_chuc']) else '',
-                    'thoi_gian_tu': str(row['thoi_gian_tu']).strip() if pd.notna(row['thoi_gian_tu']) else '',
-                    'thoi_gian_den': str(row['thoi_gian_den']).strip() if pd.notna(row['thoi_gian_den']) else '',
-                    'noi_dung': str(row['noi_dung_chi_tiet']).strip() if pd.notna(row['noi_dung_chi_tiet']) else '',
-                    'co_quan_xm': str(row['co_quan_xm']).strip() if pd.notna(row['co_quan_xm']) else '',
-                    'ket_qua': str(row['ket_qua']).strip() if pd.notna(row['ket_qua']) else '',
+                    'quoc_tich': get_val(row, 'quoc_tich') or '',
+                    'ten_to_chuc': get_val(row, 'ten_to_chuc') or '',
+                    'thoi_gian_tu': get_val(row, 'thoi_gian_tu') or '',
+                    'thoi_gian_den': get_val(row, 'thoi_gian_den') or '',
+                    'noi_dung': get_val(row, 'noi_dung_chi_tiet') or '',
+                    'co_quan_xm': get_val(row, 'co_quan_xm') or '',
+                    'ket_qua': get_val(row, 'ket_qua') or '',
                 }
                 
-                cursor.execute("""
-                    INSERT INTO ho_so_dac_thu (cccd, loai_hinh, noi_dung_chi_tiet, ghi_chu)
-                    VALUES (?, ?, ?, ?)
-                """, (
+                data_list.append((
                     str(row['cccd']).strip(),
                     str(row['loai_hinh']).strip(),
                     json.dumps(noi_dung_dict, ensure_ascii=False),
-                    str(row['ghi_chu']).strip() if pd.notna(row['ghi_chu']) else None
+                    get_val(row, 'ghi_chu')
                 ))
-                stats['ho_so_dac_thu'] += 1
+
+            if data_list:
+                cursor.executemany("""
+                    INSERT INTO ho_so_dac_thu (cccd, loai_hinh, noi_dung_chi_tiet, ghi_chu)
+                    VALUES (?, ?, ?, ?)
+                """, data_list)
+                stats['ho_so_dac_thu'] = len(data_list)
         
         # Commit transaction
         conn.commit()
@@ -688,4 +717,4 @@ def bulk_import_all(validated_data):
         # Rollback nếu có lỗi
         conn.rollback()
         conn.close()
-        return False, f"Lỗi import: {str(e)}", stats
+        return False, f"Lỗi import tại bước SQL: {str(e)}", stats
