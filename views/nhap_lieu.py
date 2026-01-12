@@ -426,10 +426,12 @@ def page_nhap_lieu():
                         📍 {row['noi_o'] if row['noi_o'] else 'N/A'}
                         """)
                     with col_del:
-                        if st.button("🗑️", key=f"nl_del_nt_{row['id']}", help=f"Xóa {row['ho_ten']}"):
-                            delete_nhan_than(row['id'])
-                            st.toast(f"✅ Đã xóa {row['loai_quan_he']}: {row['ho_ten']}")
-                            st.rerun()
+                        with st.popover("🗑️", help=f"Xóa {row['ho_ten']}"):
+                            st.markdown(f"Xóa **{row['ho_ten']}**?")
+                            if st.button("Xác nhận", key=f"conf_del_nt_{row['id']}", type="primary"):
+                                delete_nhan_than(row['id'])
+                                st.toast(f"✅ Đã xóa {row['loai_quan_he']}: {row['ho_ten']}")
+                                st.rerun()
                 st.markdown("---")
         
         # Form thêm thân nhân mới
@@ -539,8 +541,11 @@ def page_nhap_lieu():
                     with col_info:
                         st.markdown(f"**{item['thoi_gian']}**: {item['noi_dung']}")
                     with col_del:
-                            if st.button("🗑️", key=f"del_qt_nl_{item['id']}"):
+                        with st.popover("🗑️", help=f"Xóa quá trình này?"):
+                            st.markdown("Xóa quá trình này?")
+                            if st.button("Xác nhận", key=f"conf_del_qt_{item['id']}", type="primary"):
                                 delete_qua_trinh_hoat_dong(item['id'])
+                                st.toast("✅ Đã xóa quá trình hoạt động")
                                 st.rerun()
 
     with tab2:
@@ -782,10 +787,12 @@ def page_nhap_lieu():
                             info_preview = ""
                         st.markdown(f"**📌 {loai_hinh_text}**: {info_preview}")
                     with col_del:
-                        if st.button("🗑️", key=f"del_nl_csxh_{row['id']}", help=f"Xóa {loai_hinh_text}"):
-                            if delete_ho_so_dac_thu(row['id']):
-                                st.toast(f"✅ Đã xóa!", icon="🎉")
-                                st.rerun()
+                        with st.popover("🗑️", help=f"Xóa {loai_hinh_text}"):
+                            st.markdown(f"Xóa **{loai_hinh_text}**?")
+                            if st.button("Xác nhận", key=f"conf_del_csxh_{row['id']}", type="primary"):
+                                if delete_ho_so_dac_thu(row['id']):
+                                    st.toast(f"✅ Đã xóa!", icon="🎉")
+                                    st.rerun()
             else:
                 st.info("💡 Chọn loại hình và nhập thông tin để thêm hồ sơ đặc thù đầu tiên")
     
@@ -837,10 +844,12 @@ def page_nhap_lieu():
                                     help="Tải xuống"
                                 )
                     with col_del:
-                        if st.button("🗑️", key=f"del_tl_{row['id']}", help=f"Xóa {row['ten_file_goc']}"):
-                            delete_tai_lieu(row['id'])
-                            st.toast(f"✅ Đã xóa: {row['ten_file_goc']}", icon="🎉")
-                            st.rerun()
+                        with st.popover("🗑️", help=f"Xóa {row['ten_file_goc']}"):
+                            st.markdown(f"Xóa file **{row['ten_file_goc']}**?")
+                            if st.button("Xác nhận", key=f"conf_del_tl_{row['id']}", type="primary"):
+                                delete_tai_lieu(row['id'])
+                                st.toast(f"✅ Đã xóa: {row['ten_file_goc']}", icon="🎉")
+                                st.rerun()
                 st.markdown("---")
         
         # Form upload tài liệu mới
