@@ -16,17 +16,6 @@ from constants import (
     LOAI_TAI_LIEU_OPTIONS, Messages
 )
 
-# Import shared getters from ho_so_chi_tiet to avoid duplication/circularity issues
-# Note: ho_so_chi_tiet.py must be created.
-# Ideally, getters should be in a separate services/ or models/ layer, but for this refactor we import from where they are defined.
-# If ho_so_chi_tiet is not yet available, we might face import error.
-# However, Python imports are runtime. As long as ho_so_chi_tiet exists when this function is called.
-# To break circular dependency if any, we can import inside functions.
-# For now, I will define the getters that `nhap_lieu` needs LOCALLY or move them to a proper shared place?
-# Task instructions say "Move `page_profile_view` AND `get_doi_tuong_detail` etc to `views/ho_so_chi_tiet.py`".
-# So they are in `ho_so_chi_tiet.py`.
-# `nhap_lieu` uses: `get_nhan_than_by_cccd`, `get_lien_he_by_cccd`... to show the lists.
-# So I should import them. To avoid circular imports (since ho_so_chi_tiet might import nhap_lieu? Probably not), it should be fine.
 from views.ho_so_chi_tiet import (
     get_nhan_than_by_cccd, get_lien_he_by_cccd,
     get_tai_chinh_by_cccd, get_phuong_tien_by_cccd,
@@ -95,7 +84,6 @@ def save_doi_tuong(data):
             data['dia_chi_xa'],
             data.get('anh_chan_dung', ''),
             data['phan_loai_nghe_nghiep'],
-            data['chi_tiet_nghe_nghiep'],
             data['chi_tiet_nghe_nghiep'],
             data['ghi_chu_chung']
         ))
@@ -301,7 +289,6 @@ def page_nhap_lieu():
             avatar_file = st.file_uploader("Tải lên ảnh chân dung", type=['png', 'jpg', 'jpeg'], key="main_avatar_uploader")
             
             # Ngày sinh với format dd/mm/yyyy
-            # Ngày sinh với format dd/mm/yyyy
             ngay_sinh = st.date_input(
                 "Ngày sinh",
                 value=None,
@@ -442,7 +429,7 @@ def page_nhap_lieu():
                     with col_del:
                         if st.button("🗑️", key=f"nl_del_nt_{row['id']}", help=f"Xóa {row['ho_ten']}"):
                             delete_nhan_than(row['id'])
-                            st.success(f"✅ Đã xóa {row['loai_quan_he']}: {row['ho_ten']}")
+                            st.toast(f"✅ Đã xóa {row['loai_quan_he']}: {row['ho_ten']}")
                             st.rerun()
                 st.markdown("---")
         
@@ -482,7 +469,7 @@ def page_nhap_lieu():
                         noi_o=nt_noi_o,
                         ghi_chu=nt_ghi_chu
                     )
-                    st.success(f"✅ Đã thêm {loai_quan_he}: {nt_ho_ten}")
+                    st.toast(f"✅ Đã thêm {loai_quan_he}: {nt_ho_ten}", icon="🎉")
                     st.rerun()
                 else:
                     st.error("⚠️ CCCD không tồn tại trong hệ thống!")
@@ -535,7 +522,7 @@ def page_nhap_lieu():
                             qt_thoi_gian = ""
                             
                         save_qua_trinh_hoat_dong(current_cccd_qt, qt_thoi_gian, qt_noi_dung, qt_ghi_chu)
-                        st.success("✅ Đã lưu quá trình hoạt động!")
+                        st.toast("✅ Đã lưu quá trình hoạt động!", icon="🎉")
                         st.rerun()
                     else:
                         st.error("⚠️ CCCD không tồn tại trong hệ thống!")
@@ -579,6 +566,14 @@ def page_nhap_lieu():
         with col1:
             st.markdown("##### 📱 Số điện thoại / Mạng xã hội")
             
+            # Show existing contacts
+            if current_cccd and check_cccd_exists(current_cccd):
+                df_lien_he = get_lien_he_by_cccd(current_cccd)
+                if not df_lien_he.empty:
+                    with st.expander(f"📋 Danh sách liên hệ ({len(df_lien_he)})"):
+                        for idx, row in df_lien_he.iterrows():
+                             st.text(f"- {row['loai_lien_he']}: {row['gia_tri']}")
+
             loai_lien_he = st.selectbox("Loại liên hệ", LOAI_LIEN_HE_OPTIONS)
             gia_tri_lien_he = st.text_input(
                 "Giá trị", 
@@ -591,7 +586,8 @@ def page_nhap_lieu():
                 if current_cccd and gia_tri_lien_he:
                     if check_cccd_exists(current_cccd):
                         save_lien_he(current_cccd, loai_lien_he, gia_tri_lien_he, ghi_chu_lien_he)
-                        st.success(f"✅ Đã thêm {loai_lien_he}: {gia_tri_lien_he}")
+                        st.toast(f"✅ Đã thêm {loai_lien_he}: {gia_tri_lien_he}", icon="🎉")
+                        st.rerun()
                     else:
                         st.error("⚠️ CCCD không tồn tại trong hệ thống!")
                 else:
@@ -600,6 +596,14 @@ def page_nhap_lieu():
         with col2:
             st.markdown("##### 🏦 Tài khoản ngân hàng")
             
+            # Show existing financial records
+            if current_cccd and check_cccd_exists(current_cccd):
+                df_tai_chinh = get_tai_chinh_by_cccd(current_cccd)
+                if not df_tai_chinh.empty:
+                    with st.expander(f"📋 Danh sách tài khoản ({len(df_tai_chinh)})"):
+                        for idx, row in df_tai_chinh.iterrows():
+                             st.text(f"- {row['ngan_hang']}: {row['so_tai_khoan']}")
+
             ngan_hang = st.selectbox("Ngân hàng", DANH_SACH_NGAN_HANG, key="ngan_hang_tab2")
             so_tai_khoan = st.text_input("Số tài khoản", placeholder="1234567890")
             chu_tai_khoan = st.text_input("Chủ tài khoản", placeholder="NGUYEN VAN A")
@@ -608,7 +612,8 @@ def page_nhap_lieu():
                 if current_cccd and so_tai_khoan:
                     if check_cccd_exists(current_cccd):
                         save_tai_chinh(current_cccd, ngan_hang, so_tai_khoan, chu_tai_khoan)
-                        st.success(f"✅ Đã thêm TK {ngan_hang}: {so_tai_khoan}")
+                        st.toast(f"✅ Đã thêm TK {ngan_hang}: {so_tai_khoan}", icon="🎉")
+                        st.rerun()
                     else:
                         st.error("⚠️ CCCD không tồn tại trong hệ thống!")
                 else:
@@ -618,6 +623,14 @@ def page_nhap_lieu():
         
         st.markdown("##### 🚗 Phương tiện giao thông")
         
+        # Show existing vehicles
+        if current_cccd and check_cccd_exists(current_cccd):
+             df_phuong_tien = get_phuong_tien_by_cccd(current_cccd)
+             if not df_phuong_tien.empty:
+                 with st.expander(f"📋 Danh sách phương tiện ({len(df_phuong_tien)})"):
+                        for idx, row in df_phuong_tien.iterrows():
+                             st.text(f"- {row['loai_xe']}: {row['bien_kiem_soat']}")
+
         col1, col2, col3 = st.columns(3)
         with col1:
             loai_xe = st.selectbox("Loại xe", LOAI_XE_OPTIONS)
@@ -630,7 +643,8 @@ def page_nhap_lieu():
             if current_cccd and bien_so:
                 if check_cccd_exists(current_cccd):
                     save_phuong_tien(current_cccd, loai_xe, bien_so, ten_xe)
-                    st.success(f"✅ Đã thêm xe {loai_xe}: {bien_so}")
+                    st.toast(f"✅ Đã thêm xe {loai_xe}: {bien_so}", icon="🎉")
+                    st.rerun()
                 else:
                     st.error("⚠️ CCCD không tồn tại trong hệ thống!")
             else:
@@ -743,8 +757,7 @@ def page_nhap_lieu():
                     # Kiểm tra có nội dung không
                     if any(noi_dung_dict.values()):
                         save_ho_so_dac_thu(current_cccd, loai_hinh, noi_dung_dict, ghi_chu_dac_thu)
-                        st.success(f"✅ Đã lưu hồ sơ đặc thù: {LOAI_HINH_DAC_THU[loai_hinh]}")
-                        st.balloons()
+                        st.toast(f"✅ Đã lưu hồ sơ đặc thù: {LOAI_HINH_DAC_THU[loai_hinh]}", icon="🎉")
                         st.rerun()
                     else:
                         st.warning("⚠️ Vui lòng nhập ít nhất một thông tin!")
@@ -774,7 +787,7 @@ def page_nhap_lieu():
                     with col_del:
                         if st.button("🗑️", key=f"del_nl_csxh_{row['id']}", help=f"Xóa {loai_hinh_text}"):
                             if delete_ho_so_dac_thu(row['id']):
-                                st.success(f"✅ Đã xóa!")
+                                st.toast(f"✅ Đã xóa!", icon="🎉")
                                 st.rerun()
             else:
                 st.info("💡 Chọn loại hình và nhập thông tin để thêm hồ sơ đặc thù đầu tiên")
@@ -829,7 +842,7 @@ def page_nhap_lieu():
                     with col_del:
                         if st.button("🗑️", key=f"del_tl_{row['id']}", help=f"Xóa {row['ten_file_goc']}"):
                             delete_tai_lieu(row['id'])
-                            st.success(f"✅ Đã xóa: {row['ten_file_goc']}")
+                            st.toast(f"✅ Đã xóa: {row['ten_file_goc']}", icon="🎉")
                             st.rerun()
                 st.markdown("---")
         
@@ -854,7 +867,7 @@ def page_nhap_lieu():
                 if check_cccd_exists(current_cccd_tl):
                     success, message = save_tai_lieu(current_cccd_tl, uploaded_file, loai_tai_lieu, mo_ta_tl)
                     if success:
-                        st.success(f"✅ {message}: {uploaded_file.name}")
+                        st.toast(f"✅ {message}: {uploaded_file.name}", icon="🎉")
                         st.rerun()
                     else:
                         st.error(f"❌ {message}")
