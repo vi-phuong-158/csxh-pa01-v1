@@ -316,7 +316,7 @@ def validate_excel_data(excel_file, import_type='all'):
                 
                 for idx, row in df.iterrows():
                     row_errors = []
-                    cccd = str(row['cccd']).strip() if pd.notna(row['cccd']) else ""
+                    cccd = normalize_cccd(row['cccd'])
                     
                     # Validate CCCD (phải đủ 12 số)
                     if not cccd:
@@ -400,7 +400,7 @@ def validate_excel_data(excel_file, import_type='all'):
                 
                 for idx, row in df.iterrows():
                     row_errors = []
-                    cccd = str(row['cccd']).strip() if pd.notna(row['cccd']) else ""
+                    cccd = normalize_cccd(row['cccd'])
                     loai_lien_he = str(row['loai_lien_he']).strip() if pd.notna(row['loai_lien_he']) else ""
                     gia_tri = str(row['gia_tri']).strip() if pd.notna(row['gia_tri']) else ""
                     
@@ -437,7 +437,7 @@ def validate_excel_data(excel_file, import_type='all'):
                 
                 for idx, row in df.iterrows():
                     row_errors = []
-                    cccd = str(row['cccd']).strip() if pd.notna(row['cccd']) else ""
+                    cccd = normalize_cccd(row['cccd'])
                     ho_ten = str(row['ho_ten']).strip() if pd.notna(row['ho_ten']) else ""
                     quan_he = str(row['quan_he']).strip() if pd.notna(row['quan_he']) else ""
                     
@@ -472,7 +472,7 @@ def validate_excel_data(excel_file, import_type='all'):
                 
                 for idx, row in df.iterrows():
                     row_errors = []
-                    cccd = str(row['cccd']).strip() if pd.notna(row['cccd']) else ""
+                    cccd = normalize_cccd(row['cccd'])
                     ngan_hang = str(row['ngan_hang']).strip() if pd.notna(row['ngan_hang']) else ""
                     so_tai_khoan = str(row['so_tai_khoan']).strip() if pd.notna(row['so_tai_khoan']) else ""
                     
@@ -509,7 +509,7 @@ def validate_excel_data(excel_file, import_type='all'):
                 
                 for idx, row in df.iterrows():
                     row_errors = []
-                    cccd = str(row['cccd']).strip() if pd.notna(row['cccd']) else ""
+                    cccd = normalize_cccd(row['cccd'])
                     loai_xe = str(row['loai_xe']).strip() if pd.notna(row['loai_xe']) else ""
                     bien_kiem_soat = str(row['bien_kiem_soat']).strip() if pd.notna(row['bien_kiem_soat']) else ""
                     
@@ -554,7 +554,7 @@ def validate_excel_data(excel_file, import_type='all'):
                 
                 for idx, row in df.iterrows():
                     row_errors = []
-                    cccd = str(row['cccd']).strip() if pd.notna(row['cccd']) else ""
+                    cccd = normalize_cccd(row['cccd'])
                     loai_hinh = str(row['loai_hinh']).strip() if pd.notna(row['loai_hinh']) else ""
                     quoc_tich = str(row['quoc_tich']).strip() if pd.notna(row['quoc_tich']) else ""
                     
@@ -591,7 +591,7 @@ def validate_excel_data(excel_file, import_type='all'):
                 
                 for idx, row in df.iterrows():
                     row_errors = []
-                    cccd = str(row['cccd']).strip() if pd.notna(row['cccd']) else ""
+                    cccd = normalize_cccd(row['cccd'])
                     noi_dung = str(row['noi_dung']).strip() if pd.notna(row['noi_dung']) else ""
                     
                     if cccd not in valid_cccds:

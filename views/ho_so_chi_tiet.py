@@ -309,6 +309,49 @@ def page_profile_view(cccd):
                 👤
             </div>
             """, unsafe_allow_html=True)
+        
+        # Quick avatar change expander
+        with st.expander("📷 Thay ảnh đại diện", expanded=False):
+            new_avatar_quick = st.file_uploader(
+                "Chọn ảnh mới",
+                type=['png', 'jpg', 'jpeg'],
+                key="quick_avatar_uploader",
+                label_visibility="collapsed"
+            )
+            if new_avatar_quick:
+                if st.button("💾 Lưu ảnh", type="primary", use_container_width=True, key="save_quick_avatar"):
+                    try:
+                        import time
+                        # Create user upload dir if not exists
+                        upload_dir = Path.cwd() / "uploads" / cccd
+                        upload_dir.mkdir(parents=True, exist_ok=True)
+                        
+                        # Generate safe filename
+                        file_ext = new_avatar_quick.name.split('.')[-1].lower()
+                        safe_name = f"avatar_{int(time.time())}.{file_ext}"
+                        save_path = upload_dir / safe_name
+                        
+                        # Save file
+                        with open(save_path, "wb") as f:
+                            f.write(new_avatar_quick.getbuffer())
+                        
+                        # Update database
+                        new_avatar_path = f"uploads/{cccd}/{safe_name}"
+                        conn = get_connection()
+                        try:
+                            cursor = conn.cursor()
+                            cursor.execute(
+                                "UPDATE doi_tuong SET anh_chan_dung = ?, updated_at = CURRENT_TIMESTAMP WHERE cccd = ?",
+                                (new_avatar_path, cccd)
+                            )
+                            conn.commit()
+                            st.success("✅ Đã cập nhật ảnh đại diện!")
+                            st.rerun()
+                        finally:
+                            conn.close()
+                    except Exception as e:
+                        logger.error(f"Error saving quick avatar: {e}")
+                        st.error("❌ Lỗi khi lưu ảnh!")
     
     with col_header2:
         st.markdown(f"## {doi_tuong.get('ho_ten', 'N/A')}")
@@ -320,7 +363,7 @@ def page_profile_view(cccd):
                 ngay_sinh = datetime.strptime(str(doi_tuong['ngay_sinh']), '%Y-%m-%d')
                 tuoi = (datetime.now() - ngay_sinh).days // 365
                 st.markdown(f"**Ngày sinh:** {ngay_sinh.strftime('%d/%m/%Y')} ({tuoi} tuổi)")
-            except:
+            except (ValueError, TypeError):
                 st.markdown(f"**Ngày sinh:** {doi_tuong.get('ngay_sinh', 'N/A')}")
         
         st.markdown(f"**Giới tính:** {doi_tuong.get('gioi_tinh', 'N/A')}")
@@ -399,7 +442,7 @@ def page_profile_view(cccd):
                     if current_ngay_sinh:
                         try:
                             ns_value = datetime.strptime(str(current_ngay_sinh), '%Y-%m-%d').date()
-                        except:
+                        except (ValueError, TypeError):
                             pass
                     
                     edit_ngay_sinh_obj = st.date_input(
@@ -787,7 +830,7 @@ def page_profile_view(cccd):
                     # Parse JSON nội dung chi tiết
                     try:
                         noi_dung = json.loads(row['noi_dung_chi_tiet']) if row['noi_dung_chi_tiet'] else {}
-                    except:
+                    except (json.JSONDecodeError, TypeError):
                         noi_dung = {}
                     
                     col1, col2 = st.columns(2)

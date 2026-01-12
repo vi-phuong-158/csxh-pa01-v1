@@ -45,6 +45,7 @@ st.set_page_config(
 # ============================================
 # LOAD CSS
 # ============================================
+@st.cache_data
 def load_css():
     """Load custom CSS file (cached for performance)"""
     css_file = Path(__file__).parent / "style.css"

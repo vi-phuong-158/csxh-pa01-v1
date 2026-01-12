@@ -1139,3 +1139,34 @@ div[data-testid="stExpander"]>details[open]>summary {
 [data-testid="stCaptionContainer"] {
     color: #b0b0ff !important;
 }
+
+/* ============================================
+   FILE UPLOADER - ENSURE WHITE TEXT
+   ============================================ */
+/* Uploaded file name - all possible selectors */
+[data-testid="stFileUploader"] * {
+    color: #ffffff !important;
+}
+
+[data-testid="stFileUploader"] div[data-testid] span,
+[data-testid="stFileUploader"] button span,
+[data-testid="stFileUploader"] [class*="FileName"],
+[data-testid="stFileUploader"] [class*="fileName"],
+[data-testid="stFileUploader"] [class*="file-name"],
+[data-testid="stFileUploader"] small {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* File size info */
+[data-testid="stFileUploader"] [class*="fileSize"],
+[data-testid="stFileUploader"] [class*="FileSize"] {
+    color: #b0b0ff !important;
+}
+
+/* Delete button X icon */
+[data-testid="stFileUploader"] button[kind="secondary"] {
+    color: #ff6b6b !important;
+    background: rgba(255, 107, 107, 0.2) !important;
+    border: 1px solid rgba(255, 107, 107, 0.5) !important;
+}

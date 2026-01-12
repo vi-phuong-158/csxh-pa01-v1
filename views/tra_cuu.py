@@ -103,36 +103,36 @@ def page_tra_cuu():
     st.markdown("### 📋 Kết quả")
     
     conn = get_connection()
-    
-    if search_query:
-        # Lấy TOÀN BỘ dữ liệu để lọc bằng Python (Flexible Search)
-        # Vì SQLite LIKE hạn chế với tiếng Việt có dấu/không dấu
-        df_all = pd.read_sql_query("SELECT * FROM doi_tuong", conn)
-        
-        filtered_rows = []
-        for index, row in df_all.iterrows():
-            match = False
-            # Check CCCD (Exact/Contains)
-            if search_type in ["Tất cả", "CCCD"]:
-                if search_query.lower() in str(row['cccd']).lower():
-                    match = True
+    try:
+        if search_query:
+            # Lấy TOÀN BỘ dữ liệu để lọc bằng Python (Flexible Search)
+            # Vì SQLite LIKE hạn chế với tiếng Việt có dấu/không dấu
+            df_all = pd.read_sql_query("SELECT * FROM doi_tuong", conn)
             
-            # Check Họ tên (Fuzzy)
-            if not match and search_type in ["Tất cả", "Họ tên"]:
-                if is_fuzzy_match(search_query, row['ho_ten']):
-                    match = True
+            filtered_rows = []
+            for index, row in df_all.iterrows():
+                match = False
+                # Check CCCD (Exact/Contains)
+                if search_type in ["Tất cả", "CCCD"]:
+                    if search_query.lower() in str(row['cccd']).lower():
+                        match = True
+                
+                # Check Họ tên (Fuzzy)
+                if not match and search_type in ["Tất cả", "Họ tên"]:
+                    if is_fuzzy_match(search_query, row['ho_ten']):
+                        match = True
+                
+                if match:
+                    filtered_rows.append(row)
             
-            if match:
-                filtered_rows.append(row)
-        
-        df = pd.DataFrame(filtered_rows) if filtered_rows else pd.DataFrame(columns=df_all.columns)
-        st.info(f"🔍 Tìm thấy **{len(df)}** kết quả cho: '{search_query}'")
-    else:
-        # Hiển thị tất cả (giới hạn 100)
-        query = "SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa, phan_loai_nghe_nghiep, dia_chi_tinh, chi_tiet_nghe_nghiep, ghi_chu_chung, created_at FROM doi_tuong ORDER BY created_at DESC LIMIT 100"
-        df = pd.read_sql_query(query, conn)
-    
-    conn.close()
+            df = pd.DataFrame(filtered_rows) if filtered_rows else pd.DataFrame(columns=df_all.columns)
+            st.info(f"🔍 Tìm thấy **{len(df)}** kết quả cho: '{search_query}'")
+        else:
+            # Hiển thị tất cả (giới hạn 100)
+            query = "SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa, phan_loai_nghe_nghiep, dia_chi_tinh, chi_tiet_nghe_nghiep, ghi_chu_chung, created_at FROM doi_tuong ORDER BY created_at DESC LIMIT 100"
+            df = pd.read_sql_query(query, conn)
+    finally:
+        conn.close()
     
     # Áp dụng bộ lọc (filters) - Thực hiện trên DataFrame cho đơn giản
     if not df.empty:

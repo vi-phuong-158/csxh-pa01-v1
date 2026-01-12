@@ -374,7 +374,6 @@ def page_nhap_lieu():
                         'dia_chi_xa': dia_chi_xa,
                         'phan_loai_nghe_nghiep': phan_loai,
                         'chi_tiet_nghe_nghiep': chi_tiet_nghe,
-                        'chi_tiet_nghe_nghiep': chi_tiet_nghe,
                         'ghi_chu_chung': ghi_chu,
                         'avatar_file': avatar_file # Pass file object to save function
                     }
@@ -651,7 +650,7 @@ def page_nhap_lieu():
                 st.warning("⚠️ Vui lòng nhập đầy đủ thông tin!")
     
     with tab3:
-        st.markdown("#### ⏳ Quá trình hoạt động & Yếu tố đặc thù")
+        st.markdown("#### 🌐 Yếu tố nước ngoài & Nghiệp vụ")
         
         # Kiểm tra đã có CCCD chưa
         if st.session_state.current_cccd:
@@ -666,9 +665,7 @@ def page_nhap_lieu():
                 key="cccd_dac_thu"
             )
         
-
-    with tab3:
-        st.markdown("#### 🌐 Yếu tố nước ngoài & Nghiệp vụ")
+        st.markdown("---")
         
         loai_hinh = st.selectbox(
             "Loại hình hồ sơ đặc thù",
