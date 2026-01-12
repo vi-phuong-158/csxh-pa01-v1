@@ -678,6 +678,10 @@ def export_error_excel(validation_results):
             # Viết dữ liệu - sử dụng enumerate để có row number chính xác
             for row_num, (_, row) in enumerate(df.iterrows(), start=2):
                 for col_idx, value in enumerate(row.values, 1):
+                    # Security: Sanitize potential formula injection
+                    if isinstance(value, str) and value.startswith(('=', '+', '-', '@')):
+                        value = "'" + value
+
                     cell = ws.cell(row=row_num, column=col_idx, value=value)
                     # Highlight cột lý do lỗi
                     if df.columns[col_idx - 1] == 'LY_DO_LOI':
