@@ -7,7 +7,7 @@ import shutil
 import json
 from datetime import datetime, date
 from pathlib import Path
-from database import get_connection, save_qua_trinh_hoat_dong, get_qua_trinh_hoat_dong, delete_qua_trinh_hoat_dong
+from database import get_connection, db_connection, save_qua_trinh_hoat_dong, get_qua_trinh_hoat_dong, delete_qua_trinh_hoat_dong
 from constants import (
     GIOI_TINH_OPTIONS, TINH_OPTIONS, DANH_SACH_XA_PHU_THO,
     PHAN_LOAI_NGHE_NGHIEP_OPTIONS, LOAI_LIEN_HE_OPTIONS,
@@ -32,14 +32,11 @@ logger = logging.getLogger(__name__)
 # ============================================
 def check_cccd_exists(cccd: str) -> bool:
     """Kiểm tra CCCD đã tồn tại chưa"""
-    conn = get_connection()
-    try:
+    with db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM doi_tuong WHERE cccd = ?", (cccd,))
         count = cursor.fetchone()[0]
         return count > 0
-    finally:
-        conn.close()
 
 def validate_cccd_for_action(cccd: str, *required_fields) -> tuple[bool, str | None]:
     if not cccd:
@@ -98,124 +95,114 @@ def get_upload_folder(cccd):
 # SAVE FUNCTIONS
 # ============================================
 def save_doi_tuong(data):
-    conn = get_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO doi_tuong (cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_tinh, 
-                                   dia_chi_xa, anh_chan_dung, phan_loai_nghe_nghiep, 
-                                   chi_tiet_nghe_nghiep, ghi_chu_chung)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            data['cccd'],
-            data['ho_ten'],
-            data['ngay_sinh'],
-            data['gioi_tinh'],
-            data['dia_chi_tinh'],
-            data['dia_chi_xa'],
-            data.get('anh_chan_dung', ''),
-            data['phan_loai_nghe_nghiep'],
-            data['chi_tiet_nghe_nghiep'],
-            data['ghi_chu_chung']
-        ))
-        
-        # Handle Avatar Upload AFTER inserting record (to have cccd for folder)
-        avatar_file = data.get('avatar_file')
-        if avatar_file:
-            try:
-                # Create user upload dir if not exists
-                base_path = Path(__file__).parent.parent / "uploads" / data['cccd']
-                base_path.mkdir(parents=True, exist_ok=True)
-                
-                # Generate safe filename
-                import time
-                file_ext = avatar_file.name.split('.')[-1]
-                safe_name = f"avatar_{int(time.time())}.{file_ext}"
-                save_path = base_path / safe_name
-                
-                # Save file
-                with open(save_path, "wb") as f:
-                    f.write(avatar_file.getbuffer())
-                
-                # Update path in DB
-                relative_path = f"uploads/{data['cccd']}/{safe_name}"
-                cursor.execute("UPDATE doi_tuong SET anh_chan_dung = ? WHERE cccd = ?", (relative_path, data['cccd']))
-                
-            except Exception as e:
-                logger.error(f"Error saving avatar on create: {e}")
-                # Don't fail the whole creation for avatar error, just log it
-        
-        conn.commit()
-        return True, "Lưu thành công!"
+        with db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO doi_tuong (cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_tinh,
+                                       dia_chi_xa, anh_chan_dung, phan_loai_nghe_nghiep,
+                                       chi_tiet_nghe_nghiep, ghi_chu_chung)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                data['cccd'],
+                data['ho_ten'],
+                data['ngay_sinh'],
+                data['gioi_tinh'],
+                data['dia_chi_tinh'],
+                data['dia_chi_xa'],
+                data.get('anh_chan_dung', ''),
+                data['phan_loai_nghe_nghiep'],
+                data['chi_tiet_nghe_nghiep'],
+                data['ghi_chu_chung']
+            ))
+
+            # Handle Avatar Upload AFTER inserting record (to have cccd for folder)
+            avatar_file = data.get('avatar_file')
+            if avatar_file:
+                try:
+                    # Create user upload dir if not exists
+                    base_path = Path(__file__).parent.parent / "uploads" / data['cccd']
+                    base_path.mkdir(parents=True, exist_ok=True)
+
+                    # Generate safe filename
+                    import time
+                    file_ext = avatar_file.name.split('.')[-1]
+                    safe_name = f"avatar_{int(time.time())}.{file_ext}"
+                    save_path = base_path / safe_name
+
+                    # Save file
+                    with open(save_path, "wb") as f:
+                        f.write(avatar_file.getbuffer())
+
+                    # Update path in DB
+                    relative_path = f"uploads/{data['cccd']}/{safe_name}"
+                    cursor.execute("UPDATE doi_tuong SET anh_chan_dung = ? WHERE cccd = ?", (relative_path, data['cccd']))
+
+                except Exception as e:
+                    logger.error(f"Error saving avatar on create: {e}")
+                    # Don't fail the whole creation for avatar error, just log it
+
+            conn.commit()
+            return True, "Lưu thành công!"
     except Exception as e:
         logger.exception(f"Lỗi lưu đối tượng: {e}")
         return False, "Đã xảy ra lỗi hệ thống. Vui lòng thử lại."
-    finally:
-        conn.close()
 
 def save_lien_he(cccd, loai, gia_tri, ghi_chu=""):
     if not gia_tri:
         return
-    conn = get_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO lien_he (cccd, loai_lien_he, gia_tri, ghi_chu)
-            VALUES (?, ?, ?, ?)
-        """, (cccd, loai, gia_tri, ghi_chu))
-        conn.commit()
+        with db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO lien_he (cccd, loai_lien_he, gia_tri, ghi_chu)
+                VALUES (?, ?, ?, ?)
+            """, (cccd, loai, gia_tri, ghi_chu))
+            conn.commit()
     except Exception as e:
         logger.exception(f"Lỗi lưu liên hệ: {e}")
-    finally:
-        conn.close()
 
 def save_tai_chinh(cccd, ngan_hang, so_tai_khoan, chu_tai_khoan="", ghi_chu=""):
     if not so_tai_khoan:
         return
-    conn = get_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO tai_chinh (cccd, ngan_hang, so_tai_khoan, chu_tai_khoan, ghi_chu)
-            VALUES (?, ?, ?, ?, ?)
-        """, (cccd, ngan_hang, so_tai_khoan, chu_tai_khoan, ghi_chu))
-        conn.commit()
+        with db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO tai_chinh (cccd, ngan_hang, so_tai_khoan, chu_tai_khoan, ghi_chu)
+                VALUES (?, ?, ?, ?, ?)
+            """, (cccd, ngan_hang, so_tai_khoan, chu_tai_khoan, ghi_chu))
+            conn.commit()
     except Exception as e:
         logger.exception(f"Lỗi lưu tài chính: {e}")
-    finally:
-        conn.close()
 
 def save_phuong_tien(cccd, loai_xe, bien_so, ten_xe, ghi_chu=""):
     if not bien_so:
         return
-    conn = get_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO phuong_tien (cccd, loai_xe, bien_kiem_soat, ten_phuong_tien, ghi_chu)
-            VALUES (?, ?, ?, ?, ?)
-        """, (cccd, loai_xe, bien_so, ten_xe, ghi_chu))
-        conn.commit()
+        with db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO phuong_tien (cccd, loai_xe, bien_kiem_soat, ten_phuong_tien, ghi_chu)
+                VALUES (?, ?, ?, ?, ?)
+            """, (cccd, loai_xe, bien_so, ten_xe, ghi_chu))
+            conn.commit()
     except Exception as e:
         logger.exception(f"Lỗi lưu phương tiện: {e}")
-    finally:
-        conn.close()
 
 def save_nhan_than(cccd, loai_quan_he, ho_ten, cccd_nhan_than="", ngay_sinh=None, nghe_nghiep="", noi_o="", ghi_chu=""):
     if not ho_ten:
         return
-    conn = get_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO nhan_than (cccd, loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh, nghe_nghiep, noi_o, ghi_chu)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (cccd, loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh, nghe_nghiep, noi_o, ghi_chu))
-        conn.commit()
+        with db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO nhan_than (cccd, loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh, nghe_nghiep, noi_o, ghi_chu)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (cccd, loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh, nghe_nghiep, noi_o, ghi_chu))
+            conn.commit()
     except Exception as e:
         logger.exception(f"Lỗi lưu nhân thân: {e}")
-    finally:
-        conn.close()
 
 def save_tai_lieu(cccd, uploaded_file, loai_tai_lieu, mo_ta=""):
     if not uploaded_file:
@@ -243,38 +230,35 @@ def save_tai_lieu(cccd, uploaded_file, loai_tai_lieu, mo_ta=""):
         return False, "Đã xảy ra lỗi khi lưu file. Vui lòng thử lại."
     
     duong_dan = f"uploads/{cccd}/{unique_name}"
-    conn = get_connection()
+
     try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO tai_lieu (cccd, ten_file_goc, ten_file_luu, duong_dan, loai_tai_lieu, mo_ta, dung_luong, dinh_dang)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (cccd, safe_filename, unique_name, duong_dan, loai_tai_lieu, mo_ta, file_size, file_ext))
-        conn.commit()
-        return True, "Đã upload thành công!"
+        with db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO tai_lieu (cccd, ten_file_goc, ten_file_luu, duong_dan, loai_tai_lieu, mo_ta, dung_luong, dinh_dang)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (cccd, safe_filename, unique_name, duong_dan, loai_tai_lieu, mo_ta, file_size, file_ext))
+            conn.commit()
+            return True, "Đã upload thành công!"
     except Exception as e:
         logger.exception(f"Lỗi lưu metadata: {e}")
         if file_path.exists():
             file_path.unlink()
         return False, "Đã xảy ra lỗi hệ thống. Vui lòng thử lại."
-    finally:
-        conn.close()
 
 def save_ho_so_dac_thu(cccd, loai_hinh, noi_dung_dict, ghi_chu=""):
     if not noi_dung_dict:
         return
-    conn = get_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO ho_so_dac_thu (cccd, loai_hinh, noi_dung_chi_tiet, ghi_chu)
-            VALUES (?, ?, ?, ?)
-        """, (cccd, loai_hinh, json.dumps(noi_dung_dict, ensure_ascii=False), ghi_chu))
-        conn.commit()
+        with db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO ho_so_dac_thu (cccd, loai_hinh, noi_dung_chi_tiet, ghi_chu)
+                VALUES (?, ?, ?, ?)
+            """, (cccd, loai_hinh, json.dumps(noi_dung_dict, ensure_ascii=False), ghi_chu))
+            conn.commit()
     except Exception as e:
         logger.exception(f"Lỗi lưu hồ sơ đặc thù: {e}")
-    finally:
-        conn.close()
 
 # ============================================
 # NHAP LIEU PAGE
@@ -457,10 +441,12 @@ def page_nhap_lieu():
                         📍 {row['noi_o'] if row['noi_o'] else 'N/A'}
                         """)
                     with col_del:
-                        if st.button("🗑️", key=f"nl_del_nt_{row['id']}", help=f"Xóa {row['ho_ten']}"):
-                            delete_nhan_than(row['id'])
-                            st.toast(f"✅ Đã xóa {row['loai_quan_he']}: {row['ho_ten']}")
-                            st.rerun()
+                        with st.popover("🗑️", help=f"Xóa {row['ho_ten']}"):
+                            st.markdown(f"Bạn chắc chắn muốn xóa **{row['ho_ten']}**?")
+                            if st.button("Xác nhận xóa", key=f"confirm_del_nt_{row['id']}", type="primary"):
+                                delete_nhan_than(row['id'])
+                                st.toast(f"✅ Đã xóa {row['loai_quan_he']}: {row['ho_ten']}")
+                                st.rerun()
                 st.markdown("---")
         
         # Form thêm thân nhân mới
@@ -570,7 +556,9 @@ def page_nhap_lieu():
                     with col_info:
                         st.markdown(f"**{item['thoi_gian']}**: {item['noi_dung']}")
                     with col_del:
-                            if st.button("🗑️", key=f"del_qt_nl_{item['id']}"):
+                        with st.popover("🗑️", help="Xóa quá trình này"):
+                            st.markdown("Bạn chắc chắn muốn xóa quá trình này?")
+                            if st.button("Xác nhận xóa", key=f"confirm_del_qt_{item['id']}", type="primary"):
                                 delete_qua_trinh_hoat_dong(item['id'])
                                 st.rerun()
 
@@ -813,10 +801,12 @@ def page_nhap_lieu():
                             info_preview = ""
                         st.markdown(f"**📌 {loai_hinh_text}**: {info_preview}")
                     with col_del:
-                        if st.button("🗑️", key=f"del_nl_csxh_{row['id']}", help=f"Xóa {loai_hinh_text}"):
-                            if delete_ho_so_dac_thu(row['id']):
-                                st.toast(f"✅ Đã xóa!", icon="🎉")
-                                st.rerun()
+                        with st.popover("🗑️", help=f"Xóa {loai_hinh_text}"):
+                            st.markdown(f"Bạn chắc chắn muốn xóa **{loai_hinh_text}**?")
+                            if st.button("Xác nhận xóa", key=f"confirm_del_csxh_{row['id']}", type="primary"):
+                                if delete_ho_so_dac_thu(row['id']):
+                                    st.toast(f"✅ Đã xóa!", icon="🎉")
+                                    st.rerun()
             else:
                 st.info("💡 Chọn loại hình và nhập thông tin để thêm hồ sơ đặc thù đầu tiên")
     
@@ -868,10 +858,12 @@ def page_nhap_lieu():
                                     help="Tải xuống"
                                 )
                     with col_del:
-                        if st.button("🗑️", key=f"del_tl_{row['id']}", help=f"Xóa {row['ten_file_goc']}"):
-                            delete_tai_lieu(row['id'])
-                            st.toast(f"✅ Đã xóa: {row['ten_file_goc']}", icon="🎉")
-                            st.rerun()
+                        with st.popover("🗑️", help=f"Xóa {row['ten_file_goc']}"):
+                            st.markdown(f"Bạn chắc chắn muốn xóa file **{row['ten_file_goc']}**?")
+                            if st.button("Xác nhận xóa", key=f"confirm_del_tl_{row['id']}", type="primary"):
+                                delete_tai_lieu(row['id'])
+                                st.toast(f"✅ Đã xóa: {row['ten_file_goc']}", icon="🎉")
+                                st.rerun()
                 st.markdown("---")
         
         # Form upload tài liệu mới

@@ -6,6 +6,16 @@ Tạo cơ sở dữ liệu SQLite với các bảng theo Schema PRD
 
 import sqlite3
 import os
+import logging
+import re
+from contextlib import contextmanager
+
+# Logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Tên file database
 DB_NAME = "security_profile.db"
@@ -24,310 +34,307 @@ def get_connection():
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
+@contextmanager
+def db_connection():
+    """Context manager for database connections."""
+    conn = get_connection()
+    try:
+        yield conn
+    except Exception as e:
+        logger.error(f"Database error: {e}")
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+
 
 def create_tables():
     """Tạo tất cả các bảng trong database"""
-    conn = get_connection()
-    cursor = conn.cursor()
+    # create_tables logic executes DDL, which auto-commits in SQLite usually,
+    # but we will use the context manager for safety.
+    try:
+        with db_connection() as conn:
+            cursor = conn.cursor()
 
-    # ========================================
-    # BẢNG DỮ LIỆU GỐC (Trung tâm hệ thống)
-    # ========================================
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS doi_tuong (
-            cccd TEXT PRIMARY KEY,
-            ho_ten TEXT,
-            ngay_sinh DATE,
-            gioi_tinh TEXT,
-            dia_chi_tinh TEXT DEFAULT 'Phú Thọ',
-            dia_chi_xa TEXT,
-            anh_chan_dung TEXT,
-            phan_loai_nghe_nghiep TEXT,
-            chi_tiet_nghe_nghiep TEXT,
-            ghi_chu_chung TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
+            # ========================================
+            # BẢNG DỮ LIỆU GỐC (Trung tâm hệ thống)
+            # ========================================
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS doi_tuong (
+                    cccd TEXT PRIMARY KEY,
+                    ho_ten TEXT,
+                    ngay_sinh DATE,
+                    gioi_tinh TEXT,
+                    dia_chi_tinh TEXT DEFAULT 'Phú Thọ',
+                    dia_chi_xa TEXT,
+                    anh_chan_dung TEXT,
+                    phan_loai_nghe_nghiep TEXT,
+                    chi_tiet_nghe_nghiep TEXT,
+                    ghi_chu_chung TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
 
-    # ========================================
-    # BẢNG VỆ TINH - TẦNG 1
-    # ========================================
+            # ========================================
+            # BẢNG VỆ TINH - TẦNG 1
+            # ========================================
 
-    # Bảng liên hệ (SĐT, Email, Facebook, Zalo, Telegram)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS lien_he (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cccd TEXT NOT NULL,
-            loai_lien_he TEXT,
-            gia_tri TEXT,
-            ghi_chu TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
-        )
-    """)
+            # Bảng liên hệ (SĐT, Email, Facebook, Zalo, Telegram)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS lien_he (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cccd TEXT NOT NULL,
+                    loai_lien_he TEXT,
+                    gia_tri TEXT,
+                    ghi_chu TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
+                )
+            """)
 
-    # Bảng tài chính (Tài khoản ngân hàng)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS tai_chinh (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cccd TEXT NOT NULL,
-            ngan_hang TEXT,
-            so_tai_khoan TEXT,
-            chu_tai_khoan TEXT,
-            ghi_chu TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
-        )
-    """)
+            # Bảng tài chính (Tài khoản ngân hàng)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS tai_chinh (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cccd TEXT NOT NULL,
+                    ngan_hang TEXT,
+                    so_tai_khoan TEXT,
+                    chu_tai_khoan TEXT,
+                    ghi_chu TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
+                )
+            """)
 
-    # Bảng phương tiện (Xe cộ)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS phuong_tien (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cccd TEXT NOT NULL,
-            loai_xe TEXT,
-            bien_kiem_soat TEXT,
-            ten_phuong_tien TEXT,
-            ghi_chu TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
-        )
-    """)
+            # Bảng phương tiện (Xe cộ)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS phuong_tien (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cccd TEXT NOT NULL,
+                    loai_xe TEXT,
+                    bien_kiem_soat TEXT,
+                    ten_phuong_tien TEXT,
+                    ghi_chu TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
+                )
+            """)
 
-    # Bảng nhân thân (Bố, Mẹ, Vợ/Chồng, Quan hệ khác)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS nhan_than (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cccd TEXT NOT NULL,
-            loai_quan_he TEXT NOT NULL,
-            ho_ten TEXT,
-            cccd_nhan_than TEXT,
-            ngay_sinh DATE,
-            nghe_nghiep TEXT,
-            noi_o TEXT,
-            ghi_chu TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
-        )
-    """)
+            # Bảng nhân thân (Bố, Mẹ, Vợ/Chồng, Quan hệ khác)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS nhan_than (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cccd TEXT NOT NULL,
+                    loai_quan_he TEXT NOT NULL,
+                    ho_ten TEXT,
+                    cccd_nhan_than TEXT,
+                    ngay_sinh DATE,
+                    nghe_nghiep TEXT,
+                    noi_o TEXT,
+                    ghi_chu TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
+                )
+            """)
 
-    # ========================================
-    # BẢNG ĐẶC THÙ - TẦNG 2 (Yếu tố nước ngoài & Nghiệp vụ)
-    # ========================================
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS ho_so_dac_thu (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cccd TEXT NOT NULL,
-            loai_hinh TEXT NOT NULL,
-            noi_dung_chi_tiet TEXT,
-            ghi_chu TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
-        )
-    """)
+            # ========================================
+            # BẢNG ĐẶC THÙ - TẦNG 2 (Yếu tố nước ngoài & Nghiệp vụ)
+            # ========================================
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS ho_so_dac_thu (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cccd TEXT NOT NULL,
+                    loai_hinh TEXT NOT NULL,
+                    noi_dung_chi_tiet TEXT,
+                    ghi_chu TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
+                )
+            """)
 
-    # ========================================
-    # BẢNG TÀI LIỆU ĐÍNH KÈM
-    # ========================================
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS tai_lieu (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cccd TEXT NOT NULL,
-            ten_file_goc TEXT,
-            ten_file_luu TEXT,
-            duong_dan TEXT,
-            loai_tai_lieu TEXT,
-            mo_ta TEXT,
-            dung_luong INTEGER,
-            dinh_dang TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
-        )
-    """)
-    
-    # ========================================
-    # BẢNG QUÁ TRÌNH HOẠT ĐỘNG
-    # ========================================
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS qua_trinh_hoat_dong (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cccd TEXT NOT NULL,
-            thoi_gian TEXT,
-            noi_dung TEXT,
-            ghi_chu TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
-        )
-    """)
+            # ========================================
+            # BẢNG TÀI LIỆU ĐÍNH KÈM
+            # ========================================
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS tai_lieu (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cccd TEXT NOT NULL,
+                    ten_file_goc TEXT,
+                    ten_file_luu TEXT,
+                    duong_dan TEXT,
+                    loai_tai_lieu TEXT,
+                    mo_ta TEXT,
+                    dung_luong INTEGER,
+                    dinh_dang TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
+                )
+            """)
 
-    # ========================================
-    # BẢNG NGUỒN DỮ LIỆU (Source Tracking - OSINT Pattern)
-    # ========================================
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS nguon_du_lieu (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ten_nguon TEXT NOT NULL,
-            loai_nguon TEXT,
-            thoi_gian_import TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            nguoi_import TEXT,
-            file_goc TEXT,
-            ghi_chu TEXT
-        )
-    """)
+            # ========================================
+            # BẢNG QUÁ TRÌNH HOẠT ĐỘNG
+            # ========================================
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS qua_trinh_hoat_dong (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cccd TEXT NOT NULL,
+                    thoi_gian TEXT,
+                    noi_dung TEXT,
+                    ghi_chu TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
+                )
+            """)
 
-    # ========================================
-    # BẢNG QUAN HỆ ĐỐI TƯỢNG (Person-to-Person Connection)
-    # ========================================
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS quan_he_doi_tuong (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cccd_1 TEXT NOT NULL,
-            cccd_2 TEXT NOT NULL,
-            loai_quan_he TEXT,
-            mo_ta TEXT,
-            nguon_id INTEGER,
-            do_tin_cay INTEGER DEFAULT 50,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (cccd_1) REFERENCES doi_tuong(cccd) ON DELETE CASCADE,
-            FOREIGN KEY (cccd_2) REFERENCES doi_tuong(cccd) ON DELETE CASCADE,
-            FOREIGN KEY (nguon_id) REFERENCES nguon_du_lieu(id)
-        )
-    """)
+            # ========================================
+            # BẢNG NGUỒN DỮ LIỆU (Source Tracking - OSINT Pattern)
+            # ========================================
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS nguon_du_lieu (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ten_nguon TEXT NOT NULL,
+                    loai_nguon TEXT,
+                    thoi_gian_import TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    nguoi_import TEXT,
+                    file_goc TEXT,
+                    ghi_chu TEXT
+                )
+            """)
 
-    # ========================================
-    # BẢNG LỊCH SỬ THAY ĐỔI (Audit Trail)
-    # ========================================
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS audit_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            bang TEXT NOT NULL,
-            hanh_dong TEXT NOT NULL,
-            khoa_chinh TEXT,
-            du_lieu_cu TEXT,
-            du_lieu_moi TEXT,
-            nguoi_thuc_hien TEXT,
-            ip_address TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
+            # ========================================
+            # BẢNG QUAN HỆ ĐỐI TƯỢNG (Person-to-Person Connection)
+            # ========================================
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS quan_he_doi_tuong (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cccd_1 TEXT NOT NULL,
+                    cccd_2 TEXT NOT NULL,
+                    loai_quan_he TEXT,
+                    mo_ta TEXT,
+                    nguon_id INTEGER,
+                    do_tin_cay INTEGER DEFAULT 50,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (cccd_1) REFERENCES doi_tuong(cccd) ON DELETE CASCADE,
+                    FOREIGN KEY (cccd_2) REFERENCES doi_tuong(cccd) ON DELETE CASCADE,
+                    FOREIGN KEY (nguon_id) REFERENCES nguon_du_lieu(id)
+                )
+            """)
 
-    # ========================================
-    # BẢNG NGƯỜI DÙNG (Authentication)
-    # ========================================
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            ho_ten TEXT,
-            role TEXT DEFAULT 'user',
-            is_active INTEGER DEFAULT 1,
-            must_change_password INTEGER DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            last_login TIMESTAMP
-        )
-    """)
+            # ========================================
+            # BẢNG LỊCH SỬ THAY ĐỔI (Audit Trail)
+            # ========================================
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS audit_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    bang TEXT NOT NULL,
+                    hanh_dong TEXT NOT NULL,
+                    khoa_chinh TEXT,
+                    du_lieu_cu TEXT,
+                    du_lieu_moi TEXT,
+                    nguoi_thuc_hien TEXT,
+                    ip_address TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
 
-    # Tạo index để tăng tốc truy vấn
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_lien_he_cccd ON lien_he(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_tai_chinh_cccd ON tai_chinh(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_phuong_tien_cccd ON phuong_tien(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_nhan_than_cccd ON nhan_than(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_ho_so_dac_thu_cccd ON ho_so_dac_thu(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_ho_so_dac_thu_loai_hinh ON ho_so_dac_thu(loai_hinh)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_qua_trinh_hoat_dong_cccd ON qua_trinh_hoat_dong(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_tai_lieu_cccd ON tai_lieu(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_ho_ten ON doi_tuong(ho_ten)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_created_at ON doi_tuong(created_at)")
-    
-    # Index cho các bảng mới
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_nguon_cccd ON quan_he_doi_tuong(cccd_1)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_quan_he_cccd1 ON quan_he_doi_tuong(cccd_1)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_quan_he_cccd2 ON quan_he_doi_tuong(cccd_2)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_bang ON audit_log(bang)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_khoa ON audit_log(khoa_chinh)")
+            # ========================================
+            # BẢNG NGƯỜI DÙNG (Authentication)
+            # ========================================
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    ho_ten TEXT,
+                    role TEXT DEFAULT 'user',
+                    is_active INTEGER DEFAULT 1,
+                    must_change_password INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_login TIMESTAMP
+                )
+            """)
 
-    conn.commit()
-    conn.close()
-    
-    print(f"[OK] Da tao database thanh cong: {get_db_path()}")
-    print("[i] Cac bang da tao:")
-    print("   - doi_tuong (Bang du lieu goc)")
-    print("   - lien_he (Thong tin lien he)")
-    print("   - tai_chinh (Tai khoan ngan hang)")
-    print("   - phuong_tien (Phuong tien)")
-    print("   - ho_so_dac_thu (Yeu to nuoc ngoai & Nghiep vu)")
-    print("   - qua_trinh_hoat_dong (Qua trinh hoat dong)")
-    print("   - nguon_du_lieu (Theo doi nguon du lieu)")
-    print("   - quan_he_doi_tuong (Quan he giua cac doi tuong)")
-    print("   - audit_log (Lich su thay doi)")
+            # Tạo index để tăng tốc truy vấn
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_lien_he_cccd ON lien_he(cccd)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_tai_chinh_cccd ON tai_chinh(cccd)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_phuong_tien_cccd ON phuong_tien(cccd)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_nhan_than_cccd ON nhan_than(cccd)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_ho_so_dac_thu_cccd ON ho_so_dac_thu(cccd)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_ho_so_dac_thu_loai_hinh ON ho_so_dac_thu(loai_hinh)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_qua_trinh_hoat_dong_cccd ON qua_trinh_hoat_dong(cccd)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_tai_lieu_cccd ON tai_lieu(cccd)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_ho_ten ON doi_tuong(ho_ten)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_created_at ON doi_tuong(created_at)")
+
+            # Index cho các bảng mới
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_nguon_cccd ON quan_he_doi_tuong(cccd_1)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_quan_he_cccd1 ON quan_he_doi_tuong(cccd_1)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_quan_he_cccd2 ON quan_he_doi_tuong(cccd_2)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_bang ON audit_log(bang)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_khoa ON audit_log(khoa_chinh)")
+
+            conn.commit()
+
+        print(f"[OK] Da tao database thanh cong: {get_db_path()}")
+        print("[i] Cac bang da tao:")
+        print("   - doi_tuong (Bang du lieu goc)")
+        print("   - lien_he (Thong tin lien he)")
+        print("   - tai_chinh (Tai khoan ngan hang)")
+        print("   - phuong_tien (Phuong tien)")
+        print("   - ho_so_dac_thu (Yeu to nuoc ngoai & Nghiep vu)")
+        print("   - qua_trinh_hoat_dong (Qua trinh hoat dong)")
+        print("   - nguon_du_lieu (Theo doi nguon du lieu)")
+        print("   - quan_he_doi_tuong (Quan he giua cac doi tuong)")
+        print("   - audit_log (Lich su thay doi)")
+
+    except Exception as e:
+        logger.error(f"Error creating tables: {e}")
+        # Connection closed by context manager
+        raise
 
 
 def save_qua_trinh_hoat_dong(cccd, thoi_gian, noi_dung, ghi_chu=""):
     """Lưu thông tin quá trình hoạt động"""
     if not noi_dung:
         return
-    conn = get_connection()
-    try:
+    with db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO qua_trinh_hoat_dong (cccd, thoi_gian, noi_dung, ghi_chu)
             VALUES (?, ?, ?, ?)
         """, (cccd, thoi_gian, noi_dung, ghi_chu))
         conn.commit()
-    finally:
-        conn.close()
 
 def get_qua_trinh_hoat_dong(cccd):
     """Lấy danh sách quá trình hoạt động theo CCCD"""
-    conn = get_connection()
-    try:
+    with db_connection() as conn:
         # Sắp xếp theo ID giảm dần (mới nhất lên đầu) hoặc có thể parse thời gian nếu cần
         # Ở đây để đơn giản ta sort theo created_at/id
         query = "SELECT * FROM qua_trinh_hoat_dong WHERE cccd = ? ORDER BY id DESC"
         # Trả về list of sqlite3.Row -> có thể convert sang dict hoặc DataFrame
-        # Để nhất quán với usage trong views (pandas read_sql), ta có thể dùng pandas ở view
-        # Tuy nhiên user yêu cầu hàm này SELECT dữ liệu.
-        # Ở đay trả về list dict cho linh hoạt
         cursor = conn.cursor()
         cursor.execute(query, (cccd,))
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
-    finally:
-        conn.close()
 
 def delete_qua_trinh_hoat_dong(qt_id: int) -> bool:
     """Xóa quá trình hoạt động theo ID"""
-    conn = get_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM qua_trinh_hoat_dong WHERE id = ?", (qt_id,))
-        conn.commit()
-        return True
+        with db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM qua_trinh_hoat_dong WHERE id = ?", (qt_id,))
+            conn.commit()
+            return True
     except Exception as e:
-        import logging
-        logging.getLogger(__name__).error(f"Lỗi xóa quá trình hoạt động: {e}")
+        logger.error(f"Lỗi xóa quá trình hoạt động: {e}")
         return False
-    finally:
-        conn.close()
-
-import logging
-import re
-
-# Logging configuration
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 
 def verify_database():
     """Kiểm tra cấu trúc database đã tạo"""
-    conn = get_connection()
-    try:
+    with db_connection() as conn:
         cursor = conn.cursor()
         
         # Lấy danh sách các bảng
@@ -358,8 +365,6 @@ def verify_database():
                 null_marker = "NOT NULL" if not_null else ""
                 default_marker = f"DEFAULT {default_val}" if default_val else ""
                 logger.debug(f"   {pk_marker} {col_name}: {col_type} {null_marker} {default_marker}")
-    finally:
-        conn.close()
 
 
 if __name__ == "__main__":
@@ -367,4 +372,3 @@ if __name__ == "__main__":
     create_tables()
     verify_database()
     logger.info("Hoàn tất! Database đã sẵn sàng sử dụng.")
-
