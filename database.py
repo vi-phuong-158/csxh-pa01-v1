@@ -162,6 +162,74 @@ def create_tables():
         )
     """)
 
+    # ========================================
+    # BẢNG NGUỒN DỮ LIỆU (Source Tracking - OSINT Pattern)
+    # ========================================
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS nguon_du_lieu (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ten_nguon TEXT NOT NULL,
+            loai_nguon TEXT,
+            thoi_gian_import TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            nguoi_import TEXT,
+            file_goc TEXT,
+            ghi_chu TEXT
+        )
+    """)
+
+    # ========================================
+    # BẢNG QUAN HỆ ĐỐI TƯỢNG (Person-to-Person Connection)
+    # ========================================
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS quan_he_doi_tuong (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cccd_1 TEXT NOT NULL,
+            cccd_2 TEXT NOT NULL,
+            loai_quan_he TEXT,
+            mo_ta TEXT,
+            nguon_id INTEGER,
+            do_tin_cay INTEGER DEFAULT 50,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (cccd_1) REFERENCES doi_tuong(cccd) ON DELETE CASCADE,
+            FOREIGN KEY (cccd_2) REFERENCES doi_tuong(cccd) ON DELETE CASCADE,
+            FOREIGN KEY (nguon_id) REFERENCES nguon_du_lieu(id)
+        )
+    """)
+
+    # ========================================
+    # BẢNG LỊCH SỬ THAY ĐỔI (Audit Trail)
+    # ========================================
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bang TEXT NOT NULL,
+            hanh_dong TEXT NOT NULL,
+            khoa_chinh TEXT,
+            du_lieu_cu TEXT,
+            du_lieu_moi TEXT,
+            nguoi_thuc_hien TEXT,
+            ip_address TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # ========================================
+    # BẢNG NGƯỜI DÙNG (Authentication)
+    # ========================================
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            ho_ten TEXT,
+            role TEXT DEFAULT 'user',
+            is_active INTEGER DEFAULT 1,
+            must_change_password INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP
+        )
+    """)
+
     # Tạo index để tăng tốc truy vấn
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_lien_he_cccd ON lien_he(cccd)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tai_chinh_cccd ON tai_chinh(cccd)")
@@ -173,6 +241,13 @@ def create_tables():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tai_lieu_cccd ON tai_lieu(cccd)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_ho_ten ON doi_tuong(ho_ten)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_created_at ON doi_tuong(created_at)")
+    
+    # Index cho các bảng mới
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_nguon_cccd ON quan_he_doi_tuong(cccd_1)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_quan_he_cccd1 ON quan_he_doi_tuong(cccd_1)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_quan_he_cccd2 ON quan_he_doi_tuong(cccd_2)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_bang ON audit_log(bang)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_khoa ON audit_log(khoa_chinh)")
 
     conn.commit()
     conn.close()
@@ -185,6 +260,10 @@ def create_tables():
     print("   - phuong_tien (Phuong tien)")
     print("   - ho_so_dac_thu (Yeu to nuoc ngoai & Nghiep vu)")
     print("   - qua_trinh_hoat_dong (Qua trinh hoat dong)")
+    print("   - nguon_du_lieu (Theo doi nguon du lieu)")
+    print("   - quan_he_doi_tuong (Quan he giua cac doi tuong)")
+    print("   - audit_log (Lich su thay doi)")
+
 
 def save_qua_trinh_hoat_dong(cccd, thoi_gian, noi_dung, ghi_chu=""):
     """Lưu thông tin quá trình hoạt động"""

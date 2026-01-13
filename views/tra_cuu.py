@@ -99,6 +99,9 @@ def page_tra_cuu():
     
     st.markdown("---")
     
+    # Pagination settings
+    ITEMS_PER_PAGE = 50
+    
     # Thực hiện tìm kiếm
     st.markdown("### 📋 Kết quả")
     
@@ -126,10 +129,37 @@ def page_tra_cuu():
                     filtered_rows.append(row)
             
             df = pd.DataFrame(filtered_rows) if filtered_rows else pd.DataFrame(columns=df_all.columns)
-            st.info(f"🔍 Tìm thấy **{len(df)}** kết quả cho: '{search_query}'")
+            total_count = len(df)
+            st.info(f"🔍 Tìm thấy **{total_count}** kết quả cho: '{search_query}'")
         else:
-            # Hiển thị tất cả (giới hạn 100)
-            query = "SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa, phan_loai_nghe_nghiep, dia_chi_tinh, chi_tiet_nghe_nghiep, ghi_chu_chung, created_at FROM doi_tuong ORDER BY created_at DESC LIMIT 100"
+            # Đếm tổng số records
+            count_query = "SELECT COUNT(*) as total FROM doi_tuong"
+            total_count = pd.read_sql_query(count_query, conn).iloc[0, 0]
+            
+            # Pagination UI
+            total_pages = max(1, (total_count + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE)
+            
+            col_page1, col_page2, col_page3 = st.columns([1, 2, 1])
+            with col_page2:
+                current_page = st.number_input(
+                    f"Trang (tổng {total_pages} trang, {total_count} hồ sơ)", 
+                    min_value=1, 
+                    max_value=total_pages, 
+                    value=1,
+                    key="search_page"
+                )
+            
+            offset = (current_page - 1) * ITEMS_PER_PAGE
+            
+            # Hiển thị với pagination
+            query = f"""
+                SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa, 
+                       phan_loai_nghe_nghiep, dia_chi_tinh, chi_tiet_nghe_nghiep, 
+                       ghi_chu_chung, created_at 
+                FROM doi_tuong 
+                ORDER BY created_at DESC 
+                LIMIT {ITEMS_PER_PAGE} OFFSET {offset}
+            """
             df = pd.read_sql_query(query, conn)
     finally:
         conn.close()
@@ -142,15 +172,7 @@ def page_tra_cuu():
             df = df[df['gioi_tinh'] == filter_gioi_tinh]
         
         # Lọc đặc thù phức tạp hơn vì thông tin nằm ở bảng khác.
-        # Ở đây logic hiện tại trong app.py CHƯA thực sự lọc kỹ theo bảng con nếu chỉ query doi_tuong.
-        # Phiên bản gốc app.py cũng chỉ query trên bảng doi_tuong và KHÔNG thực sự join với ho_so_dac_thu để lọc.
-        # Tuy nhiên, nếu user chọn lọc đặc thù, ta cần subquery.
-        # Tôi sẽ giữ nguyên logic (hoặc cải thiện nếu cần, nhưng user yêu cầu tách code).
-        # Nếu xem kỹ app.py gốc, filter_dac_thu chỉ ĐƯỢC CHỌN nhưng KHÔNG được dùng trong query ở đoạn code gốc.
-        # "filter_dac_thu" biến được khai báo nhưng chưa xử lý logic lọc trong đoạn code tôi đọc được?
-        # Xem lại app.py: dòng 1604-1616 tạo UI. Sau đó query database. Sau đó hiển thị dataframe. 
-        # Không thấy logic áp dụng filter_dac_thu.
-        # Tôi sẽ để nguyên như app.py gốc (tức là UI có nhưng chưa logic lọc, hoặc tôi sót).
+        # Logic này chưa được implement trong phiên bản gốc.
         pass
 
     if not df.empty:

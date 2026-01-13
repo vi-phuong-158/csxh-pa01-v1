@@ -2,6 +2,7 @@
 """
 Module Bulk Import cho Security Profile 360
 Xử lý nhập liệu hàng loạt từ file Excel đa sheet
+Tích hợp Deduplication để phát hiện trùng lặp
 """
 
 import pandas as pd
@@ -19,6 +20,13 @@ from constants import (
     DANH_SACH_QUOC_GIA, LOAI_HINH_TO_CHUC_NN, HINH_THUC_DU_HOC, 
     KET_QUA_XAC_MINH, DANH_SACH_NGAN_HANG
 )
+
+# Import Deduplication module
+try:
+    from utils.deduplication import find_duplicates_in_batch, generate_duplicate_report
+    DEDUP_AVAILABLE = True
+except ImportError:
+    DEDUP_AVAILABLE = False
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -384,6 +392,22 @@ def validate_excel_data(excel_file, import_type='all'):
                 results['doi_tuong']['errors'] = errors
                 results['doi_tuong']['valid_count'] = len(valid_rows)
                 results['doi_tuong']['new_cccds'] = new_cccds
+                
+                # ===== DEDUPLICATION CHECK =====
+                if DEDUP_AVAILABLE and valid_rows:
+                    try:
+                        # Chuyển valid_rows thành list of dicts để kiểm tra trùng
+                        records = [row.to_dict() for row in valid_rows]
+                        duplicates = find_duplicates_in_batch(records)
+                        
+                        if duplicates:
+                            results['doi_tuong']['duplicates'] = duplicates
+                            results['doi_tuong']['duplicate_count'] = len(duplicates)
+                            results['doi_tuong']['duplicate_report'] = generate_duplicate_report(
+                                [{'kept_record': records[d[0]], 'removed_records': [records[d[1]]], 'cluster_size': 2} for d in duplicates]
+                            )
+                    except Exception as e:
+                        logger.warning(f"Dedup detection failed: {e}")
         
         # ===== SHEET: LIÊN HỆ =====
         if should_read('lien_he', 1):

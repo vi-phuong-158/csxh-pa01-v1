@@ -18,6 +18,12 @@ from constants import (
     HINH_THUC_DU_HOC
 )
 
+# Import từ services module để tránh circular import
+from services import (
+    save_nhan_than, save_lien_he, save_tai_chinh,
+    save_phuong_tien, save_ho_so_dac_thu, save_tai_lieu
+)
+
 logger = logging.getLogger(__name__)
 
 # ============================================
@@ -25,13 +31,15 @@ logger = logging.getLogger(__name__)
 # ============================================
 def get_doi_tuong_detail(cccd):
     conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM doi_tuong WHERE cccd = ?", (cccd,))
-    row = cursor.fetchone()
-    conn.close()
-    if row:
-        return dict(row)
-    return None
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM doi_tuong WHERE cccd = ?", (cccd,))
+        row = cursor.fetchone()
+        if row:
+            return dict(row)
+        return None
+    finally:
+        conn.close()
 
 def get_nhan_than_by_cccd(cccd):
     conn = get_connection()
@@ -264,11 +272,7 @@ CSXH_FIELD_LABELS = {
 
 def page_profile_view(cccd):
     """Trang xem chi tiết hồ sơ đối tượng 360 độ"""
-    # Import save functions lazily to avoid circular import at module level
-    from views.nhap_lieu import (
-        save_nhan_than, save_lien_he, save_tai_chinh, 
-        save_phuong_tien, save_ho_so_dac_thu, save_tai_lieu
-    )
+    # Save functions đã được import ở module level từ services
 
     # Lấy thông tin đối tượng
     doi_tuong = get_doi_tuong_detail(cccd)

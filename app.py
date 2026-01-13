@@ -2,8 +2,7 @@
 """
 SECURITY PROFILE 360
 Hệ thống Quản trị An ninh PA01
-Phiên bản: 1.0
-(Refactored)
+Phiên bản: 1.0 (với Authentication)
 """
 
 import streamlit as st
@@ -12,6 +11,17 @@ from pathlib import Path
 
 # Import database module
 from database import create_tables
+
+# Import authentication
+from auth import init_super_admin, is_super_admin
+
+# Import login views
+from views.login import (
+    require_login, 
+    show_user_menu, 
+    show_self_change_password,
+    get_current_user
+)
 
 # Import views
 from views import (
@@ -22,6 +32,7 @@ from views import (
     page_ra_soat,
     page_nhap_excel
 )
+from views.quan_ly_user import page_quan_ly_user
 
 # ============================================
 # LOGGING CONFIGURATION
@@ -59,12 +70,13 @@ if css_content:
     st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
 
 # ============================================
-# KHỞI TẠO DATABASE
+# KHỞI TẠO DATABASE & SUPER ADMIN
 # ============================================
 @st.cache_resource
 def init_database():
-    """Khởi tạo database nếu chưa tồn tại"""
+    """Khởi tạo database và Super Admin nếu chưa tồn tại"""
     create_tables()
+    init_super_admin()
     return True
 
 init_database()
@@ -82,10 +94,28 @@ if 'edit_mode' not in st.session_state:
     st.session_state.edit_mode = False
 if 'confirm_delete' not in st.session_state:
     st.session_state.confirm_delete = False
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+if 'user' not in st.session_state:
+    st.session_state.user = None
+if 'show_change_password' not in st.session_state:
+    st.session_state.show_change_password = False
 
 # ============================================
-# SIDEBAR & NAVIGATION
+# AUTHENTICATION CHECK
 # ============================================
+if not require_login():
+    # Nếu chưa đăng nhập hoặc cần đổi mật khẩu, dừng ở đây
+    st.stop()
+
+# ============================================
+# SIDEBAR & NAVIGATION (Sau khi đăng nhập)
+# ============================================
+
+# Import thêm các trang admin
+from views.nguon_du_lieu import page_nguon_du_lieu
+from views.audit_log import page_audit_log
+
 with st.sidebar:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -95,12 +125,30 @@ with st.sidebar:
     
     st.markdown("---")
     
+    # Menu items based on role
+    user = get_current_user()
+    
+    menu_items = ["Dashboard", "Nhập liệu", "Nhập Excel", "Tra cứu", "Rà soát"]
+    
+    # Thêm menu Admin cho Super Admin
+    if is_super_admin(user):
+        menu_items.append("---")  # Separator
+        menu_items.append("👥 Quản lý tài khoản")
+        menu_items.append("📦 Nguồn dữ liệu")
+        menu_items.append("📜 Lịch sử thay đổi")
+    
+    # Filter out separator
+    display_menu = [m for m in menu_items if m != "---"]
+    
     menu = st.radio(
         "Menu chính",
-        ["Dashboard", "Nhập liệu", "Nhập Excel", "Tra cứu", "Rà soát"],
+        display_menu,
         index=0,
         key="main_menu"
     )
+    
+    # User menu (đổi mật khẩu, đăng xuất)
+    show_user_menu()
     
     st.markdown("---")
     st.markdown("<div style='text-align: center; color: #888; font-size: 0.8em;'>Thiết kế bởi Vi Phương</div>", unsafe_allow_html=True)
@@ -109,14 +157,12 @@ with st.sidebar:
 # ROUTING LOGIC
 # ============================================
 
+# Nếu đang đổi mật khẩu (tự nguyện)
+if st.session_state.get('show_change_password'):
+    show_self_change_password()
+
 # Xử lý điều hướng đặc biệt (Xem chi tiết hồ sơ)
-if st.session_state.view_profile_cccd:
-    # Nếu đang xem chi tiết, hiển thị trang profile
-    # Bất kể menu đang chọn gì, trừ khi user click menu khác
-    # Tuy nhiên Streamlit rerun script khi interact.
-    # Logic: Nếu user click nút "Xem hồ sơ" ở trang Tra cứu, biến view_profile_cccd được set.
-    # Script rerun. Tại đây ta check biến đó.
-    # Để thoát chế độ xem chi tiết, View Profile cần có nút "Quay lại" set biến về None.
+elif st.session_state.view_profile_cccd:
     page_profile_view(st.session_state.view_profile_cccd)
 
 else:
@@ -131,5 +177,11 @@ else:
         page_tra_cuu()
     elif menu == "Rà soát":
         page_ra_soat()
+    elif menu == "👥 Quản lý tài khoản":
+        page_quan_ly_user()
+    elif menu == "📦 Nguồn dữ liệu":
+        page_nguon_du_lieu()
+    elif menu == "📜 Lịch sử thay đổi":
+        page_audit_log()
     else:
         page_dashboard()
