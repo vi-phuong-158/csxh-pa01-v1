@@ -14,6 +14,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils.dataframe import dataframe_to_rows
 from database import get_connection
+from utils.security import sanitize_for_excel
 from constants import (
     DANH_SACH_XA_PHU_THO, GIOI_TINH_OPTIONS, TINH_OPTIONS, 
     PHAN_LOAI_NGHE_NGHIEP_OPTIONS, LOAI_LIEN_HE_OPTIONS, LOAI_XE_OPTIONS,
@@ -703,8 +704,7 @@ def export_error_excel(validation_results):
             for row_num, (_, row) in enumerate(df.iterrows(), start=2):
                 for col_idx, value in enumerate(row.values, 1):
                     # Security: Sanitize potential formula injection
-                    if isinstance(value, str) and value.startswith(('=', '+', '-', '@')):
-                        value = "'" + value
+                    value = sanitize_for_excel(value)
 
                     cell = ws.cell(row=row_num, column=col_idx, value=value)
                     # Highlight cột lý do lỗi

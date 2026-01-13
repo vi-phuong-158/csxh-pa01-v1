@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from database import get_connection
+from utils.security import sanitize_for_excel
 from constants import (
     TINH_OPTIONS, GIOI_TINH_OPTIONS, LOAI_HINH_DAC_THU
 )
@@ -217,9 +218,14 @@ def page_tra_cuu():
         st.markdown("---")
         
         # Nút xuất Excel
+        # Security: Sanitize all string columns to prevent CSV Injection
+        df_export = df.copy()
+        for col in df_export.select_dtypes(include=['object']).columns:
+            df_export[col] = df_export[col].apply(sanitize_for_excel)
+
         st.download_button(
             label="📥 Xuất Excel",
-            data=df.to_csv(index=False).encode('utf-8-sig'),
+            data=df_export.to_csv(index=False).encode('utf-8-sig'),
             file_name=f"danh_sach_doi_tuong_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
         )

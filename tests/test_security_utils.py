@@ -1,51 +1,46 @@
 import unittest
 import pandas as pd
-import io
-import openpyxl
-from utils.bulk_import import export_error_excel
+from utils.security import sanitize_for_excel
 
 class TestSecurityUtils(unittest.TestCase):
-    def test_excel_formula_injection_prevention(self):
-        """Test that Excel Formula Injection is prevented in error reports."""
-        # Create a dummy validation result with malicious input
-        malicious_input = "=1+1"
-        safe_input = "Normal Text"
+    def test_sanitize_for_excel(self):
+        # Test dangerous characters
+        self.assertEqual(sanitize_for_excel("=1+1"), "'=1+1")
+        self.assertEqual(sanitize_for_excel("+1+1"), "'+1+1")
+        self.assertEqual(sanitize_for_excel("-1+1"), "'-1+1")
+        self.assertEqual(sanitize_for_excel("@SUM(1,1)"), "'@SUM(1,1)")
 
-        validation_results = {
-            'doi_tuong': {
-                'error_rows': [
-                    {
-                        'cccd': malicious_input,  # Injection point
-                        'ho_ten': safe_input,
-                        'LY_DO_LOI': 'Some error'
-                    }
-                ]
-            }
+        # Test safe strings
+        self.assertEqual(sanitize_for_excel("Safe String"), "Safe String")
+        self.assertEqual(sanitize_for_excel("123"), "123")
+        self.assertEqual(sanitize_for_excel(""), "")
+
+        # Test non-string inputs
+        self.assertEqual(sanitize_for_excel(123), 123)
+        self.assertEqual(sanitize_for_excel(None), None)
+        self.assertEqual(sanitize_for_excel(1.5), 1.5)
+
+    def test_sanitize_dataframe(self):
+        # Create a dataframe with some dangerous inputs
+        data = {
+            'Name': ['=cmd|', 'John Doe'],
+            'Age': [30, 25],
+            'Note': ['@link', 'Normal note']
         }
+        df = pd.DataFrame(data)
 
-        # Generate Excel bytes
-        excel_bytes = export_error_excel(validation_results)
+        # Apply sanitization as done in tra_cuu.py
+        df_export = df.copy()
+        for col in df_export.select_dtypes(include=['object']).columns:
+            df_export[col] = df_export[col].apply(sanitize_for_excel)
 
-        # Load the Excel file to check the cell value
-        wb = openpyxl.load_workbook(io.BytesIO(excel_bytes))
-        ws = wb['1. Đối tượng - LỖI']
-
-        # Find column indices
-        headers = [cell.value for cell in ws[1]]
-        cccd_idx = headers.index('cccd') + 1
-        hoten_idx = headers.index('ho_ten') + 1
-
-        # Get values from row 2
-        cccd_val = ws.cell(row=2, column=cccd_idx).value
-        hoten_val = ws.cell(row=2, column=hoten_idx).value
-
-        # Assertions
-        # Malicious input should be escaped with single quote
-        self.assertTrue(str(cccd_val).startswith("'="), f"Malicious input '{cccd_val}' was not escaped!")
-        self.assertEqual(cccd_val, "'" + malicious_input)
-
-        # Safe input should remain untouched (or at least not weirdly modified)
-        self.assertEqual(hoten_val, safe_input)
+        # Check results
+        self.assertEqual(df_export.iloc[0]['Name'], "'=cmd|")
+        self.assertEqual(df_export.iloc[1]['Name'], "John Doe")
+        self.assertEqual(df_export.iloc[0]['Note'], "'@link")
+        self.assertEqual(df_export.iloc[1]['Note'], "Normal note")
+        # Integers should remain integers
+        self.assertEqual(df_export.iloc[0]['Age'], 30)
 
 if __name__ == '__main__':
     unittest.main()
