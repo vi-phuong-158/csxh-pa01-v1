@@ -61,7 +61,13 @@ def sanitize_filename(filename: str) -> str:
 
 def get_upload_folder(cccd):
     """Lấy thư mục upload cho một CCCD"""
-    base_path = Path(__file__).parent / "uploads" / cccd
+    # Security: Validate cccd to prevent path traversal
+    # CCCD should be numeric and usually 12 digits, but we allow alphanumeric to be safe for legacy IDs
+    # But STRICTLY NO path separators or dot-dot
+    if not str(cccd).isalnum():
+        raise ValueError("Invalid CCCD format for file path generation")
+
+    base_path = Path(__file__).parent / "uploads" / str(cccd)
     base_path.mkdir(parents=True, exist_ok=True)
     return base_path
 
