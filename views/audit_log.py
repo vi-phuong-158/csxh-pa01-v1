@@ -8,6 +8,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from database import get_connection
 from auth import is_super_admin
+from utils.security import sanitize_for_excel
 
 
 def get_audit_logs(limit=100, table_filter=None, action_filter=None, date_from=None, date_to=None):
@@ -217,9 +218,15 @@ def page_audit_log():
     
     # Export
     st.markdown("---")
+
+    # Security: Sanitize for Excel Injection
+    export_df = df.copy()
+    for col in export_df.select_dtypes(include=['object']).columns:
+        export_df[col] = export_df[col].apply(sanitize_for_excel)
+
     st.download_button(
         label="📥 Xuất Audit Log (CSV)",
-        data=df.to_csv(index=False).encode('utf-8-sig'),
+        data=export_df.to_csv(index=False).encode('utf-8-sig'),
         file_name=f"audit_log_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
         mime="text/csv"
     )

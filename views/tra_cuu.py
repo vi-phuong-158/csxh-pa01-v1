@@ -6,6 +6,7 @@ from database import get_connection
 from constants import (
     TINH_OPTIONS, GIOI_TINH_OPTIONS, LOAI_HINH_DAC_THU
 )
+from utils.security import sanitize_for_excel
 import unicodedata
 import re
 
@@ -217,9 +218,14 @@ def page_tra_cuu():
         st.markdown("---")
         
         # Nút xuất Excel
+        # Security: Sanitize for Excel Injection before export
+        export_df = df.copy()
+        for col in export_df.select_dtypes(include=['object']).columns:
+            export_df[col] = export_df[col].apply(sanitize_for_excel)
+
         st.download_button(
             label="📥 Xuất Excel",
-            data=df.to_csv(index=False).encode('utf-8-sig'),
+            data=export_df.to_csv(index=False).encode('utf-8-sig'),
             file_name=f"danh_sach_doi_tuong_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
         )
