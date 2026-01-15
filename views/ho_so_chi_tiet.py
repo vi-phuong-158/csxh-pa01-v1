@@ -597,10 +597,12 @@ def page_profile_view(cccd):
                     📍 {row['noi_o'] if row['noi_o'] else 'N/A'}
                     """)
                 with col_del:
-                    if st.button("🗑️", key=f"del_nt_{row['id']}", help=f"Xóa {row['ho_ten']}"):
-                        delete_nhan_than(row['id'])
-                        st.success(f"✅ Đã xóa {row['loai_quan_he']}: {row['ho_ten']}")
-                        st.rerun()
+                    with st.popover("🗑️", help=f"Xóa {row['ho_ten']}", key=f"pop_pv_del_nt_{row['id']}"):
+                        st.write("Xóa nhân thân này?")
+                        if st.button("Xác nhận", key=f"confirm_del_nt_{row['id']}", type="primary"):
+                            delete_nhan_than(row['id'])
+                            st.toast(f"✅ Đã xóa {row['loai_quan_he']}: {row['ho_ten']}")
+                            st.rerun()
             st.markdown("---")
         else:
             st.info("💡 Chưa có thông tin thân nhân. Nhấn **➕ Thêm thân nhân mới** để thêm.")
@@ -663,10 +665,12 @@ def page_profile_view(cccd):
                         if item['ghi_chu']:
                             st.caption(f"📝 {item['ghi_chu']}")
                     with col_del:
-                        if st.button("🗑️", key=f"del_qt_pv_{item['id']}", help="Xóa mục này"):
-                            if delete_qua_trinh_hoat_dong(item['id']):
-                                st.success("Đã xóa")
-                                st.rerun()
+                        with st.popover("🗑️", help="Xóa mục này", key=f"pop_pv_del_qt_{item['id']}"):
+                            st.write("Xóa quá trình này?")
+                            if st.button("Xác nhận", key=f"confirm_del_qt_pv_{item['id']}", type="primary"):
+                                if delete_qua_trinh_hoat_dong(item['id']):
+                                    st.toast("✅ Đã xóa quá trình hoạt động")
+                                    st.rerun()
                     st.divider()
         else:
             st.info("💡 Chưa có thông tin quá trình hoạt động")
@@ -717,10 +721,12 @@ def page_profile_view(cccd):
                     ghi_chu_text = f" | 📝 {row['ghi_chu']}" if row['ghi_chu'] else ""
                     st.markdown(f"**{row['loai_lien_he']}**: {row['gia_tri']}{ghi_chu_text}")
                 with col_del:
-                    if st.button("🗑️", key=f"del_lh_{row['id']}", help=f"Xóa {row['loai_lien_he']}"):
-                        if delete_lien_he(row['id']):
-                            st.success(f"✅ Đã xóa!")
-                            st.rerun()
+                    with st.popover("🗑️", help=f"Xóa {row['loai_lien_he']}", key=f"pop_pv_del_lh_{row['id']}"):
+                        st.write("Xóa liên hệ này?")
+                        if st.button("Xác nhận", key=f"confirm_del_lh_{row['id']}", type="primary"):
+                            if delete_lien_he(row['id']):
+                                st.toast(f"✅ Đã xóa!")
+                                st.rerun()
         else:
             st.info("💡 Chưa có thông tin liên hệ")
         
@@ -755,10 +761,12 @@ def page_profile_view(cccd):
                     ghi_chu_text = f" | 📝 {row['ghi_chu']}" if row['ghi_chu'] else ""
                     st.markdown(f"**{row['ngan_hang']}**: {row['so_tai_khoan']}{chu_tk}{ghi_chu_text}")
                 with col_del:
-                    if st.button("🗑️", key=f"del_tc_{row['id']}", help=f"Xóa TK {row['ngan_hang']}"):
-                        if delete_tai_chinh(row['id']):
-                            st.success(f"✅ Đã xóa!")
-                            st.rerun()
+                    with st.popover("🗑️", help=f"Xóa TK {row['ngan_hang']}", key=f"pop_pv_del_tc_{row['id']}"):
+                        st.write("Xóa tài khoản này?")
+                        if st.button("Xác nhận", key=f"confirm_del_tc_{row['id']}", type="primary"):
+                            if delete_tai_chinh(row['id']):
+                                st.toast(f"✅ Đã xóa!")
+                                st.rerun()
         else:
             st.info("💡 Chưa có thông tin tài khoản ngân hàng")
         
@@ -794,10 +802,12 @@ def page_profile_view(cccd):
                     ghi_chu_text = f" | 📝 {row['ghi_chu']}" if row['ghi_chu'] else ""
                     st.markdown(f"**{row['loai_xe']}**: {row['bien_kiem_soat']}{ten_xe}{ghi_chu_text}")
                 with col_del:
-                    if st.button("🗑️", key=f"del_pt_{row['id']}", help=f"Xóa {row['bien_kiem_soat']}"):
-                        if delete_phuong_tien(row['id']):
-                            st.success(f"✅ Đã xóa!")
-                            st.rerun()
+                    with st.popover("🗑️", help=f"Xóa {row['bien_kiem_soat']}", key=f"pop_pv_del_pt_{row['id']}"):
+                        st.write("Xóa phương tiện này?")
+                        if st.button("Xác nhận", key=f"confirm_del_pt_{row['id']}", type="primary"):
+                            if delete_phuong_tien(row['id']):
+                                st.toast(f"✅ Đã xóa!")
+                                st.rerun()
         else:
             st.info("💡 Chưa có thông tin phương tiện")
         
@@ -860,12 +870,14 @@ def page_profile_view(cccd):
                     with col_date:
                         st.caption(f"📅 Ngày tạo: {row.get('created_at', 'N/A')}")
                     with col_del:
-                        if st.button("🗑️ Xóa", key=f"del_csxh_{row['id']}", help=f"Xóa hồ sơ {loai_hinh_text}"):
-                            if delete_ho_so_dac_thu(row['id']):
-                                st.success(f"✅ Đã xóa: {loai_hinh_text}")
-                                st.rerun()
-                            else:
-                                st.error("❌ Lỗi khi xóa hồ sơ!")
+                        with st.popover("🗑️ Xóa", help=f"Xóa hồ sơ {loai_hinh_text}", key=f"pop_pv_del_csxh_{row['id']}"):
+                            st.write(f"Xóa hồ sơ {loai_hinh_text}?")
+                            if st.button("Xác nhận", key=f"confirm_del_csxh_{row['id']}", type="primary"):
+                                if delete_ho_so_dac_thu(row['id']):
+                                    st.toast(f"✅ Đã xóa: {loai_hinh_text}")
+                                    st.rerun()
+                                else:
+                                    st.error("❌ Lỗi khi xóa hồ sơ!")
         else:
             st.info("💡 Chưa có hồ sơ đặc thù nào")
         
@@ -1011,10 +1023,12 @@ def page_profile_view(cccd):
                                 help="Tải xuống"
                             )
                 with col_del:
-                    if st.button("🗑️", key=f"pv_del_tl_{row['id']}", help=f"Xóa {row['ten_file_goc']}"):
-                        delete_tai_lieu(row['id'])
-                        st.success(f"✅ Đã xóa: {row['ten_file_goc']}")
-                        st.rerun()
+                    with st.popover("🗑️", help=f"Xóa {row['ten_file_goc']}", key=f"pop_pv_del_tl_{row['id']}"):
+                        st.write("Xóa tài liệu này?")
+                        if st.button("Xác nhận", key=f"confirm_pv_del_tl_{row['id']}", type="primary"):
+                            delete_tai_lieu(row['id'])
+                            st.toast(f"✅ Đã xóa: {row['ten_file_goc']}")
+                            st.rerun()
             st.markdown("---")
         else:
             st.info("💡 Chưa có tài liệu đính kèm")
