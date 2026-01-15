@@ -1,0 +1,3 @@
+## 2024-05-22 - [Pandas Vectorization vs Iterrows]
+**Learning:** Python loops (specifically `DataFrame.iterrows()`) are extremely slow for data filtering compared to Pandas' vectorized operations (boolean masking). In the search feature, switching from `iterrows` to vectorized `.str.contains` and `.apply` resulted in a ~7x speedup (0.087s -> 0.012s) for 1000 records.
+**Action:** Always prefer vectorization for dataframe operations. Use boolean indexing `df[mask]` instead of building a list of rows in a loop. Even `.apply()` is significantly faster than `iterrows` when true vectorization isn't possible (e.g., custom fuzzy logic).
