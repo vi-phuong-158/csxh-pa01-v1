@@ -22,10 +22,22 @@ logger = logging.getLogger(__name__)
 # HELPER FUNCTIONS
 # ============================================
 
+
+def validate_cccd(cccd: str) -> bool:
+    """
+    Validate CCCD format (12 digits).
+    Used to prevent path traversal and ensure data integrity.
+    """
+    if not cccd or not isinstance(cccd, str):
+        return False
+    # Strictly digits only, 12 characters
+    return cccd.isdigit() and len(cccd) == 12
+
+
 def sanitize_filename(filename: str) -> str:
     """
     Sanitize filename để ngăn path traversal và injection attacks.
-    
+
     Bảo vệ chống:
     - Path traversal (../)
     - Null byte injection
@@ -33,34 +45,40 @@ def sanitize_filename(filename: str) -> str:
     - Filename quá dài
     """
     import os
-    
+
     if not filename:
         return 'unnamed_file'
-    
+
     # Lấy tên file, loại bỏ path
     filename = Path(filename).name
-    
+
     # Loại bỏ null bytes (null byte injection)
     filename = filename.replace('\x00', '')
-    
+
     # Loại bỏ các ký tự đặc biệt nguy hiểm
-    # Chỉ giữ lại: chữ cái (bao gồm Unicode), số, dấu gạch ngang, gạch dưới, dấu chấm, khoảng trắng
+    # Chỉ giữ lại: chữ cái (bao gồm Unicode), số, dấu gạch ngang, gạch dưới,
+    # dấu chấm, khoảng trắng
     filename = re.sub(r'[^\w\-_\. ]', '', filename, flags=re.UNICODE)
-    
-    # Loại bỏ path traversal patterns
-    filename = filename.replace('..', '')
-    
+
+    # Ensure no double dots '..' remain (safety measure)
+    while '..' in filename:
+        filename = filename.replace('..', '.')
+
     # Giới hạn độ dài filename
     max_length = 200
     if len(filename) > max_length:
         name, ext = os.path.splitext(filename)
         filename = name[:max_length - len(ext)] + ext
-    
+
     return filename.strip() if filename.strip() else 'unnamed_file'
 
 
 def get_upload_folder(cccd):
     """Lấy thư mục upload cho một CCCD"""
+    # STRICT VALIDATION TO PREVENT PATH TRAVERSAL
+    if not validate_cccd(cccd):
+        raise ValueError(f"Invalid CCCD: {cccd}. Must be 12 digits.")
+
     base_path = Path(__file__).parent / "uploads" / cccd
     base_path.mkdir(parents=True, exist_ok=True)
     return base_path
@@ -90,7 +108,8 @@ def save_lien_he(cccd, loai, gia_tri, ghi_chu=""):
         conn.close()
 
 
-def save_tai_chinh(cccd, ngan_hang, so_tai_khoan, chu_tai_khoan="", ghi_chu=""):
+def save_tai_chinh(cccd, ngan_hang, so_tai_khoan,
+                   chu_tai_khoan="", ghi_chu=""):
     """Lưu thông tin tài khoản ngân hàng"""
     if not so_tai_khoan:
         return False
@@ -130,7 +149,8 @@ def save_phuong_tien(cccd, loai_xe, bien_so, ten_xe, ghi_chu=""):
         conn.close()
 
 
-def save_nhan_than(cccd, loai_quan_he, ho_ten, cccd_nhan_than="", ngay_sinh=None, nghe_nghiep="", noi_o="", ghi_chu=""):
+def save_nhan_than(cccd, loai_quan_he, ho_ten, cccd_nhan_than="",
+                   ngay_sinh=None, nghe_nghiep="", noi_o="", ghi_chu=""):
     """Lưu thông tin nhân thân"""
     if not ho_ten:
         return False
@@ -174,28 +194,34 @@ def save_tai_lieu(cccd, uploaded_file, loai_tai_lieu, mo_ta=""):
     """Lưu tài liệu đính kèm"""
     if not uploaded_file:
         return False, "Không có file"
-    
+
     file_size = len(uploaded_file.getvalue())
     if file_size > MAX_FILE_SIZE_MB * 1024 * 1024:
         return False, f"File quá lớn! Giới hạn {MAX_FILE_SIZE_MB}MB"
-    
+
     file_ext = uploaded_file.name.split('.')[-1].lower()
     if file_ext not in ALLOWED_EXTENSIONS:
         return False, f"Định dạng không hỗ trợ! Chỉ chấp nhận: {', '.join(ALLOWED_EXTENSIONS)}"
-    
+
     safe_filename = sanitize_filename(uploaded_file.name)
     unique_name = f"{uuid.uuid4().hex[:8]}_{safe_filename}"
-    
-    upload_folder = get_upload_folder(cccd)
+
+    # Use get_upload_folder which now validates CCCD
+    try:
+        upload_folder = get_upload_folder(cccd)
+    except ValueError as e:
+        logger.error(f"Security error: {e}")
+        return False, "CCCD không hợp lệ!"
+
     file_path = upload_folder / unique_name
-    
+
     try:
         with open(file_path, "wb") as f:
             f.write(uploaded_file.getvalue())
     except Exception as e:
         logger.exception(f"Lỗi lưu file: {e}")
         return False, "Đã xảy ra lỗi khi lưu file. Vui lòng thử lại."
-    
+
     duong_dan = f"uploads/{cccd}/{unique_name}"
     conn = get_connection()
     try:
@@ -221,8 +247,8 @@ def save_doi_tuong(data):
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO doi_tuong (cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_tinh, 
-                                   dia_chi_xa, anh_chan_dung, phan_loai_nghe_nghiep, 
+            INSERT INTO doi_tuong (cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_tinh,
+                                   dia_chi_xa, anh_chan_dung, phan_loai_nghe_nghiep,
                                    chi_tiet_nghe_nghiep, ghi_chu_chung)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
@@ -237,28 +263,29 @@ def save_doi_tuong(data):
             data['chi_tiet_nghe_nghiep'],
             data['ghi_chu_chung']
         ))
-        
+
         # Handle Avatar Upload AFTER inserting record
         avatar_file = data.get('avatar_file')
         if avatar_file:
             try:
                 import time
-                base_path = Path(__file__).parent / "uploads" / data['cccd']
-                base_path.mkdir(parents=True, exist_ok=True)
-                
+                # Use get_upload_folder which validates CCCD
+                base_path = get_upload_folder(data['cccd'])
+
                 file_ext = avatar_file.name.split('.')[-1]
                 safe_name = f"avatar_{int(time.time())}.{file_ext}"
                 save_path = base_path / safe_name
-                
+
                 with open(save_path, "wb") as f:
                     f.write(avatar_file.getbuffer())
-                
+
                 relative_path = f"uploads/{data['cccd']}/{safe_name}"
-                cursor.execute("UPDATE doi_tuong SET anh_chan_dung = ? WHERE cccd = ?", 
-                             (relative_path, data['cccd']))
+                cursor.execute("UPDATE doi_tuong SET anh_chan_dung = ? WHERE cccd = ?",
+                               (relative_path, data['cccd']))
             except Exception as e:
                 logger.error(f"Error saving avatar on create: {e}")
-        
+                # Don't fail the whole creation for avatar error
+
         conn.commit()
         return True, "Lưu thành công!"
     except Exception as e:
@@ -277,7 +304,8 @@ def check_cccd_exists(cccd: str) -> bool:
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM doi_tuong WHERE cccd = ?", (cccd,))
+        cursor.execute(
+            "SELECT COUNT(*) FROM doi_tuong WHERE cccd = ?", (cccd,))
         count = cursor.fetchone()[0]
         return count > 0
     finally:
