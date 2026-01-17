@@ -9,6 +9,9 @@ from datetime import datetime
 from typing import Optional, Dict, List, Tuple
 from database import get_connection
 import logging
+import secrets
+import string
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +21,6 @@ ROLE_USER = 'user'
 
 # Default Super Admin credentials
 DEFAULT_ADMIN_USERNAME = 'admin'
-DEFAULT_ADMIN_PASSWORD = 'admin123'
 
 
 def hash_password(password: str) -> str:
@@ -229,8 +231,19 @@ def init_super_admin():
         count = cursor.fetchone()[0]
         
         if count == 0:
+            # Get password from env or generate random
+            env_password = os.environ.get('ADMIN_PASSWORD')
+            if env_password:
+                password = env_password
+                source = "environment variable"
+            else:
+                # Generate secure random password
+                alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+                password = ''.join(secrets.choice(alphabet) for i in range(16))
+                source = "generated"
+
             # Tạo super admin mặc định
-            password_hash = hash_password(DEFAULT_ADMIN_PASSWORD)
+            password_hash = hash_password(password)
             cursor.execute("""
                 INSERT INTO users (username, password_hash, ho_ten, role, must_change_password)
                 VALUES (?, ?, ?, ?, ?)
@@ -242,8 +255,16 @@ def init_super_admin():
                 1  # Bắt buộc đổi mật khẩu lần đầu
             ))
             conn.commit()
+
             logger.info(f"Đã tạo Super Admin mặc định: {DEFAULT_ADMIN_USERNAME}")
-            print(f"[i] Đã tạo Super Admin: {DEFAULT_ADMIN_USERNAME} / {DEFAULT_ADMIN_PASSWORD}")
+
+            # Print securely to console
+            print(f"\n{'='*60}")
+            print(f"[SECURITY] Đã tạo tài khoản Super Admin mặc định")
+            print(f"Username: {DEFAULT_ADMIN_USERNAME}")
+            print(f"Password: {password}")
+            print(f"Source:   {source}")
+            print(f"{'='*60}\n")
     except Exception as e:
         logger.error(f"Lỗi init super admin: {e}")
     finally:
