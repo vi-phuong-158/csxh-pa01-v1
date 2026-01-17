@@ -1,3 +1,3 @@
-## 2025-05-26 - Toasts for Micro-Interactions
-**Learning:** In Streamlit apps with complex forms, using `st.success` + `st.rerun` for every small addition (like adding a list item) creates a jarring experience. `st.toast` provides transient, non-blocking feedback that feels much more modern and less disruptive, especially when combined with immediate UI updates.
-**Action:** Prefer `st.toast` for secondary actions (Add/Delete items from a list) and reserve `st.success` + `st.balloons` for primary success states (Create/Submit main entity).
+## 2026-01-17 - Delete Confirmation Popovers
+**Learning:** Destructive actions (like deleting records) without confirmation are a significant UX risk. `st.popover` provides an excellent, non-intrusive pattern for these confirmations compared to modal dialogs or session-state hacks, keeping the user context preserved. Switching from `st.success` (persistent alert) to `st.toast` (ephemeral) for post-action feedback creates a smoother, less cluttered experience.
+**Action:** Use `st.popover` with a confirmation button for all item-level destructive actions. Use `st.toast` for success feedback on these actions.
