@@ -21,7 +21,8 @@ from constants import (
 # Import từ services module để tránh circular import
 from services import (
     save_nhan_than, save_lien_he, save_tai_chinh,
-    save_phuong_tien, save_ho_so_dac_thu, save_tai_lieu
+    save_phuong_tien, save_ho_so_dac_thu, save_tai_lieu,
+    get_upload_folder
 )
 
 logger = logging.getLogger(__name__)
@@ -326,9 +327,8 @@ def page_profile_view(cccd):
                 if st.button("💾 Lưu ảnh", type="primary", use_container_width=True, key="save_quick_avatar"):
                     try:
                         import time
-                        # Create user upload dir if not exists
-                        upload_dir = Path.cwd() / "uploads" / cccd
-                        upload_dir.mkdir(parents=True, exist_ok=True)
+                        # Use secure get_upload_folder
+                        upload_dir = get_upload_folder(cccd)
                         
                         # Generate safe filename
                         file_ext = new_avatar_quick.name.split('.')[-1].lower()
@@ -518,9 +518,8 @@ def page_profile_view(cccd):
                         current_avatar_path = doi_tuong.get('anh_chan_dung')
                         if new_avatar:
                             try:
-                                # Create user upload dir if not exists
-                                upload_dir = Path.cwd() / "uploads" / cccd
-                                upload_dir.mkdir(parents=True, exist_ok=True)
+                                # Use secure get_upload_folder
+                                upload_dir = get_upload_folder(cccd)
                                 
                                 # Generate safe filename
                                 import time

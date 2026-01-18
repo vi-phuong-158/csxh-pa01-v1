@@ -61,6 +61,11 @@ def sanitize_filename(filename: str) -> str:
 
 def get_upload_folder(cccd):
     """Lấy thư mục upload cho một CCCD"""
+    # Security: Validate CCCD to prevent path traversal
+    if not cccd or not str(cccd).isdigit() or len(str(cccd)) != 12:
+        logger.warning(f"Security: Invalid CCCD format for upload folder: {cccd}")
+        raise ValueError("CCCD không hợp lệ (phải là 12 chữ số)")
+
     base_path = Path(__file__).parent / "uploads" / cccd
     base_path.mkdir(parents=True, exist_ok=True)
     return base_path
@@ -186,10 +191,10 @@ def save_tai_lieu(cccd, uploaded_file, loai_tai_lieu, mo_ta=""):
     safe_filename = sanitize_filename(uploaded_file.name)
     unique_name = f"{uuid.uuid4().hex[:8]}_{safe_filename}"
     
-    upload_folder = get_upload_folder(cccd)
-    file_path = upload_folder / unique_name
-    
     try:
+        upload_folder = get_upload_folder(cccd)
+        file_path = upload_folder / unique_name
+
         with open(file_path, "wb") as f:
             f.write(uploaded_file.getvalue())
     except Exception as e:
