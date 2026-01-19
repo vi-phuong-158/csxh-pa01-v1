@@ -5,6 +5,8 @@ Xử lý đăng nhập, phân quyền, quản lý tài khoản
 """
 import bcrypt
 import sqlite3
+import os
+import secrets
 from datetime import datetime
 from typing import Optional, Dict, List, Tuple
 from database import get_connection
@@ -18,7 +20,6 @@ ROLE_USER = 'user'
 
 # Default Super Admin credentials
 DEFAULT_ADMIN_USERNAME = 'admin'
-DEFAULT_ADMIN_PASSWORD = 'admin123'
 
 
 def hash_password(password: str) -> str:
@@ -229,8 +230,17 @@ def init_super_admin():
         count = cursor.fetchone()[0]
         
         if count == 0:
+            # Get password from env or generate random
+            env_password = os.environ.get('ADMIN_PASSWORD')
+            if env_password:
+                password = env_password
+                is_generated = False
+            else:
+                password = secrets.token_urlsafe(16)
+                is_generated = True
+
             # Tạo super admin mặc định
-            password_hash = hash_password(DEFAULT_ADMIN_PASSWORD)
+            password_hash = hash_password(password)
             cursor.execute("""
                 INSERT INTO users (username, password_hash, ho_ten, role, must_change_password)
                 VALUES (?, ?, ?, ?, ?)
@@ -243,7 +253,17 @@ def init_super_admin():
             ))
             conn.commit()
             logger.info(f"Đã tạo Super Admin mặc định: {DEFAULT_ADMIN_USERNAME}")
-            print(f"[i] Đã tạo Super Admin: {DEFAULT_ADMIN_USERNAME} / {DEFAULT_ADMIN_PASSWORD}")
+
+            if is_generated:
+                print("="*60)
+                print(f"[SECURITY NOTICE] Generated Random Super Admin Password")
+                print(f"Username: {DEFAULT_ADMIN_USERNAME}")
+                print(f"Password: {password}")
+                print(f"Please change this password immediately after logging in.")
+                print("="*60)
+            else:
+                print(f"[i] Super Admin initialized with provided environment password.")
+
     except Exception as e:
         logger.error(f"Lỗi init super admin: {e}")
     finally:
