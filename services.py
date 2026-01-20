@@ -61,6 +61,10 @@ def sanitize_filename(filename: str) -> str:
 
 def get_upload_folder(cccd):
     """Lấy thư mục upload cho một CCCD"""
+    # Security Check: CCCD must be 12 digits
+    if not cccd or len(cccd) != 12 or not cccd.isdigit():
+        raise ValueError("CCCD không hợp lệ: phải là 12 chữ số")
+
     base_path = Path(__file__).parent / "uploads" / cccd
     base_path.mkdir(parents=True, exist_ok=True)
     return base_path
@@ -243,8 +247,7 @@ def save_doi_tuong(data):
         if avatar_file:
             try:
                 import time
-                base_path = Path(__file__).parent / "uploads" / data['cccd']
-                base_path.mkdir(parents=True, exist_ok=True)
+                base_path = get_upload_folder(data['cccd'])
                 
                 file_ext = avatar_file.name.split('.')[-1]
                 safe_name = f"avatar_{int(time.time())}.{file_ext}"

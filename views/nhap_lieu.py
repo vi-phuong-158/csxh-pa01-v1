@@ -8,6 +8,7 @@ import json
 from datetime import datetime, date
 from pathlib import Path
 from database import get_connection, save_qua_trinh_hoat_dong, get_qua_trinh_hoat_dong, delete_qua_trinh_hoat_dong
+from services import get_upload_folder
 from constants import (
     GIOI_TINH_OPTIONS, TINH_OPTIONS, DANH_SACH_XA_PHU_THO,
     PHAN_LOAI_NGHE_NGHIEP_OPTIONS, LOAI_LIEN_HE_OPTIONS,
@@ -89,11 +90,6 @@ def sanitize_filename(filename: str) -> str:
     
     return filename.strip() if filename.strip() else 'unnamed_file'
 
-def get_upload_folder(cccd):
-    base_path = Path(__file__).parent.parent / "uploads" / cccd # Adjust path related to views/
-    base_path.mkdir(parents=True, exist_ok=True)
-    return base_path
-
 # ============================================
 # SAVE FUNCTIONS
 # ============================================
@@ -124,8 +120,7 @@ def save_doi_tuong(data):
         if avatar_file:
             try:
                 # Create user upload dir if not exists
-                base_path = Path(__file__).parent.parent / "uploads" / data['cccd']
-                base_path.mkdir(parents=True, exist_ok=True)
+                base_path = get_upload_folder(data['cccd'])
                 
                 # Generate safe filename
                 import time
