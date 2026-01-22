@@ -170,11 +170,11 @@ TINH_OPTIONS = ["Phú Thọ", "Khác"]
 
 # Các lựa chọn cho phân loại nghề nghiệp
 PHAN_LOAI_NGHE_NGHIEP_OPTIONS = [
-    "Cơ quan nhà nước", 
-    "Lao động tự do", 
-    "Doanh nghiệp tư nhân", 
+    "Cơ quan nhà nước",
+    "Lao động tự do",
+    "Doanh nghiệp tư nhân",
     "Nông nghiệp",
-    "FDI", 
+    "FDI",
     "NGO",
     "Học sinh/Sinh viên",
     "Hưu trí",
@@ -183,10 +183,12 @@ PHAN_LOAI_NGHE_NGHIEP_OPTIONS = [
 ]
 
 # Các loại liên hệ
-LOAI_LIEN_HE_OPTIONS = ["SĐT", "Email", "Facebook", "Zalo", "Telegram", "Instagram", "Tiktok", "Khác"]
+LOAI_LIEN_HE_OPTIONS = ["SĐT", "Email", "Facebook",
+                        "Zalo", "Telegram", "Instagram", "Tiktok", "Khác"]
 
 # Các loại phương tiện
-LOAI_XE_OPTIONS = ["Ô tô", "Xe máy", "Ô tô con", "Ô tô tải", "Xe khách", "Xe đạp điện", "Khác"]
+LOAI_XE_OPTIONS = ["Ô tô", "Xe máy", "Ô tô con",
+                   "Ô tô tải", "Xe khách", "Xe đạp điện", "Khác"]
 
 # Các loại hình hồ sơ đặc thù (Yếu tố nước ngoài & Nghiệp vụ)
 LOAI_HINH_DAC_THU = {
@@ -202,7 +204,7 @@ DANH_SACH_QUOC_GIA = [
     # Đông Á
     "Trung Quốc", "Hàn Quốc", "Nhật Bản", "Đài Loan", "Hồng Kông", "Macao",
     # Đông Nam Á
-    "Thái Lan", "Lào", "Campuchia", "Myanmar", "Malaysia", "Singapore", 
+    "Thái Lan", "Lào", "Campuchia", "Myanmar", "Malaysia", "Singapore",
     "Indonesia", "Philippines", "Brunei", "Đông Timor",
     # Nam Á
     "Ấn Độ", "Pakistan", "Bangladesh", "Nepal", "Sri Lanka",
@@ -222,17 +224,19 @@ DANH_SACH_QUOC_GIA = [
 ]
 
 # Các loại hình tổ chức nước ngoài
-LOAI_HINH_TO_CHUC_NN = ["FDI", "NGO", "Đại sứ quán", "Lãnh sự quán", "Tổ chức quốc tế", "Khác"]
+LOAI_HINH_TO_CHUC_NN = ["FDI", "NGO", "Đại sứ quán",
+                        "Lãnh sự quán", "Tổ chức quốc tế", "Khác"]
 
 # Hình thức du học/công tác
 HINH_THUC_DU_HOC = ["Du học", "Công tác", "Thuê lao động", "Thăm thân", "Khác"]
 
 # Kết quả xác minh
-KET_QUA_XAC_MINH = ["Đủ điều kiện", "Không đủ điều kiện", "Đang xác minh", "Chưa có kết quả", "Khác"]
+KET_QUA_XAC_MINH = ["Đủ điều kiện", "Không đủ điều kiện",
+                    "Đang xác minh", "Chưa có kết quả", "Khác"]
 
 # Ngân hàng phổ biến
 DANH_SACH_NGAN_HANG = [
-    "Vietcombank", "Vietinbank", "BIDV", "Agribank", "Techcombank", 
+    "Vietcombank", "Vietinbank", "BIDV", "Agribank", "Techcombank",
     "MB Bank", "ACB", "Sacombank", "VPBank", "TPBank", "HDBank",
     "SHB", "OCB", "VIB", "MSB", "Eximbank", "LienVietPostBank", "Khác"
 ]
@@ -251,7 +255,8 @@ LOAI_TAI_LIEU_OPTIONS = [
 ]
 
 # File extensions được phép upload
-ALLOWED_EXTENSIONS: list[str] = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif']
+ALLOWED_EXTENSIONS: list[str] = [
+    'pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif']
 
 # Giới hạn dung lượng file (MB)
 MAX_FILE_SIZE_MB: int = 10
@@ -272,14 +277,13 @@ class Messages:
     MISSING_REQUIRED = "⚠️ Vui lòng nhập đầy đủ thông tin!"
     MISSING_NAME = "⚠️ Vui lòng nhập họ tên!"
     SYSTEM_ERROR = "❌ Đã xảy ra lỗi hệ thống. Vui lòng thử lại."
-    
+
     # Success
     SAVE_SUCCESS = "✅ Lưu thành công!"
     DELETE_SUCCESS = "✅ Đã xóa thành công!"
     UPDATE_SUCCESS = "✅ Cập nhật thành công!"
     UPLOAD_SUCCESS = "✅ Đã upload thành công!"
-    
+
     # Info
     NO_DATA = "💡 Chưa có dữ liệu."
     PLEASE_SAVE_PERSONAL_FIRST = "⚠️ Vui lòng nhập và lưu thông tin cá nhân trước (Tab 1)"
-

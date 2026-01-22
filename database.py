@@ -4,6 +4,8 @@ Database module cho hệ thống Security Profile 360
 Tạo cơ sở dữ liệu SQLite với các bảng theo Schema PRD
 """
 
+import logging
+import re
 import sqlite3
 import os
 
@@ -146,7 +148,7 @@ def create_tables():
             FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
         )
     """)
-    
+
     # ========================================
     # BẢNG QUÁ TRÌNH HOẠT ĐỘNG
     # ========================================
@@ -231,27 +233,42 @@ def create_tables():
     """)
 
     # Tạo index để tăng tốc truy vấn
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_lien_he_cccd ON lien_he(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_tai_chinh_cccd ON tai_chinh(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_phuong_tien_cccd ON phuong_tien(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_nhan_than_cccd ON nhan_than(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_ho_so_dac_thu_cccd ON ho_so_dac_thu(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_ho_so_dac_thu_loai_hinh ON ho_so_dac_thu(loai_hinh)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_qua_trinh_hoat_dong_cccd ON qua_trinh_hoat_dong(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_tai_lieu_cccd ON tai_lieu(cccd)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_ho_ten ON doi_tuong(ho_ten)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_created_at ON doi_tuong(created_at)")
-    
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_lien_he_cccd ON lien_he(cccd)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_tai_chinh_cccd ON tai_chinh(cccd)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_phuong_tien_cccd ON phuong_tien(cccd)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_nhan_than_cccd ON nhan_than(cccd)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_ho_so_dac_thu_cccd ON ho_so_dac_thu(cccd)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_ho_so_dac_thu_loai_hinh ON ho_so_dac_thu(loai_hinh)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_qua_trinh_hoat_dong_cccd ON qua_trinh_hoat_dong(cccd)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_tai_lieu_cccd ON tai_lieu(cccd)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_doi_tuong_ho_ten ON doi_tuong(ho_ten)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_doi_tuong_created_at ON doi_tuong(created_at)")
+
     # Index cho các bảng mới
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi_tuong_nguon_cccd ON quan_he_doi_tuong(cccd_1)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_quan_he_cccd1 ON quan_he_doi_tuong(cccd_1)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_quan_he_cccd2 ON quan_he_doi_tuong(cccd_2)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_bang ON audit_log(bang)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_khoa ON audit_log(khoa_chinh)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_doi_tuong_nguon_cccd ON quan_he_doi_tuong(cccd_1)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_quan_he_cccd1 ON quan_he_doi_tuong(cccd_1)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_quan_he_cccd2 ON quan_he_doi_tuong(cccd_2)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_audit_bang ON audit_log(bang)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_audit_khoa ON audit_log(khoa_chinh)")
 
     conn.commit()
     conn.close()
-    
+
     print(f"[OK] Da tao database thanh cong: {get_db_path()}")
     print("[i] Cac bang da tao:")
     print("   - doi_tuong (Bang du lieu goc)")
@@ -280,6 +297,7 @@ def save_qua_trinh_hoat_dong(cccd, thoi_gian, noi_dung, ghi_chu=""):
     finally:
         conn.close()
 
+
 def get_qua_trinh_hoat_dong(cccd):
     """Lấy danh sách quá trình hoạt động theo CCCD"""
     conn = get_connection()
@@ -298,12 +316,14 @@ def get_qua_trinh_hoat_dong(cccd):
     finally:
         conn.close()
 
+
 def delete_qua_trinh_hoat_dong(qt_id: int) -> bool:
     """Xóa quá trình hoạt động theo ID"""
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM qua_trinh_hoat_dong WHERE id = ?", (qt_id,))
+        cursor.execute(
+            "DELETE FROM qua_trinh_hoat_dong WHERE id = ?", (qt_id,))
         conn.commit()
         return True
     except Exception as e:
@@ -313,8 +333,6 @@ def delete_qua_trinh_hoat_dong(qt_id: int) -> bool:
     finally:
         conn.close()
 
-import logging
-import re
 
 # Logging configuration
 logging.basicConfig(
@@ -329,35 +347,37 @@ def verify_database():
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        
+
         # Lấy danh sách các bảng
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
         tables = cursor.fetchall()
-        
+
         logger.info("Cấu trúc Database:")
-        
+
         for table in tables:
             table_name = table[0]
             if table_name.startswith("sqlite_"):
                 continue
-            
+
             # SECURITY: Sanitize table_name để tránh SQL injection
             if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', table_name):
                 logger.warning(f"Invalid table name detected: {table_name}")
                 continue
-                
+
             logger.info(f"[TABLE] {table_name}")
-            
+
             # Lấy thông tin các cột - sau khi đã validate table_name
             cursor.execute(f"PRAGMA table_info({table_name})")
             columns = cursor.fetchall()
-            
+
             for col in columns:
                 col_id, col_name, col_type, not_null, default_val, is_pk = col
                 pk_marker = "[PK]" if is_pk else "    "
                 null_marker = "NOT NULL" if not_null else ""
                 default_marker = f"DEFAULT {default_val}" if default_val else ""
-                logger.debug(f"   {pk_marker} {col_name}: {col_type} {null_marker} {default_marker}")
+                logger.debug(
+                    f"   {pk_marker} {col_name}: {col_type} {null_marker} {default_marker}")
     finally:
         conn.close()
 
@@ -367,4 +387,3 @@ if __name__ == "__main__":
     create_tables()
     verify_database()
     logger.info("Hoàn tất! Database đã sẵn sàng sử dụng.")
-
