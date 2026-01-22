@@ -22,6 +22,23 @@ logger = logging.getLogger(__name__)
 # HELPER FUNCTIONS
 # ============================================
 
+def validate_cccd(cccd: str) -> bool:
+    """
+    Validate CCCD format (must be 12 digits).
+    Raises ValueError if invalid to prevent injection/traversal.
+    """
+    if not cccd:
+        raise ValueError("CCCD cannot be empty")
+
+    if not isinstance(cccd, str):
+        cccd = str(cccd)
+
+    if len(cccd) != 12 or not cccd.isdigit():
+        raise ValueError("CCCD must be exactly 12 digits")
+
+    return True
+
+
 def sanitize_filename(filename: str) -> str:
     """
     Sanitize filename để ngăn path traversal và injection attacks.
@@ -61,6 +78,7 @@ def sanitize_filename(filename: str) -> str:
 
 def get_upload_folder(cccd):
     """Lấy thư mục upload cho một CCCD"""
+    validate_cccd(cccd)
     base_path = Path(__file__).parent / "uploads" / cccd
     base_path.mkdir(parents=True, exist_ok=True)
     return base_path
@@ -243,8 +261,8 @@ def save_doi_tuong(data):
         if avatar_file:
             try:
                 import time
-                base_path = Path(__file__).parent / "uploads" / data['cccd']
-                base_path.mkdir(parents=True, exist_ok=True)
+                # Use secured function
+                base_path = get_upload_folder(data['cccd'])
                 
                 file_ext = avatar_file.name.split('.')[-1]
                 safe_name = f"avatar_{int(time.time())}.{file_ext}"
