@@ -1,0 +1,3 @@
+## 2025-05-20 - [Pandas Iterrows Bottleneck in Flexible Search]
+**Learning:** The application uses a "Flexible Search" pattern where it fetches `SELECT *` from the database and filters in Python to handle Vietnamese diacritics and fuzzy matching. This was implemented using `df.iterrows()`, which caused a significant bottleneck (O(n) Python loops) as the dataset grew.
+**Action:** Always prefer Pandas vectorized string operations (`.str.contains`) or `.apply()` over `iterrows()`. In this case, switching to vectorization yielded a ~5x speedup for 1000 records. For larger datasets (>10k), we should move filtering to the database (FTS5 or normalized columns).
