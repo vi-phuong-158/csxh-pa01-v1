@@ -2,3 +2,8 @@
 **Vulnerability:** Excel Formula Injection (CSV Injection) in `utils/bulk_import.py`.
 **Learning:** User inputs (like `=1+1` or `=cmd|...`) that are written back to an Excel file (in this case, an error report) without sanitization can be interpreted as formulas by Excel, potentially leading to command execution or data exfiltration on the administrator's machine. Openpyxl does not automatically sanitize strings starting with `=`.
 **Prevention:** Sanitize any string starting with `=`, `+`, `-`, or `@` by prepending a single quote `'` before writing it to an Excel cell.
+
+## 2024-05-22 - Path Traversal in File Uploads
+**Vulnerability:** Path Traversal in `services.get_upload_folder` and `views/nhap_lieu.py`.
+**Learning:** Using user input (e.g., CCCD) directly to construct file paths (`Path(...) / input`) without strict validation allows attackers to traverse directories (e.g., using `../`) and potentially write files to arbitrary locations.
+**Prevention:** Strictly validate user input used in file paths. For IDs like CCCD, enforce alphanumeric or digit-only constraints using `str.isalnum()` before path construction.

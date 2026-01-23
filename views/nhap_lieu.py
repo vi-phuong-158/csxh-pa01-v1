@@ -25,6 +25,8 @@ from views.ho_so_chi_tiet import (
     delete_tai_lieu
 )
 
+from services import get_upload_folder
+
 logger = logging.getLogger(__name__)
 
 # ============================================
@@ -89,10 +91,6 @@ def sanitize_filename(filename: str) -> str:
     
     return filename.strip() if filename.strip() else 'unnamed_file'
 
-def get_upload_folder(cccd):
-    base_path = Path(__file__).parent.parent / "uploads" / cccd # Adjust path related to views/
-    base_path.mkdir(parents=True, exist_ok=True)
-    return base_path
 
 # ============================================
 # SAVE FUNCTIONS
@@ -124,8 +122,7 @@ def save_doi_tuong(data):
         if avatar_file:
             try:
                 # Create user upload dir if not exists
-                base_path = Path(__file__).parent.parent / "uploads" / data['cccd']
-                base_path.mkdir(parents=True, exist_ok=True)
+                base_path = get_upload_folder(data['cccd'])
                 
                 # Generate safe filename
                 import time

@@ -59,8 +59,29 @@ def sanitize_filename(filename: str) -> str:
     return filename.strip() if filename.strip() else 'unnamed_file'
 
 
+def validate_cccd(cccd: str) -> str:
+    """
+    Validate CCCD string to prevent path traversal and ensure format.
+    Allowed: alphanumeric only.
+    """
+    if not cccd:
+        raise ValueError("CCCD cannot be empty")
+
+    # Ensure string
+    cccd_str = str(cccd)
+
+    # Strict validation: alphanumeric only
+    if not cccd_str.isalnum():
+        raise ValueError(f"Invalid CCCD: '{cccd_str}' contains unsafe characters")
+
+    return cccd_str
+
+
 def get_upload_folder(cccd):
     """Lấy thư mục upload cho một CCCD"""
+    # Security check
+    cccd = validate_cccd(cccd)
+
     base_path = Path(__file__).parent / "uploads" / cccd
     base_path.mkdir(parents=True, exist_ok=True)
     return base_path
