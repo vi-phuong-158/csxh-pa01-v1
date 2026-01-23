@@ -4,6 +4,7 @@ import io
 import openpyxl
 from utils.bulk_import import export_error_excel
 
+
 class TestSecurityUtils(unittest.TestCase):
     def test_excel_formula_injection_prevention(self):
         """Test that Excel Formula Injection is prevented in error reports."""
@@ -41,11 +42,13 @@ class TestSecurityUtils(unittest.TestCase):
 
         # Assertions
         # Malicious input should be escaped with single quote
-        self.assertTrue(str(cccd_val).startswith("'="), f"Malicious input '{cccd_val}' was not escaped!")
+        self.assertTrue(str(cccd_val).startswith("'="),
+                        f"Malicious input '{cccd_val}' was not escaped!")
         self.assertEqual(cccd_val, "'" + malicious_input)
 
         # Safe input should remain untouched (or at least not weirdly modified)
         self.assertEqual(hoten_val, safe_input)
+
 
 if __name__ == '__main__':
     unittest.main()
