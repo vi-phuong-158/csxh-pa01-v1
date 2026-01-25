@@ -2,6 +2,7 @@ import unittest
 import pandas as pd
 from utils.text_utils import normalize_string
 
+
 def run_optimized_search(df_all, search_query, search_type):
     # Pre-compute normalization
     query_norm = normalize_string(search_query)
@@ -10,16 +11,19 @@ def run_optimized_search(df_all, search_query, search_type):
     # 1. CCCD Match (Vectorized)
     mask_cccd = pd.Series(False, index=df_all.index)
     if search_type in ["Tất cả", "CCCD"]:
-        mask_cccd = df_all['cccd'].astype(str).str.contains(query_lower, case=False, na=False)
+        mask_cccd = df_all['cccd'].astype(str).str.contains(
+            query_lower, case=False, na=False)
 
     # 2. Ho ten Match (Vectorized + Subsequence)
     mask_hoten = pd.Series(False, index=df_all.index)
     if search_type in ["Tất cả", "Họ tên"]:
         # Normalize 'ho_ten' column
-        normalized_hoten = df_all['ho_ten'].apply(lambda x: normalize_string(x) if x else "")
+        normalized_hoten = df_all['ho_ten'].apply(
+            lambda x: normalize_string(x) if x else "")
 
         # Check containment (Fast)
-        mask_hoten_contains = normalized_hoten.str.contains(query_norm, na=False, regex=False)
+        mask_hoten_contains = normalized_hoten.str.contains(
+            query_norm, na=False, regex=False)
         mask_hoten = mask_hoten_contains
 
         # Check subsequence (Slower, only if query >= 3 chars)
@@ -31,8 +35,10 @@ def run_optimized_search(df_all, search_query, search_type):
             # Only check rows that failed containment
             remaining_indices = ~mask_hoten_contains
             if remaining_indices.any():
-                subsequence_matches = normalized_hoten[remaining_indices].apply(check_subsequence)
-                mask_hoten = mask_hoten | subsequence_matches.reindex(df_all.index, fill_value=False)
+                subsequence_matches = normalized_hoten[remaining_indices].apply(
+                    check_subsequence)
+                mask_hoten = mask_hoten | subsequence_matches.reindex(
+                    df_all.index, fill_value=False)
 
     # Combine masks
     final_mask = mask_cccd | mask_hoten
@@ -71,6 +77,7 @@ class TestSearchPerformance(unittest.TestCase):
         result = run_optimized_search(self.df, 'van', 'Tất cả')
         self.assertEqual(len(result), 1)
         self.assertEqual(result.iloc[0]['ho_ten'], 'Nguyễn Văn A')
+
 
 if __name__ == '__main__':
     unittest.main()
