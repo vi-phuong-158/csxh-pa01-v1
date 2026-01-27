@@ -24,6 +24,7 @@ from views.ho_so_chi_tiet import (
     delete_tai_chinh, delete_phuong_tien, delete_ho_so_dac_thu,
     delete_tai_lieu
 )
+from services import get_upload_folder, sanitize_filename
 
 logger = logging.getLogger(__name__)
 
@@ -59,49 +60,6 @@ def validate_cccd_for_action(cccd: str, *
     return True, None
 
 
-def sanitize_filename(filename: str) -> str:
-    """
-    Sanitize filename để ngăn path traversal và injection attacks.
-
-    Bảo vệ chống:
-    - Path traversal (../)
-    - Null byte injection
-    - Ký tự đặc biệt nguy hiểm
-    - Filename quá dài
-    """
-    import os
-
-    if not filename:
-        return 'unnamed_file'
-
-    # Lấy tên file, loại bỏ path
-    filename = Path(filename).name
-
-    # Loại bỏ null bytes (null byte injection)
-    filename = filename.replace('\x00', '')
-
-    # Loại bỏ các ký tự đặc biệt nguy hiểm
-    # Chỉ giữ lại: chữ cái (bao gồm Unicode tiếng Việt), số, dấu gạch ngang,
-    # gạch dưới, dấu chấm, khoảng trắng
-    filename = re.sub(r'[^\w\-_\. ]', '', filename, flags=re.UNICODE)
-
-    # Loại bỏ path traversal patterns
-    filename = filename.replace('..', '')
-
-    # Giới hạn độ dài filename
-    max_length = 200
-    if len(filename) > max_length:
-        name, ext = os.path.splitext(filename)
-        filename = name[:max_length - len(ext)] + ext
-
-    return filename.strip() if filename.strip() else 'unnamed_file'
-
-
-def get_upload_folder(cccd):
-    base_path = Path(__file__).parent.parent / "uploads" / \
-        cccd  # Adjust path related to views/
-    base_path.mkdir(parents=True, exist_ok=True)
-    return base_path
 
 # ============================================
 # SAVE FUNCTIONS
@@ -135,9 +93,7 @@ def save_doi_tuong(data):
         if avatar_file:
             try:
                 # Create user upload dir if not exists
-                base_path = Path(__file__).parent.parent / \
-                    "uploads" / data['cccd']
-                base_path.mkdir(parents=True, exist_ok=True)
+                base_path = get_upload_folder(data['cccd'])
 
                 # Generate safe filename
                 import time

@@ -22,6 +22,16 @@ logger = logging.getLogger(__name__)
 # HELPER FUNCTIONS
 # ============================================
 
+def validate_cccd(cccd: str) -> bool:
+    """
+    Validate CCCD string to prevent path traversal and injection.
+    Only allows alphanumeric characters.
+    """
+    if not cccd:
+        return False
+    # Only allow alphanumeric characters
+    return cccd.isalnum()
+
 def sanitize_filename(filename: str) -> str:
     """
     Sanitize filename để ngăn path traversal và injection attacks.
@@ -61,6 +71,9 @@ def sanitize_filename(filename: str) -> str:
 
 def get_upload_folder(cccd):
     """Lấy thư mục upload cho một CCCD"""
+    if not validate_cccd(cccd):
+        raise ValueError("Invalid CCCD: Must be alphanumeric only")
+
     base_path = Path(__file__).parent / "uploads" / cccd
     base_path.mkdir(parents=True, exist_ok=True)
     return base_path
