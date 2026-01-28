@@ -95,8 +95,20 @@ def page_tra_cuu():
         if search_query:
             # Lấy TOÀN BỘ dữ liệu để lọc bằng Python (Flexible Search)
             # Vì SQLite LIKE hạn chế với tiếng Việt có dấu/không dấu
-            # Optimized by Bolt: Vectorized search instead of iterrows (~7.5x faster)
-            df_all = pd.read_sql_query("SELECT * FROM doi_tuong", conn)
+            # Optimized by Bolt: Vectorized search (~7.5x faster)
+            # Optimized by Bolt: Push filters (Tỉnh, Giới tính) to SQL
+            sql = "SELECT * FROM doi_tuong WHERE 1=1"
+            params = []
+
+            if filter_tinh != "Tất cả":
+                sql += " AND dia_chi_tinh = ?"
+                params.append(filter_tinh)
+
+            if filter_gioi_tinh != "Tất cả":
+                sql += " AND gioi_tinh = ?"
+                params.append(filter_gioi_tinh)
+
+            df_all = pd.read_sql_query(sql, conn, params=params)
             
             # Pre-compute normalization
             query_norm = normalize_string(search_query)
