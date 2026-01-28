@@ -301,13 +301,15 @@ def page_nhap_lieu():
                 "Số CCCD *",
                 placeholder="Nhập 12 số CCCD",
                 max_chars=12,
-                help="Số căn cước công dân 12 số"
+                help="Số căn cước công dân 12 số",
+                key="nl_cccd"
             )
 
             ho_ten = st.text_input(
                 "Họ và tên *",
                 placeholder="Nguyễn Văn A",
-                help="Họ tên đầy đủ theo giấy tờ"
+                help="Họ tên đầy đủ theo giấy tờ",
+                key="nl_ho_ten"
             )
 
             # Avatar Upload (Mới)
@@ -420,6 +422,11 @@ def page_nhap_lieu():
         with col_btn2:
             if st.button("🔄 Làm mới", use_container_width=True):
                 st.session_state.current_cccd = None
+                # Clear inputs
+                if 'nl_cccd' in st.session_state:
+                    del st.session_state.nl_cccd
+                if 'nl_ho_ten' in st.session_state:
+                    del st.session_state.nl_ho_ten
                 st.rerun()
 
     # ===== TAB THÂN NHÂN (MỚI) =====

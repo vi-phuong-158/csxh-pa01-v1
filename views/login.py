@@ -9,10 +9,10 @@ from auth import authenticate, change_password, is_super_admin
 
 def show_login_form():
     """Hiển thị form đăng nhập."""
-    
+
     # Center the login form
     col1, col2, col3 = st.columns([1, 2, 1])
-    
+
     with col2:
         st.markdown("""
         <div style="text-align: center; padding: 20px;">
@@ -20,31 +20,32 @@ def show_login_form():
             <p style="color: #aaa;">Hệ thống quản lý hồ sơ an ninh</p>
         </div>
         """, unsafe_allow_html=True)
-        
+
         st.markdown("---")
-        
+
         with st.form("login_form"):
             st.markdown("### Đăng nhập")
-            
+
             username = st.text_input(
                 "👤 Tên đăng nhập",
                 placeholder="Nhập username"
             )
-            
+
             password = st.text_input(
                 "🔑 Mật khẩu",
                 type="password",
                 placeholder="Nhập mật khẩu"
             )
-            
-            submitted = st.form_submit_button("🔓 Đăng nhập", type="primary", use_container_width=True)
-            
+
+            submitted = st.form_submit_button(
+                "🔓 Đăng nhập", type="primary", use_container_width=True)
+
             if submitted:
                 if not username or not password:
                     st.error("⚠️ Vui lòng nhập đầy đủ thông tin!")
                 else:
                     user = authenticate(username, password)
-                    
+
                     if user:
                         st.session_state.logged_in = True
                         st.session_state.user = user
@@ -56,9 +57,9 @@ def show_login_form():
 
 def show_change_password_form():
     """Hiển thị form bắt buộc đổi mật khẩu (lần đầu đăng nhập)."""
-    
+
     col1, col2, col3 = st.columns([1, 2, 1])
-    
+
     with col2:
         st.markdown("""
         <div style="text-align: center; padding: 20px;">
@@ -66,24 +67,25 @@ def show_change_password_form():
             <p style="color: #ffc107;">⚠️ Bạn cần đổi mật khẩu trước khi tiếp tục</p>
         </div>
         """, unsafe_allow_html=True)
-        
+
         st.markdown("---")
-        
+
         with st.form("change_password_form"):
             new_password = st.text_input(
                 "🔑 Mật khẩu mới",
                 type="password",
                 placeholder="Ít nhất 6 ký tự"
             )
-            
+
             confirm_password = st.text_input(
                 "🔑 Xác nhận mật khẩu mới",
                 type="password",
                 placeholder="Nhập lại mật khẩu"
             )
-            
-            submitted = st.form_submit_button("✅ Đổi mật khẩu", type="primary", use_container_width=True)
-            
+
+            submitted = st.form_submit_button(
+                "✅ Đổi mật khẩu", type="primary", use_container_width=True)
+
             if submitted:
                 if not new_password or not confirm_password:
                     st.error("⚠️ Vui lòng nhập đầy đủ!")
@@ -94,7 +96,7 @@ def show_change_password_form():
                 else:
                     user = st.session_state.user
                     success, msg = change_password(user['id'], new_password)
-                    
+
                     if success:
                         st.session_state.user['must_change_password'] = False
                         st.success("✅ Đổi mật khẩu thành công!")
@@ -106,18 +108,18 @@ def show_change_password_form():
 def show_user_menu():
     """Hiển thị menu user ở sidebar."""
     user = st.session_state.get('user', {})
-    
+
     st.sidebar.markdown("---")
     st.sidebar.markdown(f"👤 **{user.get('ho_ten', 'User')}**")
-    
+
     role_display = "🔑 Super Admin" if is_super_admin(user) else "👤 User"
     st.sidebar.caption(role_display)
-    
+
     # Nút đổi mật khẩu
     if st.sidebar.button("🔐 Đổi mật khẩu", use_container_width=True):
         st.session_state.show_change_password = True
         st.rerun()
-    
+
     # Nút đăng xuất
     if st.sidebar.button("🚪 Đăng xuất", use_container_width=True):
         logout()
@@ -127,32 +129,32 @@ def show_user_menu():
 def show_self_change_password():
     """Form đổi mật khẩu tự nguyện (không bắt buộc)."""
     st.markdown("### 🔐 Đổi mật khẩu")
-    
+
     with st.form("self_change_password"):
         current_password = st.text_input(
             "Mật khẩu hiện tại",
             type="password"
         )
-        
+
         new_password = st.text_input(
             "Mật khẩu mới",
             type="password",
             placeholder="Ít nhất 6 ký tự"
         )
-        
+
         confirm_password = st.text_input(
             "Xác nhận mật khẩu mới",
             type="password"
         )
-        
+
         col1, col2 = st.columns(2)
-        
+
         with col1:
             if st.form_submit_button("✅ Đổi mật khẩu", type="primary"):
                 # Verify current password
                 user = st.session_state.user
                 check_user = authenticate(user['username'], current_password)
-                
+
                 if not check_user:
                     st.error("❌ Mật khẩu hiện tại không đúng!")
                 elif new_password != confirm_password:
@@ -166,7 +168,7 @@ def show_self_change_password():
                         st.session_state.show_change_password = False
                     else:
                         st.error(f"❌ {msg}")
-        
+
         with col2:
             if st.form_submit_button("❌ Hủy"):
                 st.session_state.show_change_password = False
@@ -198,11 +200,11 @@ def require_login():
     if not is_logged_in():
         show_login_form()
         return False
-    
+
     # Kiểm tra phải đổi mật khẩu không
     user = st.session_state.user
     if user.get('must_change_password'):
         show_change_password_form()
         return False
-    
+
     return True

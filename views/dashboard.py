@@ -22,29 +22,34 @@ except ImportError:
 # ============================================
 # HELPER FUNCTIONS
 # ============================================
+
+
 @st.cache_data(ttl=300)
 def get_statistics():
     """Lấy thống kê tổng quan (cached)"""
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        
+
         # Tổng số đối tượng
         cursor.execute("SELECT COUNT(*) FROM doi_tuong")
         total_doi_tuong = cursor.fetchone()[0]
-        
+
         # Số theo giới tính
-        cursor.execute("SELECT gioi_tinh, COUNT(*) FROM doi_tuong GROUP BY gioi_tinh")
+        cursor.execute(
+            "SELECT gioi_tinh, COUNT(*) FROM doi_tuong GROUP BY gioi_tinh")
         gioi_tinh_stats = dict(cursor.fetchall())
-        
+
         # Số theo phân loại nghề nghiệp
-        cursor.execute("SELECT phan_loai_nghe_nghiep, COUNT(*) FROM doi_tuong GROUP BY phan_loai_nghe_nghiep")
+        cursor.execute(
+            "SELECT phan_loai_nghe_nghiep, COUNT(*) FROM doi_tuong GROUP BY phan_loai_nghe_nghiep")
         nghe_nghiep_stats = dict(cursor.fetchall())
-        
+
         # Số hồ sơ đặc thù theo loại hình
-        cursor.execute("SELECT loai_hinh, COUNT(*) FROM ho_so_dac_thu GROUP BY loai_hinh")
+        cursor.execute(
+            "SELECT loai_hinh, COUNT(*) FROM ho_so_dac_thu GROUP BY loai_hinh")
         dac_thu_stats = dict(cursor.fetchall())
-        
+
         return {
             "total": total_doi_tuong,
             "gioi_tinh": gioi_tinh_stats,
@@ -53,6 +58,7 @@ def get_statistics():
         }
     finally:
         conn.close()
+
 
 def get_recent_records(limit=10):
     """Lấy các bản ghi gần đây"""
@@ -68,6 +74,7 @@ def get_recent_records(limit=10):
         return df
     finally:
         conn.close()
+
 
 def get_xa_phuong_stats():
     """Lấy thống kê theo xã/phường"""
@@ -90,6 +97,7 @@ def get_xa_phuong_stats():
 # ECHARTS COMPONENTS (Primary - Interactive)
 # ============================================
 
+
 def render_pie_echarts(data: dict, title: str):
     """
     Pie/Donut chart với ECharts - Tương tác khi hover.
@@ -98,15 +106,15 @@ def render_pie_echarts(data: dict, title: str):
     if not data or sum(data.values()) == 0:
         st.info("💡 Chưa có dữ liệu.")
         return
-    
+
     chart_data = [
-        {"value": v, "name": k} 
+        {"value": v, "name": k}
         for k, v in data.items() if v > 0
     ]
-    
+
     # Màu gradient đẹp
     colors = ['#667eea', '#764ba2', '#00d9a5', '#ffc107', '#ff6b6b', '#4ecdc4']
-    
+
     options = {
         "backgroundColor": "transparent",
         "tooltip": {
@@ -146,7 +154,7 @@ def render_pie_echarts(data: dict, title: str):
         }],
         "color": colors
     }
-    
+
     st_echarts(options=options, height="320px")
 
 
@@ -158,22 +166,22 @@ def render_bar_echarts(data: dict, title: str, horizontal: bool = False):
     if not data or sum(data.values()) == 0:
         st.info("💡 Chưa có dữ liệu.")
         return
-    
+
     categories = list(data.keys())
     values = list(data.values())
-    
+
     # Gradient color
     gradient_color = {
         "type": "linear",
-        "x": 0, "y": 0, 
-        "x2": 1 if horizontal else 0, 
+        "x": 0, "y": 0,
+        "x2": 1 if horizontal else 0,
         "y2": 0 if horizontal else 1,
         "colorStops": [
             {"offset": 0, "color": "#667eea"},
             {"offset": 1, "color": "#764ba2"}
         ]
     }
-    
+
     options = {
         "backgroundColor": "transparent",
         "tooltip": {
@@ -185,9 +193,9 @@ def render_bar_echarts(data: dict, title: str, horizontal: bool = False):
             "textStyle": {"color": "#fff"}
         },
         "grid": {
-            "left": "3%", 
-            "right": "4%", 
-            "bottom": "15%", 
+            "left": "3%",
+            "right": "4%",
+            "bottom": "15%",
             "top": "5%",
             "containLabel": True
         },
@@ -195,7 +203,7 @@ def render_bar_echarts(data: dict, title: str, horizontal: bool = False):
             "type": "value" if horizontal else "category",
             "data": None if horizontal else categories,
             "axisLabel": {
-                "color": "#aaa", 
+                "color": "#aaa",
                 "rotate": 0 if horizontal else 30,
                 "fontSize": 10
             },
@@ -231,7 +239,7 @@ def render_bar_echarts(data: dict, title: str, horizontal: bool = False):
             }
         }]
     }
-    
+
     st_echarts(options=options, height="320px")
 
 
@@ -242,10 +250,10 @@ def render_horizontal_bar_echarts(df: pd.DataFrame, x_col: str, y_col: str):
     if df.empty:
         st.info("💡 Chưa có dữ liệu.")
         return
-    
+
     categories = df[y_col].tolist()
     values = df[x_col].tolist()
-    
+
     options = {
         "backgroundColor": "transparent",
         "tooltip": {
@@ -257,9 +265,9 @@ def render_horizontal_bar_echarts(df: pd.DataFrame, x_col: str, y_col: str):
             "textStyle": {"color": "#fff"}
         },
         "grid": {
-            "left": "3%", 
-            "right": "8%", 
-            "bottom": "5%", 
+            "left": "3%",
+            "right": "8%",
+            "bottom": "5%",
             "top": "5%",
             "containLabel": True
         },
@@ -310,7 +318,7 @@ def render_horizontal_bar_echarts(df: pd.DataFrame, x_col: str, y_col: str):
             }
         }]
     }
-    
+
     st_echarts(options=options, height="320px")
 
 
@@ -323,9 +331,9 @@ def render_pie_plotly(data: dict, title: str):
     if not PLOTLY_AVAILABLE:
         st.warning("⚠️ Cần cài đặt plotly: `pip install plotly`")
         return
-        
+
     df = pd.DataFrame(list(data.items()), columns=["Danh mục", "Số lượng"])
-    fig = px.pie(df, values='Số lượng', names='Danh mục', 
+    fig = px.pie(df, values='Số lượng', names='Danh mục',
                  color_discrete_sequence=['#667eea', '#764ba2'], hole=0.4)
     fig.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
@@ -341,7 +349,7 @@ def render_bar_plotly(data: dict, title: str):
     if not PLOTLY_AVAILABLE:
         st.warning("⚠️ Cần cài đặt plotly: `pip install plotly`")
         return
-        
+
     df = pd.DataFrame(list(data.items()), columns=["Danh mục", "Số lượng"])
     fig = px.bar(df, x='Danh mục', y='Số lượng', color='Danh mục',
                  color_discrete_sequence=['#667eea', '#764ba2', '#00d9a5', '#ffc107'])
@@ -360,54 +368,56 @@ def render_bar_plotly(data: dict, title: str):
 # ============================================
 def page_dashboard():
     """Trang Dashboard - Tổng quan hệ thống với ECharts tương tác"""
-    
+
     st.markdown("# 🏠 Dashboard")
     st.markdown("### Tổng quan hệ thống quản lý hồ sơ an ninh")
-    
+
     # Check ECharts availability
     if not ECHARTS_AVAILABLE:
-        st.warning("⚠️ Để có biểu đồ tương tác, hãy cài: `pip install streamlit-echarts`")
+        st.warning(
+            "⚠️ Để có biểu đồ tương tác, hãy cài: `pip install streamlit-echarts`")
         st.info("Đang sử dụng Plotly fallback...")
-    
+
     st.markdown("---")
-    
+
     # Thống kê chính
     stats = get_statistics()
-    
+
     col1, col2, col3, col4 = st.columns(4)
-    
+
     with col1:
         st.metric(
             label="📋 Tổng đối tượng",
             value=stats["total"],
         )
-    
+
     with col2:
         nam_count = stats["gioi_tinh"].get("Nam", 0)
         st.metric(
             label="👨 Nam giới",
             value=nam_count,
         )
-    
+
     with col3:
         nu_count = stats["gioi_tinh"].get("Nữ", 0)
         st.metric(
             label="👩 Nữ giới",
             value=nu_count,
         )
-    
+
     with col4:
-        dac_thu_total = sum(stats["dac_thu"].values()) if stats["dac_thu"] else 0
+        dac_thu_total = sum(stats["dac_thu"].values()
+                            ) if stats["dac_thu"] else 0
         st.metric(
             label="🌐 Yếu tố nước ngoài",
             value=dac_thu_total,
         )
-    
+
     st.markdown("---")
-    
+
     # Row 1: Pie Chart giới tính + Bar chart nghề nghiệp
     col_left, col_right = st.columns(2)
-    
+
     with col_left:
         st.markdown("### 👥 Phân bố giới tính")
         if stats["gioi_tinh"] and sum(stats["gioi_tinh"].values()) > 0:
@@ -417,7 +427,7 @@ def page_dashboard():
                 render_pie_plotly(stats["gioi_tinh"], "Giới tính")
         else:
             st.info("💡 Chưa có dữ liệu giới tính.")
-    
+
     with col_right:
         st.markdown("### 📊 Phân loại nghề nghiệp")
         if stats["nghe_nghiep"] and sum(stats["nghe_nghiep"].values()) > 0:
@@ -427,39 +437,41 @@ def page_dashboard():
                 render_bar_plotly(stats["nghe_nghiep"], "Nghề nghiệp")
         else:
             st.info("💡 Chưa có dữ liệu nghề nghiệp.")
-    
+
     st.markdown("---")
-    
+
     # Row 2: Hồ sơ đặc thù + Top xã/phường
     col_left2, col_right2 = st.columns(2)
-    
+
     with col_left2:
         st.markdown("### 🌐 Hồ sơ đặc thù CSXH")
         if stats["dac_thu"] and sum(stats["dac_thu"].values()) > 0:
             # Convert keys to readable names
             readable_dac_thu = {
-                LOAI_HINH_DAC_THU.get(k, k): v 
+                LOAI_HINH_DAC_THU.get(k, k): v
                 for k, v in stats["dac_thu"].items()
             }
             if ECHARTS_AVAILABLE:
-                render_bar_echarts(readable_dac_thu, "Hồ sơ đặc thù", horizontal=False)
+                render_bar_echarts(
+                    readable_dac_thu, "Hồ sơ đặc thù", horizontal=False)
             else:
                 render_bar_plotly(readable_dac_thu, "Hồ sơ đặc thù")
         else:
             st.info("💡 Chưa có hồ sơ đặc thù nào.")
-    
+
     with col_right2:
         st.markdown("### 🏘️ Top 10 xã/phường")
         df_xa = get_xa_phuong_stats()
-        
+
         if not df_xa.empty:
             if ECHARTS_AVAILABLE:
                 # Convert DataFrame to dict for vertical bar chart
-                xa_data = dict(zip(df_xa['dia_chi_xa'].tolist(), df_xa['so_luong'].tolist()))
+                xa_data = dict(
+                    zip(df_xa['dia_chi_xa'].tolist(), df_xa['so_luong'].tolist()))
                 render_bar_echarts(xa_data, "Top xã/phường", horizontal=False)
             else:
                 fig_xa = px.bar(df_xa, y='dia_chi_xa', x='so_luong', orientation='h',
-                               color='so_luong', color_continuous_scale='Viridis')
+                                color='so_luong', color_continuous_scale='Viridis')
                 fig_xa.update_layout(
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
@@ -470,15 +482,16 @@ def page_dashboard():
                 st.plotly_chart(fig_xa, use_container_width=True)
         else:
             st.info("💡 Chưa có dữ liệu phân bố theo xã/phường.")
-    
+
     st.markdown("---")
-    
+
     # Bản ghi gần đây
     st.markdown("### 📋 Hồ sơ được thêm gần đây")
     recent_df = get_recent_records(10)
     if not recent_df.empty:
         # Đổi tên cột cho dễ đọc
-        recent_df.columns = ["CCCD", "Họ tên", "Ngày sinh", "Giới tính", "Xã/Phường", "Phân loại"]
+        recent_df.columns = ["CCCD", "Họ tên", "Ngày sinh",
+                             "Giới tính", "Xã/Phường", "Phân loại"]
         st.dataframe(recent_df, use_container_width=True, hide_index=True)
     else:
         st.info("💡 Chưa có hồ sơ nào. Bấm vào **📝 Nhập liệu** để thêm mới.")

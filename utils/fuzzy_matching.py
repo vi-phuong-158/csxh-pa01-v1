@@ -44,7 +44,7 @@ def compare_names(name1: str, name2: str) -> Dict[str, int]:
     """
     So sánh 2 tên với nhiều thuật toán khác nhau.
     Returns dict với các loại score khác nhau (0-100).
-    
+
     Pattern từ thefuzz:
     - ratio: Levenshtein distance cơ bản
     - partial_ratio: So sánh substring
@@ -54,7 +54,7 @@ def compare_names(name1: str, name2: str) -> Dict[str, int]:
     """
     n1 = normalize_vietnamese(name1)
     n2 = normalize_vietnamese(name2)
-    
+
     if not n1 or not n2:
         return {
             'ratio': 0,
@@ -64,7 +64,7 @@ def compare_names(name1: str, name2: str) -> Dict[str, int]:
             'weighted': 0,
             'best': 0
         }
-    
+
     scores = {
         'ratio': fuzz.ratio(n1, n2),
         'partial_ratio': fuzz.partial_ratio(n1, n2),
@@ -73,39 +73,39 @@ def compare_names(name1: str, name2: str) -> Dict[str, int]:
         'weighted': fuzz.WRatio(n1, n2),
     }
     scores['best'] = max(scores.values())
-    
+
     return scores
 
 
 def find_similar_names(
-    query: str, 
-    candidates: List[str], 
+    query: str,
+    candidates: List[str],
     threshold: int = THRESHOLD_SUSPECT,
     limit: int = 10
 ) -> List[Dict]:
     """
     Tìm các tên tương tự trong danh sách.
-    
+
     Pattern: extractOne với custom scorer (token_set_ratio)
     Đặc biệt phù hợp cho tiếng Việt vì bỏ qua thứ tự họ/tên.
-    
+
     Args:
         query: Tên cần tìm
         candidates: Danh sách tên để so sánh
         threshold: Ngưỡng tối thiểu (mặc định 80%)
         limit: Số kết quả tối đa
-        
+
     Returns:
         List of dicts với {name, score, index}
     """
     if not candidates or not query:
         return []
-    
+
     normalized_query = normalize_vietnamese(query)
-    
+
     if not normalized_query:
         return []
-    
+
     # Sử dụng token_set_ratio - tốt nhất cho tiếng Việt
     results = process.extract(
         normalized_query,
@@ -113,7 +113,7 @@ def find_similar_names(
         scorer=fuzz.token_set_ratio,
         limit=limit
     )
-    
+
     return [
         {'name': name, 'score': score, 'index': idx}
         for name, score, idx in results
@@ -124,7 +124,7 @@ def find_similar_names(
 def classify_match(score: int) -> Tuple[str, str]:
     """
     Phân loại kết quả match dựa trên score.
-    
+
     Returns:
         (status_text, status_type)
     """
@@ -139,32 +139,32 @@ def classify_match(score: int) -> Tuple[str, str]:
 
 
 def batch_screen(
-    input_names: List[str], 
+    input_names: List[str],
     database_names: List[str],
     threshold: int = THRESHOLD_SUSPECT
 ) -> List[Dict]:
     """
     Rà soát hàng loạt - So sánh danh sách đầu vào với database.
-    
+
     Pattern từ process.extractWithoutOrder của thefuzz.
-    
+
     Args:
         input_names: Danh sách tên cần rà soát
         database_names: Danh sách tên trong database
         threshold: Ngưỡng (mặc định 80%)
-        
+
     Returns:
         List of screening results
     """
     results = []
-    
+
     for query in input_names:
         if not query or not str(query).strip():
             continue
-        
+
         query = str(query).strip()
         matches = find_similar_names(query, database_names, threshold)
-        
+
         if matches:
             best = matches[0]
             status, status_type = classify_match(best['score'])
@@ -185,7 +185,7 @@ def batch_screen(
                 'status_type': 'not_found',
                 'alternatives': []
             })
-    
+
     return results
 
 
@@ -193,27 +193,27 @@ def find_potential_duplicates(names: List[str], threshold: int = THRESHOLD_SUSPE
     """
     Tìm các cặp tên có thể trùng lặp trong danh sách.
     Phục vụ cho việc khử trùng khi import Excel.
-    
+
     Args:
         names: Danh sách tên
         threshold: Ngưỡng coi là trùng (mặc định 80%)
-        
+
     Returns:
         List of potential duplicate pairs
     """
     duplicates = []
     n = len(names)
-    
+
     for i in range(n):
         for j in range(i + 1, n):
             if not names[i] or not names[j]:
                 continue
-                
+
             score = fuzz.token_set_ratio(
                 normalize_vietnamese(names[i]),
                 normalize_vietnamese(names[j])
             )
-            
+
             if score >= threshold:
                 duplicates.append({
                     'index_1': i,
@@ -223,7 +223,7 @@ def find_potential_duplicates(names: List[str], threshold: int = THRESHOLD_SUSPE
                     'score': score,
                     'status': classify_match(score)[0]
                 })
-    
+
     return duplicates
 
 
