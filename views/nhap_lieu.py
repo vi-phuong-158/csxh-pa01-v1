@@ -3,7 +3,6 @@ import streamlit as st
 import logging
 import re
 import uuid
-import shutil
 import json
 from datetime import datetime, date
 from pathlib import Path
@@ -20,8 +19,7 @@ from views.ho_so_chi_tiet import (
     get_nhan_than_by_cccd, get_lien_he_by_cccd,
     get_tai_chinh_by_cccd, get_phuong_tien_by_cccd,
     get_ho_so_dac_thu_by_cccd, get_tai_lieu_by_cccd,
-    get_file_path, delete_nhan_than, delete_lien_he,
-    delete_tai_chinh, delete_phuong_tien, delete_ho_so_dac_thu,
+    get_file_path, delete_nhan_than, delete_ho_so_dac_thu,
     delete_tai_lieu
 )
 
