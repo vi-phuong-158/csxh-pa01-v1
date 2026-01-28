@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
+from pathlib import Path
 from datetime import datetime
 from database import get_connection
 from constants import (
@@ -95,7 +96,8 @@ def page_tra_cuu():
             # Lấy TOÀN BỘ dữ liệu để lọc bằng Python (Flexible Search)
             # Vì SQLite LIKE hạn chế với tiếng Việt có dấu/không dấu
             # Optimized by Bolt: Vectorized search instead of iterrows (~7.5x faster)
-            df_all = pd.read_sql_query("SELECT * FROM doi_tuong", conn)
+            with st.spinner("⏳ Đang tìm kiếm..."):
+                df_all = pd.read_sql_query("SELECT * FROM doi_tuong", conn)
             
             # Pre-compute normalization
             query_norm = normalize_string(search_query)
@@ -136,7 +138,7 @@ def page_tra_cuu():
             df = df_all[final_mask]
             
             total_count = len(df)
-            st.info(f"🔍 Tìm thấy **{total_count}** kết quả cho: '{search_query}'")
+            # st.info moved to display section for better layout
         else:
             # Đếm tổng số records
             count_query = "SELECT COUNT(*) as total FROM doi_tuong"
@@ -182,44 +184,103 @@ def page_tra_cuu():
         pass
 
     if not df.empty:
-        # Đổi tên cột
-        display_df = df.copy()
-        if 'cccd' in display_df.columns:
-            col_map = {
-                'cccd': 'CCCD',
-                'ho_ten': 'Họ tên',
-                'ngay_sinh': 'Ngày sinh',
-                'gioi_tinh': 'Giới tính',
-                'dia_chi_xa': 'Xã/Phường',
-                'phan_loai_nghe_nghiep': 'Phân loại',
-                'dia_chi_tinh': 'Tỉnh/TP',
-                'chi_tiet_nghe_nghiep': 'Nơi làm việc',
-                'ghi_chu_chung': 'Ghi chú'
-            }
-            display_df = display_df.rename(columns={k: v for k, v in col_map.items() if k in display_df.columns})
-        
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
-        
-        st.markdown("---")
-        
-        # Chọn và xem hồ sơ chi tiết
-        st.markdown("##### 👤 Xem hồ sơ chi tiết")
-        col_select, col_btn = st.columns([3, 1])
-        
-        with col_select:
-            # Tạo danh sách options: CCCD - Họ tên
-            cccd_col = 'cccd' if 'cccd' in df.columns else 'CCCD'
-            hoten_col = 'ho_ten' if 'ho_ten' in df.columns else 'Họ tên'
-            options = [f"{row[cccd_col]} - {row[hoten_col]}" for _, row in df.iterrows()]
-            selected = st.selectbox("Chọn đối tượng", options, key="select_profile")
-        
-        with col_btn:
-            if st.button("👁️ Xem hồ sơ", type="primary", use_container_width=True):
-                if selected:
-                    selected_cccd = selected.split(" - ")[0]
-                    st.session_state.view_profile_cccd = selected_cccd
-                    st.rerun()
-        
+        # View Mode Toggle
+        col_msg, col_mode = st.columns([3, 1])
+        with col_msg:
+            if search_query:
+                st.success(f"✅ Tìm thấy **{len(df)}** kết quả phù hợp")
+        with col_mode:
+            view_mode = st.radio(
+                "Chế độ xem",
+                ["Danh sách", "Thẻ"],
+                horizontal=True,
+                label_visibility="collapsed",
+                key="view_mode_toggle"
+            )
+
+        if view_mode == "Danh sách":
+            # Đổi tên cột
+            display_df = df.copy()
+            if 'cccd' in display_df.columns:
+                col_map = {
+                    'cccd': 'CCCD',
+                    'ho_ten': 'Họ tên',
+                    'ngay_sinh': 'Ngày sinh',
+                    'gioi_tinh': 'Giới tính',
+                    'dia_chi_xa': 'Xã/Phường',
+                    'phan_loai_nghe_nghiep': 'Phân loại',
+                    'dia_chi_tinh': 'Tỉnh/TP',
+                    'chi_tiet_nghe_nghiep': 'Nơi làm việc',
+                    'ghi_chu_chung': 'Ghi chú'
+                }
+                display_df = display_df.rename(columns={k: v for k, v in col_map.items() if k in display_df.columns})
+
+            st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+            st.markdown("---")
+
+            # Chọn và xem hồ sơ chi tiết
+            st.markdown("##### 👤 Xem hồ sơ chi tiết")
+            col_select, col_btn = st.columns([3, 1])
+
+            with col_select:
+                # Tạo danh sách options: CCCD - Họ tên
+                cccd_col = 'cccd' if 'cccd' in df.columns else 'CCCD'
+                hoten_col = 'ho_ten' if 'ho_ten' in df.columns else 'Họ tên'
+                options = [f"{row[cccd_col]} - {row[hoten_col]}" for _, row in df.iterrows()]
+                selected = st.selectbox("Chọn đối tượng", options, key="select_profile")
+
+            with col_btn:
+                if st.button("👁️ Xem hồ sơ", type="primary", use_container_width=True):
+                    if selected:
+                        selected_cccd = selected.split(" - ")[0]
+                        st.session_state.view_profile_cccd = selected_cccd
+                        st.rerun()
+
+        elif view_mode == "Thẻ":
+            # Limit results for Card View to avoid performance issues
+            MAX_CARDS = 20
+            if len(df) > MAX_CARDS:
+                st.warning(f"⚠️ Chỉ hiển thị {MAX_CARDS} kết quả đầu tiên ở chế độ Thẻ. Chuyển sang Danh sách để xem tất cả.")
+                display_df = df.iloc[:MAX_CARDS]
+            else:
+                display_df = df
+
+            # Grid layout
+            st.markdown("##### 🪪 Kết quả dạng thẻ")
+            for idx, row in display_df.iterrows():
+                # Use expander as a card container
+                with st.expander(f"👤 {row['ho_ten']} ({row['cccd']})", expanded=True):
+                    col_img, col_info, col_action = st.columns([1, 3, 1])
+
+                    with col_img:
+                        # Check avatar existence
+                        avatar_path = row.get('anh_chan_dung')
+                        has_avatar = False
+                        if avatar_path:
+                             try:
+                                 # Handle relative path
+                                 full_path = Path.cwd() / avatar_path
+                                 if full_path.exists():
+                                     st.image(str(full_path), width=80)
+                                     has_avatar = True
+                             except:
+                                 pass
+
+                        if not has_avatar:
+                             st.markdown("""<div style="font-size: 3rem; text-align: center;">👤</div>""", unsafe_allow_html=True)
+
+                    with col_info:
+                        st.markdown(f"**Năm sinh:** {row['ngay_sinh'] if row['ngay_sinh'] else 'N/A'}")
+                        st.markdown(f"**Địa chỉ:** {row['dia_chi_xa']} - {row['dia_chi_tinh']}")
+                        st.caption(f"💼 {row['phan_loai_nghe_nghiep']}")
+
+                    with col_action:
+                        st.markdown("<br>", unsafe_allow_html=True) # Spacing
+                        if st.button("👁️ Xem", key=f"card_view_{row['cccd']}", type="primary", use_container_width=True):
+                            st.session_state.view_profile_cccd = row['cccd']
+                            st.rerun()
+
         st.markdown("---")
         
         # Nút xuất Excel
