@@ -5,6 +5,8 @@ Hệ thống Quản trị An ninh PA01
 Phiên bản: 1.0 (với Authentication)
 """
 
+from views.audit_log import page_audit_log
+from views.nguon_du_lieu import page_nguon_du_lieu
 import streamlit as st
 import logging
 from pathlib import Path
@@ -17,8 +19,8 @@ from auth import init_super_admin, is_super_admin
 
 # Import login views
 from views.login import (
-    require_login, 
-    show_user_menu, 
+    require_login,
+    show_user_menu,
     show_self_change_password,
     get_current_user
 )
@@ -56,6 +58,8 @@ st.set_page_config(
 # ============================================
 # LOAD CSS
 # ============================================
+
+
 @st.cache_data
 def load_css():
     """Load custom CSS file (cached for performance)"""
@@ -65,6 +69,7 @@ def load_css():
             return f.read()
     return ""
 
+
 css_content = load_css()
 if css_content:
     st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
@@ -72,12 +77,15 @@ if css_content:
 # ============================================
 # KHỞI TẠO DATABASE & SUPER ADMIN
 # ============================================
+
+
 @st.cache_resource
 def init_database():
     """Khởi tạo database và Super Admin nếu chưa tồn tại"""
     create_tables()
     init_super_admin()
     return True
+
 
 init_database()
 
@@ -113,45 +121,45 @@ if not require_login():
 # ============================================
 
 # Import thêm các trang admin
-from views.nguon_du_lieu import page_nguon_du_lieu
-from views.audit_log import page_audit_log
 
 with st.sidebar:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image("logo.png", use_container_width=True)
-    st.markdown("<h3 style='text-align: center; margin-bottom: 0px;'>Security Profile PA01</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; margin-bottom: 0px;'>Security Profile PA01</h3>",
+                unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #e0e0e0; font-weight: 600; font-size: 8px;'>HỆ THỐNG QUẢN LÝ HỒ SƠ CSXH</p>", unsafe_allow_html=True)
-    
+
     st.markdown("---")
-    
+
     # Menu items based on role
     user = get_current_user()
-    
+
     menu_items = ["Dashboard", "Nhập liệu", "Nhập Excel", "Tra cứu", "Rà soát"]
-    
+
     # Thêm menu Admin cho Super Admin
     if is_super_admin(user):
         menu_items.append("---")  # Separator
         menu_items.append("👥 Quản lý tài khoản")
         menu_items.append("📦 Nguồn dữ liệu")
         menu_items.append("📜 Lịch sử thay đổi")
-    
+
     # Filter out separator
     display_menu = [m for m in menu_items if m != "---"]
-    
+
     menu = st.radio(
         "Menu chính",
         display_menu,
         index=0,
         key="main_menu"
     )
-    
+
     # User menu (đổi mật khẩu, đăng xuất)
     show_user_menu()
-    
+
     st.markdown("---")
-    st.markdown("<div style='text-align: center; color: #888; font-size: 0.8em;'>Thiết kế bởi Vi Phương</div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center; color: #888; font-size: 0.8em;'>Thiết kế bởi Vi Phương</div>",
+                unsafe_allow_html=True)
 
 # ============================================
 # ROUTING LOGIC

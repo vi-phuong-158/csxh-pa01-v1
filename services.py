@@ -22,10 +22,11 @@ logger = logging.getLogger(__name__)
 # HELPER FUNCTIONS
 # ============================================
 
+
 def sanitize_filename(filename: str) -> str:
     """
     Sanitize filename để ngăn path traversal và injection attacks.
-    
+
     Bảo vệ chống:
     - Path traversal (../)
     - Null byte injection
@@ -33,29 +34,29 @@ def sanitize_filename(filename: str) -> str:
     - Filename quá dài
     """
     import os
-    
+
     if not filename:
         return 'unnamed_file'
-    
+
     # Lấy tên file, loại bỏ path
     filename = Path(filename).name
-    
+
     # Loại bỏ null bytes (null byte injection)
     filename = filename.replace('\x00', '')
-    
+
     # Loại bỏ các ký tự đặc biệt nguy hiểm
     # Chỉ giữ lại: chữ cái (bao gồm Unicode), số, dấu gạch ngang, gạch dưới, dấu chấm, khoảng trắng
     filename = re.sub(r'[^\w\-_\. ]', '', filename, flags=re.UNICODE)
-    
+
     # Loại bỏ path traversal patterns
     filename = filename.replace('..', '')
-    
+
     # Giới hạn độ dài filename
     max_length = 200
     if len(filename) > max_length:
         name, ext = os.path.splitext(filename)
         filename = name[:max_length - len(ext)] + ext
-    
+
     return filename.strip() if filename.strip() else 'unnamed_file'
 
 
@@ -174,28 +175,28 @@ def save_tai_lieu(cccd, uploaded_file, loai_tai_lieu, mo_ta=""):
     """Lưu tài liệu đính kèm"""
     if not uploaded_file:
         return False, "Không có file"
-    
+
     file_size = len(uploaded_file.getvalue())
     if file_size > MAX_FILE_SIZE_MB * 1024 * 1024:
         return False, f"File quá lớn! Giới hạn {MAX_FILE_SIZE_MB}MB"
-    
+
     file_ext = uploaded_file.name.split('.')[-1].lower()
     if file_ext not in ALLOWED_EXTENSIONS:
         return False, f"Định dạng không hỗ trợ! Chỉ chấp nhận: {', '.join(ALLOWED_EXTENSIONS)}"
-    
+
     safe_filename = sanitize_filename(uploaded_file.name)
     unique_name = f"{uuid.uuid4().hex[:8]}_{safe_filename}"
-    
+
     upload_folder = get_upload_folder(cccd)
     file_path = upload_folder / unique_name
-    
+
     try:
         with open(file_path, "wb") as f:
             f.write(uploaded_file.getvalue())
     except Exception as e:
         logger.exception(f"Lỗi lưu file: {e}")
         return False, "Đã xảy ra lỗi khi lưu file. Vui lòng thử lại."
-    
+
     duong_dan = f"uploads/{cccd}/{unique_name}"
     conn = get_connection()
     try:
@@ -237,7 +238,7 @@ def save_doi_tuong(data):
             data['chi_tiet_nghe_nghiep'],
             data['ghi_chu_chung']
         ))
-        
+
         # Handle Avatar Upload AFTER inserting record
         avatar_file = data.get('avatar_file')
         if avatar_file:
@@ -245,20 +246,20 @@ def save_doi_tuong(data):
                 import time
                 base_path = Path(__file__).parent / "uploads" / data['cccd']
                 base_path.mkdir(parents=True, exist_ok=True)
-                
+
                 file_ext = avatar_file.name.split('.')[-1]
                 safe_name = f"avatar_{int(time.time())}.{file_ext}"
                 save_path = base_path / safe_name
-                
+
                 with open(save_path, "wb") as f:
                     f.write(avatar_file.getbuffer())
-                
+
                 relative_path = f"uploads/{data['cccd']}/{safe_name}"
-                cursor.execute("UPDATE doi_tuong SET anh_chan_dung = ? WHERE cccd = ?", 
-                             (relative_path, data['cccd']))
+                cursor.execute("UPDATE doi_tuong SET anh_chan_dung = ? WHERE cccd = ?",
+                               (relative_path, data['cccd']))
             except Exception as e:
                 logger.error(f"Error saving avatar on create: {e}")
-        
+
         conn.commit()
         return True, "Lưu thành công!"
     except Exception as e:
@@ -277,7 +278,8 @@ def check_cccd_exists(cccd: str) -> bool:
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM doi_tuong WHERE cccd = ?", (cccd,))
+        cursor.execute(
+            "SELECT COUNT(*) FROM doi_tuong WHERE cccd = ?", (cccd,))
         count = cursor.fetchone()[0]
         return count > 0
     finally:
