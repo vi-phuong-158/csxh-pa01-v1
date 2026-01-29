@@ -10,6 +10,7 @@ from utils.text_utils import normalize_string
 from utils.security_utils import sanitize_dataframe_for_csv
 
 
+
 def is_fuzzy_match(query, text):
     """
     Kiểm tra query có phải là match của text không.
@@ -55,8 +56,10 @@ def page_tra_cuu():
     with col1:
         search_query = st.text_input(
             "Tìm kiếm",
-            placeholder="Nhập CCCD, họ tên để tìm kiếm...",
-            label_visibility="collapsed"
+            placeholder="Nhập CCCD, họ tên (có thể viết tắt, vd: viphuong)...",
+            label_visibility="collapsed",
+            help="Hỗ trợ tìm kiếm theo CCCD hoặc Họ tên "
+                 "(bao gồm tìm kiếm không dấu và viết tắt)"
         )
 
     with col2:
@@ -77,14 +80,23 @@ def page_tra_cuu():
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            filter_tinh = st.selectbox("Tỉnh/TP", ["Tất cả"] + TINH_OPTIONS)
+            filter_tinh = st.selectbox(
+                "Tỉnh/TP",
+                ["Tất cả"] + TINH_OPTIONS,
+                help="Lọc danh sách theo Tỉnh/Thành phố thường trú"
+            )
         with col2:
             filter_gioi_tinh = st.selectbox(
-                "Giới tính", ["Tất cả"] + GIOI_TINH_OPTIONS)
+                "Giới tính",
+                ["Tất cả"] + GIOI_TINH_OPTIONS,
+                help="Lọc danh sách theo Giới tính"
+            )
         with col3:
             filter_dac_thu = st.selectbox(
                 "Yếu tố đặc thù",
-                ["Tất cả"] + list(LOAI_HINH_DAC_THU.values())
+                ["Tất cả"] + list(LOAI_HINH_DAC_THU.values()),
+                help="Lọc theo các loại hồ sơ chính sách xã hội "
+                     "(kết hôn nước ngoài, xuất cảnh, v.v.)"
             )
 
     st.markdown("---")
@@ -241,7 +253,12 @@ def page_tra_cuu():
                 "Chọn đối tượng", options, key="select_profile")
 
         with col_btn:
-            if st.button("👁️ Xem hồ sơ", type="primary", use_container_width=True):
+            if st.button(
+                "👁️ Xem hồ sơ",
+                type="primary",
+                use_container_width=True,
+                help="Nhấn để xem chi tiết toàn bộ thông tin của đối tượng đã chọn"
+            ):
                 if selected:
                     selected_cccd = selected.split(" - ")[0]
                     st.session_state.view_profile_cccd = selected_cccd
