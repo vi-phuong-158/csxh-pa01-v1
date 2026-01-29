@@ -59,8 +59,21 @@ def sanitize_filename(filename: str) -> str:
     return filename.strip() if filename.strip() else 'unnamed_file'
 
 
+def validate_cccd(cccd: str) -> str:
+    """Validate CCCD format (alphanumeric only) to prevent path traversal."""
+    if not cccd or not isinstance(cccd, str):
+        raise ValueError("CCCD must be a non-empty string")
+
+    # Strict alphanumeric check
+    if not cccd.isalnum():
+        raise ValueError("CCCD must contain only alphanumeric characters")
+
+    return cccd
+
+
 def get_upload_folder(cccd):
     """Lấy thư mục upload cho một CCCD"""
+    validate_cccd(cccd)
     base_path = Path(__file__).parent / "uploads" / cccd
     base_path.mkdir(parents=True, exist_ok=True)
     return base_path
@@ -243,12 +256,11 @@ def save_doi_tuong(data):
         if avatar_file:
             try:
                 import time
-                base_path = Path(__file__).parent / "uploads" / data['cccd']
-                base_path.mkdir(parents=True, exist_ok=True)
+                upload_folder = get_upload_folder(data['cccd'])
                 
                 file_ext = avatar_file.name.split('.')[-1]
                 safe_name = f"avatar_{int(time.time())}.{file_ext}"
-                save_path = base_path / safe_name
+                save_path = upload_folder / safe_name
                 
                 with open(save_path, "wb") as f:
                     f.write(avatar_file.getbuffer())
