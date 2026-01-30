@@ -60,7 +60,6 @@ def validate_cccd_for_action(cccd: str, *
     return True, None
 
 
-
 # ============================================
 # SAVE FUNCTIONS
 # ============================================

@@ -1,3 +1,4 @@
+from utils.security_utils import sanitize_dataframe_for_csv
 import pandas as pd
 import sys
 import os
@@ -5,7 +6,6 @@ import os
 # Add repo root to path to allow imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.security_utils import sanitize_dataframe_for_csv
 
 def test_sanitize_dataframe():
     # Simulate user data with malicious payload
@@ -38,10 +38,11 @@ def test_sanitize_dataframe():
 
     # Check CSV output contains the escaped version
     if "'=1+1" not in csv_content:
-         print("[FAIL] '=1+1 not found in CSV")
-         sys.exit(1)
+        print("[FAIL] '=1+1 not found in CSV")
+        sys.exit(1)
 
     print("\n[PASS] CSV Sanitization verified successfully.")
+
 
 if __name__ == "__main__":
     test_sanitize_dataframe()

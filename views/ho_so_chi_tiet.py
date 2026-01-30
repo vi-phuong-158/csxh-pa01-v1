@@ -639,7 +639,8 @@ def page_profile_view(cccd):
                         st.markdown(f"Xóa **{row['ho_ten']}**?")
                         if st.button("Xác nhận", key=f"confirm_del_nt_{row['id']}", type="primary"):
                             delete_nhan_than(row['id'])
-                            st.toast(f"✅ Đã xóa {row['loai_quan_he']}: {row['ho_ten']}", icon="✅")
+                            st.toast(
+                                f"✅ Đã xóa {row['loai_quan_he']}: {row['ho_ten']}", icon="✅")
                             st.rerun()
             st.markdown("---")
         else:
@@ -716,7 +717,8 @@ def page_profile_view(cccd):
                             st.markdown("Xóa quá trình này?")
                             if st.button("Xác nhận", key=f"confirm_del_qt_pv_{item['id']}", type="primary"):
                                 if delete_qua_trinh_hoat_dong(item['id']):
-                                    st.toast("✅ Đã xóa quá trình hoạt động", icon="✅")
+                                    st.toast(
+                                        "✅ Đã xóa quá trình hoạt động", icon="✅")
                                     st.rerun()
                     st.divider()
         else:
@@ -939,7 +941,8 @@ def page_profile_view(cccd):
                             st.markdown(f"Xóa hồ sơ **{loai_hinh_text}**?")
                             if st.button("Xác nhận", key=f"confirm_del_csxh_{row['id']}", type="primary"):
                                 if delete_ho_so_dac_thu(row['id']):
-                                    st.toast(f"✅ Đã xóa: {loai_hinh_text}", icon="✅")
+                                    st.toast(
+                                        f"✅ Đã xóa: {loai_hinh_text}", icon="✅")
                                     st.rerun()
                                 else:
                                     st.error("❌ Lỗi khi xóa hồ sơ!")
@@ -1125,7 +1128,8 @@ def page_profile_view(cccd):
                         st.markdown(f"Xóa file **{row['ten_file_goc']}**?")
                         if st.button("Xác nhận", key=f"confirm_pv_del_tl_{row['id']}", type="primary"):
                             delete_tai_lieu(row['id'])
-                            st.toast(f"✅ Đã xóa: {row['ten_file_goc']}", icon="✅")
+                            st.toast(
+                                f"✅ Đã xóa: {row['ten_file_goc']}", icon="✅")
                             st.rerun()
             st.markdown("---")
         else:

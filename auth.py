@@ -254,7 +254,8 @@ def init_super_admin():
                 1  # Bắt buộc đổi mật khẩu lần đầu
             ))
             conn.commit()
-            logger.info(f"Đã tạo Super Admin mặc định: {DEFAULT_ADMIN_USERNAME}")
+            logger.info(
+                f"Đã tạo Super Admin mặc định: {DEFAULT_ADMIN_USERNAME}")
 
             if is_generated:
                 print("="*60)
@@ -264,7 +265,8 @@ def init_super_admin():
                 print(f"Please change this password immediately after logging in.")
                 print("="*60)
             else:
-                print(f"[i] Super Admin initialized with provided environment password.")
+                print(
+                    f"[i] Super Admin initialized with provided environment password.")
     except Exception as e:
         logger.error(f"Lỗi init super admin: {e}")
     finally:

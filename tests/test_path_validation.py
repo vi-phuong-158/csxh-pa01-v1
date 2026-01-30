@@ -6,6 +6,7 @@ import os
 
 from services import get_upload_folder, sanitize_filename
 
+
 class TestPathValidation(unittest.TestCase):
     def test_get_upload_folder_traversal(self):
         """Test that get_upload_folder prevents path traversal."""
@@ -48,6 +49,7 @@ class TestPathValidation(unittest.TestCase):
 
         invalid_cccd_2 = "123/456"
         self.assertFalse(validate_cccd(invalid_cccd_2))
+
 
 if __name__ == '__main__':
     unittest.main()

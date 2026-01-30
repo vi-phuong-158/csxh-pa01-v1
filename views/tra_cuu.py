@@ -10,13 +10,13 @@ from utils.text_utils import normalize_string
 from utils.security_utils import sanitize_dataframe_for_csv
 
 
-
 def is_fuzzy_match(query, text):
     """
     Kiểm tra query có phải là match của text không.
     Hỗ trợ:
     1. Containment (sau khi chuẩn hóa)
-    2. Subsequence (các ký tự của query xuất hiện thứ tự trong text) - VIPHUONG -> Vi Ngoc Phuong
+    2. Subsequence (các ký tự của query xuất hiện thứ tự trong text)
+       - VIPHUONG -> Vi Ngoc Phuong
     """
     if not query or not text:
         return False
@@ -70,7 +70,9 @@ def page_tra_cuu():
         )
 
     with col3:
-        search_clicked = st.button(
+        # Variable assigned but unused: search_clicked
+        # Kept for UI button rendering
+        _ = st.button(
             "🔍 Tìm kiếm", type="primary", use_container_width=True)
 
     st.markdown("---")
@@ -92,7 +94,8 @@ def page_tra_cuu():
                 help="Lọc danh sách theo Giới tính"
             )
         with col3:
-            filter_dac_thu = st.selectbox(
+            # Unused filter
+            _ = st.selectbox(
                 "Yếu tố đặc thù",
                 ["Tất cả"] + list(LOAI_HINH_DAC_THU.values()),
                 help="Lọc theo các loại hồ sơ chính sách xã hội "
@@ -103,20 +106,26 @@ def page_tra_cuu():
 
     # Pagination settings
     ITEMS_PER_PAGE = 50
+    # Add a unique key for pagination to reset when query changes
+    pagination_key = f"search_page_{hash(search_query)}"
 
     # Thực hiện tìm kiếm
     st.markdown("### 📋 Kết quả")
 
     conn = get_connection()
     try:
+        df_display = pd.DataFrame()
+        # Will be populated only if needed or kept as partial
+        df_export = pd.DataFrame()
+
         if search_query:
-            # Lấy TOÀN BỘ dữ liệu để lọc bằng Python (Flexible Search)
-            # Vì SQLite LIKE hạn chế với tiếng Việt có dấu/không dấu
-            # Optimized by Bolt: Vectorized search (~7.5x faster)
-            # Optimized by Bolt: Push filters (Tỉnh, Giới tính) to SQL
-            sql = "SELECT * FROM doi_tuong WHERE 1=1"
+            # OPTIMIZATION (Bolt): Fetch only necessary columns for search
+            # Instead of SELECT *, we select only columns needed for filtering
+            # This reduces data transfer and memory usage significantly
+            sql = "SELECT cccd, ho_ten FROM doi_tuong WHERE 1=1"
             params = []
 
+            # Predicate Pushdown (Filters)
             if filter_tinh != "Tất cả":
                 sql += " AND dia_chi_tinh = ?"
                 params.append(filter_tinh)
@@ -125,59 +134,107 @@ def page_tra_cuu():
                 sql += " AND gioi_tinh = ?"
                 params.append(filter_gioi_tinh)
 
-            df_all = pd.read_sql_query(sql, conn, params=params)
+            # 1. Light Fetch
+            df_light = pd.read_sql_query(sql, conn, params=params)
+
             # Pre-compute normalization
             query_norm = normalize_string(search_query)
             query_lower = search_query.lower()
 
-            # 1. CCCD Match (Vectorized)
-            mask_cccd = pd.Series(False, index=df_all.index)
+            # 2. CCCD Match (Vectorized)
+            mask_cccd = pd.Series(False, index=df_light.index)
             if search_type in ["Tất cả", "CCCD"]:
-                mask_cccd = df_all['cccd'].astype(str).str.contains(
+                mask_cccd = df_light['cccd'].astype(str).str.contains(
                     query_lower, case=False, na=False)
 
-            # 2. Ho ten Match (Vectorized + Subsequence)
-            mask_hoten = pd.Series(False, index=df_all.index)
+            # 3. Ho ten Match (Vectorized + Subsequence)
+            mask_hoten = pd.Series(False, index=df_light.index)
             if search_type in ["Tất cả", "Họ tên"]:
-                # Normalize 'ho_ten' column
-                normalized_hoten = df_all['ho_ten'].apply(
+                normalized_hoten = df_light['ho_ten'].apply(
                     lambda x: normalize_string(x) if x else "")
 
-                # Check containment (Fast)
                 mask_hoten_contains = normalized_hoten.str.contains(
                     query_norm, na=False, regex=False)
                 mask_hoten = mask_hoten_contains
 
-                # Check subsequence (Slower, only if query >= 3 chars)
                 if len(query_norm) >= 3:
                     def check_subsequence(text_norm):
                         it = iter(text_norm)
                         return all(char in it for char in query_norm)
 
-                    # Only check rows that failed containment
                     remaining_indices = ~mask_hoten_contains
                     if remaining_indices.any():
-                        # We apply only to the remaining part
-                        subsequence_matches = normalized_hoten[remaining_indices].apply(
-                            check_subsequence)
-                        # Update mask (using index alignment)
+                        subsequence_matches = normalized_hoten[
+                            remaining_indices].apply(check_subsequence)
                         mask_hoten = mask_hoten | subsequence_matches.reindex(
-                            df_all.index, fill_value=False)
+                            df_light.index, fill_value=False)
 
             # Combine masks
             final_mask = mask_cccd | mask_hoten
 
-            df = df_all[final_mask]
+            # Get list of matching CCCDs
+            matching_cccds = df_light.loc[final_mask, 'cccd'].tolist()
+            total_count = len(matching_cccds)
 
-            total_count = len(df)
-            st.info(
-                f"🔍 Tìm thấy **{total_count}** kết quả cho: '{search_query}'")
+            st.info(f"🔍 Tìm thấy **{total_count}** kết quả "
+                    f"cho: '{search_query}'")
+
+            if total_count > 0:
+                # Pagination for Search Results
+                total_pages = max(
+                    1, (total_count + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE)
+
+                col_page1, col_page2, col_page3 = st.columns([1, 2, 1])
+                with col_page2:
+                    current_page = st.number_input(
+                        f"Trang (tổng {total_pages} trang)",
+                        min_value=1,
+                        max_value=total_pages,
+                        value=1,
+                        key=pagination_key
+                    )
+
+                start_idx = (current_page - 1) * ITEMS_PER_PAGE
+                end_idx = start_idx + ITEMS_PER_PAGE
+                page_cccds = matching_cccds[start_idx:end_idx]
+
+                # 4. Fetch Full Details for Displayed Page
+                if page_cccds:
+                    placeholders = ','.join(['?'] * len(page_cccds))
+                    # Note: We don't filter by province/gender here because
+                    # they were already filtered in Step 1
+                    sql_details = f"""
+                        SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa,
+                               phan_loai_nghe_nghiep, dia_chi_tinh,
+                               chi_tiet_nghe_nghiep, ghi_chu_chung, created_at
+                        FROM doi_tuong
+                        WHERE cccd IN ({placeholders})
+                    """
+                    df_display = pd.read_sql_query(
+                        sql_details, conn, params=page_cccds)
+
+                # 5. Prepare Export Data (Fetch all matches if needed for export)
+                # User expects to download ALL matches.
+                # If total matches < 2000, we fetch all.
+                if total_count <= 2000:
+                    placeholders_all = ','.join(['?'] * len(matching_cccds))
+                    sql_export = f"""
+                        SELECT * FROM doi_tuong
+                        WHERE cccd IN ({placeholders_all})
+                    """
+                    df_export = pd.read_sql_query(
+                        sql_export, conn, params=matching_cccds)
+                else:
+                    # Fallback for huge results: Only export current page
+                    df_export = df_display  # Limited export
+                    st.warning("⚠️ Số lượng kết quả quá lớn (>2000). "
+                               "File xuất sẽ chỉ chứa trang hiện tại.")
+
         else:
-            # Đếm tổng số records
+            # Default View (No Search Query)
             count_query = "SELECT COUNT(*) as total FROM doi_tuong"
             total_count = pd.read_sql_query(count_query, conn).iloc[0, 0]
 
-            # Pagination UI
             total_pages = max(
                 1, (total_count + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE)
 
@@ -188,39 +245,39 @@ def page_tra_cuu():
                     min_value=1,
                     max_value=total_pages,
                     value=1,
-                    key="search_page"
+                    key="search_page_default"
                 )
 
             offset = (current_page - 1) * ITEMS_PER_PAGE
 
-            # Hiển thị với pagination
             query = f"""
-                SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa, 
-                       phan_loai_nghe_nghiep, dia_chi_tinh, chi_tiet_nghe_nghiep, 
-                       ghi_chu_chung, created_at 
-                FROM doi_tuong 
-                ORDER BY created_at DESC 
+                SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa,
+                       phan_loai_nghe_nghiep, dia_chi_tinh,
+                       chi_tiet_nghe_nghiep, ghi_chu_chung, created_at
+                FROM doi_tuong
+                ORDER BY created_at DESC
                 LIMIT {ITEMS_PER_PAGE} OFFSET {offset}
             """
-            df = pd.read_sql_query(query, conn)
+            df_display = pd.read_sql_query(query, conn)
+
+            if not df_display.empty:
+                if filter_tinh != "Tất cả":
+                    df_display = df_display[
+                        df_display['dia_chi_tinh'] == filter_tinh]
+                if filter_gioi_tinh != "Tất cả":
+                    df_display = df_display[
+                        df_display['gioi_tinh'] == filter_gioi_tinh]
+
+            # For export in default view
+            df_export = df_display
+
     finally:
         conn.close()
 
-    # Áp dụng bộ lọc (filters) - Thực hiện trên DataFrame cho đơn giản
-    if not df.empty:
-        if filter_tinh != "Tất cả":
-            df = df[df['dia_chi_tinh'] == filter_tinh]
-        if filter_gioi_tinh != "Tất cả":
-            df = df[df['gioi_tinh'] == filter_gioi_tinh]
-
-        # Lọc đặc thù phức tạp hơn vì thông tin nằm ở bảng khác.
-        # Logic này chưa được implement trong phiên bản gốc.
-        pass
-
-    if not df.empty:
+    if not df_display.empty:
         # Đổi tên cột
-        display_df = df.copy()
-        if 'cccd' in display_df.columns:
+        display_cols = df_display.copy()
+        if 'cccd' in display_cols.columns:
             col_map = {
                 'cccd': 'CCCD',
                 'ho_ten': 'Họ tên',
@@ -232,10 +289,11 @@ def page_tra_cuu():
                 'chi_tiet_nghe_nghiep': 'Nơi làm việc',
                 'ghi_chu_chung': 'Ghi chú'
             }
-            display_df = display_df.rename(
-                columns={k: v for k, v in col_map.items() if k in display_df.columns})
+            display_cols = display_cols.rename(
+                columns={k: v for k, v in col_map.items()
+                         if k in display_cols.columns})
 
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        st.dataframe(display_cols, use_container_width=True, hide_index=True)
 
         st.markdown("---")
 
@@ -245,10 +303,10 @@ def page_tra_cuu():
 
         with col_select:
             # Tạo danh sách options: CCCD - Họ tên
-            cccd_col = 'cccd' if 'cccd' in df.columns else 'CCCD'
-            hoten_col = 'ho_ten' if 'ho_ten' in df.columns else 'Họ tên'
+            cccd_col = 'cccd' if 'cccd' in df_display.columns else 'CCCD'
+            hoten_col = 'ho_ten' if 'ho_ten' in df_display.columns else 'Họ tên'
             options = [f"{row[cccd_col]} - {row[hoten_col]}" for _,
-                       row in df.iterrows()]
+                       row in df_display.iterrows()]
             selected = st.selectbox(
                 "Chọn đối tượng", options, key="select_profile")
 
@@ -257,7 +315,7 @@ def page_tra_cuu():
                 "👁️ Xem hồ sơ",
                 type="primary",
                 use_container_width=True,
-                help="Nhấn để xem chi tiết toàn bộ thông tin của đối tượng đã chọn"
+                help="Nhấn để xem chi tiết toàn bộ thông tin của đối tượng"
             ):
                 if selected:
                     selected_cccd = selected.split(" - ")[0]
@@ -267,16 +325,20 @@ def page_tra_cuu():
         st.markdown("---")
 
         # Nút xuất Excel
-        st.download_button(
-            label="📥 Xuất Excel",
-            data=sanitize_dataframe_for_csv(df).to_csv(index=False).encode('utf-8-sig'),
-            file_name=f"danh_sach_doi_tuong_{datetime.now().strftime('%Y%m%d')}.csv",
-            mime="text/csv",
-        )
+        if not df_export.empty:
+            now_str = datetime.now().strftime('%Y%m%d')
+            st.download_button(
+                label="📥 Xuất Excel",
+                data=sanitize_dataframe_for_csv(df_export).to_csv(
+                    index=False).encode('utf-8-sig'),
+                file_name=f"danh_sach_doi_tuong_{now_str}.csv",
+                mime="text/csv",
+            )
     else:
         st.info("💡 Không có dữ liệu.")
         if search_query:
-            if st.button(f"➕ Thêm mới hồ sơ: {search_query}", type="secondary", use_container_width=True):
+            if st.button(f"➕ Thêm mới hồ sơ: {search_query}",
+                         type="secondary", use_container_width=True):
                 # Determine if numeric (CCCD) or text (Name)
                 if search_query.isdigit() and len(search_query) == 12:
                     st.session_state.nl_cccd = search_query

@@ -16,13 +16,16 @@ ROLE_SUPER_ADMIN = 'super_admin'
 ROLE_USER = 'user'
 DEFAULT_ADMIN_USERNAME = 'admin'
 
+
 def get_db():
     return SessionLocal()
+
 
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed.decode('utf-8')
+
 
 def verify_password(password: str, password_hash: str) -> bool:
     try:
@@ -31,12 +34,14 @@ def verify_password(password: str, password_hash: str) -> bool:
         logger.error(f"Lỗi verify password: {e}")
         return False
 
+
 def authenticate(username: str, password: str) -> Optional[Dict]:
     db = get_db()
     try:
-        stmt = select(User).where(User.username == username, User.is_active == 1)
+        stmt = select(User).where(User.username ==
+                                  username, User.is_active == 1)
         user = db.execute(stmt).scalar_one_or_none()
-        
+
         if user and verify_password(password, user.password_hash):
             user.last_login = datetime.now()
             db.commit()
@@ -54,18 +59,19 @@ def authenticate(username: str, password: str) -> Optional[Dict]:
     finally:
         db.close()
 
+
 def create_user(username: str, password: str, ho_ten: str = "", role: str = ROLE_USER, must_change_password: bool = False) -> Tuple[bool, str]:
     if not username or not password:
         return False, "Username và password không được trống"
     if len(password) < 6:
         return False, "Mật khẩu phải có ít nhất 6 ký tự"
-        
+
     db = get_db()
     try:
         stmt = select(User).where(User.username == username)
         if db.execute(stmt).scalar_one_or_none():
             return False, f"Username '{username}' đã tồn tại"
-            
+
         password_hash = hash_password(password)
         new_user = User(
             username=username,
@@ -85,17 +91,19 @@ def create_user(username: str, password: str, ho_ten: str = "", role: str = ROLE
     finally:
         db.close()
 
+
 def delete_user(user_id: int) -> Tuple[bool, str]:
     db = get_db()
     try:
         stmt = select(User).where(User.id == user_id)
         user = db.execute(stmt).scalar_one_or_none()
-        
+
         if not user:
             return False, "Không tìm thấy tài khoản"
 
         # Check super admin count
-        stmt_count = select(func.count(User.id)).where(User.role == ROLE_SUPER_ADMIN, User.is_active == 1, User.id != user_id)
+        stmt_count = select(func.count(User.id)).where(
+            User.role == ROLE_SUPER_ADMIN, User.is_active == 1, User.id != user_id)
         admin_count = db.execute(stmt_count).scalar_one()
 
         if user.role == ROLE_SUPER_ADMIN and admin_count == 0:
@@ -111,16 +119,17 @@ def delete_user(user_id: int) -> Tuple[bool, str]:
     finally:
         db.close()
 
+
 def change_password(user_id: int, new_password: str) -> Tuple[bool, str]:
     if len(new_password) < 6:
         return False, "Mật khẩu phải có ít nhất 6 ký tự"
-        
+
     db = get_db()
     try:
         user = db.get(User, user_id)
         if not user:
-             return False, "User not found"
-             
+            return False, "User not found"
+
         user.password_hash = hash_password(new_password)
         user.must_change_password = 0
         db.commit()
@@ -132,10 +141,12 @@ def change_password(user_id: int, new_password: str) -> Tuple[bool, str]:
     finally:
         db.close()
 
+
 def get_all_users() -> List[Dict]:
     db = get_db()
     try:
-        stmt = select(User).where(User.is_active == 1).order_by(User.created_at.desc())
+        stmt = select(User).where(User.is_active ==
+                                  1).order_by(User.created_at.desc())
         users = db.execute(stmt).scalars().all()
         return [
             {
@@ -153,12 +164,13 @@ def get_all_users() -> List[Dict]:
     finally:
         db.close()
 
+
 def init_super_admin():
     db = get_db()
     try:
         stmt = select(func.count(User.id))
         count = db.execute(stmt).scalar_one()
-        
+
         if count == 0:
             env_password = os.environ.get('ADMIN_PASSWORD')
             if env_password:
@@ -167,7 +179,7 @@ def init_super_admin():
             else:
                 password = secrets.token_urlsafe(16)
                 is_generated = True
-                
+
             password_hash = hash_password(password)
             super_admin = User(
                 username=DEFAULT_ADMIN_USERNAME,
@@ -178,8 +190,9 @@ def init_super_admin():
             )
             db.add(super_admin)
             db.commit()
-            
-            logger.info(f"Đã tạo Super Admin mặc định: {DEFAULT_ADMIN_USERNAME}")
+
+            logger.info(
+                f"Đã tạo Super Admin mặc định: {DEFAULT_ADMIN_USERNAME}")
             if is_generated:
                 print("="*60)
                 print(f"[SECURITY NOTICE] Generated Random Super Admin Password")
@@ -190,6 +203,7 @@ def init_super_admin():
         logger.error(f"Lỗi init super admin: {e}")
     finally:
         db.close()
+
 
 def is_super_admin(user: Dict) -> bool:
     if not user:
