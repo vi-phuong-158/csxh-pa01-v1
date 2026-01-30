@@ -15,7 +15,8 @@ from pathlib import Path
 from database import create_tables
 
 # Import authentication
-from auth import init_super_admin, is_super_admin
+# Import authentication
+from app.services.auth_service import init_super_admin, is_super_admin
 
 # Import login views
 from views.login import (
@@ -77,12 +78,18 @@ if css_content:
 # ============================================
 # KHỞI TẠO DATABASE & SUPER ADMIN
 # ============================================
-
+# Import new DB init
+from app.init_db import init_db
 
 @st.cache_resource
 def init_database():
     """Khởi tạo database và Super Admin nếu chưa tồn tại"""
-    create_tables()
+    # Use new SQLAlchemy init
+    init_db()
+    
+    # Legacy init for backward compatibility if needed, or just use new auth service later
+    # For now, we still need init_super_admin from auth.py which uses legacy DB access
+    # ideally we refactor auth.py next.
     init_super_admin()
     return True
 

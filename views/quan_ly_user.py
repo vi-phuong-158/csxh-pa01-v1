@@ -6,7 +6,7 @@ Quản lý tài khoản (chỉ Super Admin)
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from auth import (
+from app.services.auth_service import (
     create_user,
     delete_user,
     change_password,
@@ -93,8 +93,12 @@ def show_user_list():
             with col3:
                 last_login = user.get('last_login')
                 if last_login:
-                    st.caption(
-                        f"Đăng nhập: {last_login[:10] if last_login else 'Chưa'}")
+                    # Handle both datetime objects and strings
+                    if isinstance(last_login, datetime):
+                        login_str = last_login.strftime('%d/%m/%Y')
+                    else:
+                        login_str = str(last_login)[:10]
+                    st.caption(f"Đăng nhập: {login_str}")
                 else:
                     st.caption("Chưa đăng nhập")
 

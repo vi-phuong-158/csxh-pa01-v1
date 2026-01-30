@@ -120,15 +120,18 @@ select,
 }
 
 /* 2. Dropdown Menu Items (Danh sách xổ xuống) */
-/* Container của dropdown menu */
+/* Container của dropdown menu - Nền TỐI, chữ SÁNG */
 [data-baseweb="popover"],
 [data-baseweb="menu"],
 [role="listbox"] {
-    background-color: #ffffff !important;
-    /* Nền trắng cho menu dropdown */
+    background-color: #1e1e3f !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    overflow: hidden !important;
 }
 
-/* Các item trong menu dropdown -> Chữ phải ĐEN */
+/* Các item trong menu dropdown -> Chữ TRẮNG SÁNG, dễ đọc */
 [data-baseweb="popover"] li,
 [data-baseweb="popover"] div,
 [data-baseweb="popover"] span,
@@ -137,20 +140,37 @@ select,
 [role="option"],
 [role="option"] div,
 [role="option"] span {
-    color: #000000 !important;
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    font-size: 1rem !important;
+    background-color: transparent !important;
 }
 
-/* Hover state cho dropdown item */
-[role="option"]:hover,
-[role="option"][aria-selected="true"] {
-    background-color: #f0f0f0 !important;
+/* Mỗi option item */
+[role="option"] {
+    padding: 12px 16px !important;
+    transition: all 0.2s ease !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Hover state cho dropdown item - Highlight màu accent */
+[role="option"]:hover {
+    background-color: rgba(102, 126, 234, 0.4) !important;
+}
+
+/* Selected option - Màu đậm hơn */
+[role="option"][aria-selected="true"],
+[role="option"][data-highlighted="true"] {
+    background-color: rgba(102, 126, 234, 0.5) !important;
+    font-weight: 600 !important;
 }
 
 /* Placeholder */
 input::placeholder,
 textarea::placeholder {
-    color: #666666 !important;
-    -webkit-text-fill-color: #666666 !important;
+    color: #888888 !important;
+    -webkit-text-fill-color: #888888 !important;
+    font-weight: 400 !important;
 }
 
 @keyframes float {

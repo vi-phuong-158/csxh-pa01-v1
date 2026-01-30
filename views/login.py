@@ -4,7 +4,7 @@ Login Page - Security Profile 360
 Giao diện đăng nhập và đổi mật khẩu
 """
 import streamlit as st
-from auth import authenticate, change_password, is_super_admin
+from app.services.auth_service import authenticate, change_password, is_super_admin
 
 
 def show_login_form():
