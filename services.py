@@ -254,12 +254,17 @@ def save_doi_tuong(data):
         # Handle Avatar Upload AFTER inserting record
         avatar_file = data.get('avatar_file')
         if avatar_file:
+            # Validate extension
+            file_ext = avatar_file.name.split('.')[-1].lower()
+            if file_ext not in ALLOWED_EXTENSIONS:
+                conn.rollback()
+                return False, f"Định dạng ảnh không hợp lệ! Chỉ chấp nhận: {', '.join(ALLOWED_EXTENSIONS)}"
+
             try:
                 import time
-                base_path = Path(__file__).parent / "uploads" / data['cccd']
-                base_path.mkdir(parents=True, exist_ok=True)
+                # Use get_upload_folder for validation and directory creation
+                base_path = get_upload_folder(data['cccd'])
 
-                file_ext = avatar_file.name.split('.')[-1]
                 safe_name = f"avatar_{int(time.time())}.{file_ext}"
                 save_path = base_path / safe_name
 
@@ -271,6 +276,10 @@ def save_doi_tuong(data):
                                (relative_path, data['cccd']))
             except Exception as e:
                 logger.error(f"Error saving avatar on create: {e}")
+                # If avatar fails but record inserted, maybe we should warn but allow saving?
+                # However, for security validation failure above, we rollback.
+                # Here it's file system error, which might be transient.
+                # Let's keep it as is (swallow error) for file system issues, but enforce validation strictly.
 
         conn.commit()
         return True, "Lưu thành công!"
