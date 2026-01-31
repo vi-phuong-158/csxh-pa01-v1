@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
-import pandas as pd
 import json
 import logging
-import shutil
 from pathlib import Path
 from datetime import datetime, date
+
 from database import (
     get_connection, get_qua_trinh_hoat_dong,
     save_qua_trinh_hoat_dong, delete_qua_trinh_hoat_dong
@@ -17,244 +16,23 @@ from constants import (
     MAX_FILE_SIZE_MB, LOAI_TAI_LIEU_OPTIONS, KET_QUA_XAC_MINH,
     HINH_THUC_DU_HOC
 )
-
-# Import từ services module để tránh circular import
 from services import (
     save_nhan_than, save_lien_he, save_tai_chinh,
     save_phuong_tien, save_ho_so_dac_thu, save_tai_lieu,
     get_upload_folder
 )
+from .getters import (
+    get_doi_tuong_detail, get_nhan_than_by_cccd, get_lien_he_by_cccd,
+    get_tai_chinh_by_cccd, get_phuong_tien_by_cccd,
+    get_ho_so_dac_thu_by_cccd, get_tai_lieu_by_cccd, get_file_path
+)
+from .actions import (
+    delete_nhan_than, delete_lien_he, delete_tai_chinh,
+    delete_phuong_tien, delete_ho_so_dac_thu, delete_tai_lieu,
+    delete_doi_tuong, update_doi_tuong
+)
 
 logger = logging.getLogger(__name__)
-
-# ============================================
-# SHARED GETTERS (Used by nhap_lieu and profile)
-# ============================================
-
-
-def get_doi_tuong_detail(cccd):
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM doi_tuong WHERE cccd = ?", (cccd,))
-        row = cursor.fetchone()
-        if row:
-            return dict(row)
-        return None
-    finally:
-        conn.close()
-
-
-def get_nhan_than_by_cccd(cccd):
-    conn = get_connection()
-    df = pd.read_sql_query(
-        "SELECT * FROM nhan_than WHERE cccd = ?", conn, params=(cccd,))
-    conn.close()
-    return df
-
-
-def get_lien_he_by_cccd(cccd):
-    conn = get_connection()
-    query = "SELECT * FROM lien_he WHERE cccd = ? ORDER BY created_at DESC"
-    df = pd.read_sql_query(query, conn, params=(cccd,))
-    conn.close()
-    return df
-
-
-def get_tai_chinh_by_cccd(cccd):
-    conn = get_connection()
-    query = "SELECT * FROM tai_chinh WHERE cccd = ? ORDER BY created_at DESC"
-    df = pd.read_sql_query(query, conn, params=(cccd,))
-    conn.close()
-    return df
-
-
-def get_phuong_tien_by_cccd(cccd):
-    conn = get_connection()
-    query = "SELECT * FROM phuong_tien WHERE cccd = ? ORDER BY created_at DESC"
-    df = pd.read_sql_query(query, conn, params=(cccd,))
-    conn.close()
-    return df
-
-
-def get_ho_so_dac_thu_by_cccd(cccd):
-    conn = get_connection()
-    query = "SELECT * FROM ho_so_dac_thu WHERE cccd = ? ORDER BY created_at DESC"
-    df = pd.read_sql_query(query, conn, params=(cccd,))
-    conn.close()
-    return df
-
-
-def get_tai_lieu_by_cccd(cccd):
-    conn = get_connection()
-    df = pd.read_sql_query(
-        "SELECT * FROM tai_lieu WHERE cccd = ? ORDER BY created_at DESC", conn, params=(cccd,))
-    conn.close()
-    return df
-
-
-def get_file_path(tai_lieu_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT duong_dan, ten_file_goc FROM tai_lieu WHERE id = ?", (tai_lieu_id,))
-    result = cursor.fetchone()
-    conn.close()
-
-    if result:
-        # Resolve path relative to project root assuming app runs from root
-        # If duong_dan doesn't start with 'uploads', we might need to adjust
-        # In app.py: duong_dan = f"uploads/{cccd}/{unique_name}"
-        # So it is relative to root.
-        file_path = Path.cwd() / result[0]
-        return file_path, result[1]
-    return None, None
-
-# ============================================
-# SHARED DELETERS & UPDATERS
-# ============================================
-
-
-def delete_nhan_than(nhan_than_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM nhan_than WHERE id = ?", (nhan_than_id,))
-    conn.commit()
-    conn.close()
-    return True
-
-
-def delete_lien_he(lien_he_id: int) -> bool:
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM lien_he WHERE id = ?", (lien_he_id,))
-        conn.commit()
-        return True
-    except Exception as e:
-        logger.exception(f"Lỗi xóa liên hệ: {e}")
-        return False
-    finally:
-        conn.close()
-
-
-def delete_tai_chinh(tai_chinh_id: int) -> bool:
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM tai_chinh WHERE id = ?", (tai_chinh_id,))
-        conn.commit()
-        return True
-    except Exception as e:
-        logger.exception(f"Lỗi xóa tài chính: {e}")
-        return False
-    finally:
-        conn.close()
-
-
-def delete_phuong_tien(phuong_tien_id: int) -> bool:
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM phuong_tien WHERE id = ?",
-                       (phuong_tien_id,))
-        conn.commit()
-        return True
-    except Exception as e:
-        logger.exception(f"Lỗi xóa phương tiện: {e}")
-        return False
-    finally:
-        conn.close()
-
-
-def delete_ho_so_dac_thu(ho_so_id: int) -> bool:
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM ho_so_dac_thu WHERE id = ?", (ho_so_id,))
-        conn.commit()
-        return True
-    except Exception as e:
-        logger.exception(f"Lỗi xóa hồ sơ đặc thù: {e}")
-        return False
-    finally:
-        conn.close()
-
-
-def delete_tai_lieu(tai_lieu_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT duong_dan FROM tai_lieu WHERE id = ?", (tai_lieu_id,))
-    result = cursor.fetchone()
-
-    if result:
-        duong_dan = result[0]
-        file_path = Path.cwd() / duong_dan
-        if file_path.exists():
-            file_path.unlink()
-
-        cursor.execute("DELETE FROM tai_lieu WHERE id = ?", (tai_lieu_id,))
-        conn.commit()
-
-    conn.close()
-    return True
-
-
-def delete_doi_tuong(cccd):
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM doi_tuong WHERE cccd = ?", (cccd,))
-        conn.commit()
-
-        upload_folder = Path.cwd() / "uploads" / cccd
-        if upload_folder.exists():
-            shutil.rmtree(upload_folder)
-
-        return True, "Đã xóa thành công!"
-    except Exception as e:
-        logger.exception(f"Lỗi xóa đối tượng: {e}")
-        return False, "Đã xảy ra lỗi hệ thống. Vui lòng thử lại."
-    finally:
-        conn.close()
-
-
-def update_doi_tuong(cccd, data):
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE doi_tuong 
-            SET ho_ten = ?, ngay_sinh = ?, gioi_tinh = ?, dia_chi_tinh = ?,
-                dia_chi_xa = ?, phan_loai_nghe_nghiep = ?, chi_tiet_nghe_nghiep = ?,
-                ghi_chu_chung = ?, anh_chan_dung = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE cccd = ?
-        """, (
-            data['ho_ten'],
-            data['ngay_sinh'],
-            data['gioi_tinh'],
-            data['dia_chi_tinh'],
-            data['dia_chi_xa'],
-            data['phan_loai_nghe_nghiep'],
-            data['chi_tiet_nghe_nghiep'],
-            data['ghi_chu_chung'],
-            data.get('anh_chan_dung'),
-            cccd
-        ))
-        conn.commit()
-        return True, "Cập nhật thành công!"
-    except Exception as e:
-        logger.exception(f"Lỗi cập nhật đối tượng: {e}")
-        return False, "Đã xảy ra lỗi hệ thống. Vui lòng thử lại."
-    finally:
-        conn.close()
-
-# ============================================
-# PROFILE VIEW PAGE
-# ============================================
-
 
 CSXH_FIELD_LABELS = {
     'ten_doi_tac': 'Tên đối tác',
@@ -278,28 +56,8 @@ CSXH_FIELD_LABELS = {
     'noi_dung_xm': 'Nội dung xác minh',
 }
 
-# We need to import save functions from nhap_lieu IF they are needed here.
-# But circular import again.
-# The user asked to split logic.
-# Profile view has "Edit mode" and "Add new item" forms.
-# These forms use `save_...` functions.
-# These `save_...` functions were in `nhap_lieu.py` in my previous step.
-# Duplicating them violates DRY.
-# Moving them to `ho_so_chi_tiet.py` or a `services` module is better.
-# For this task, I will redefine them here or import them?
-# If I import from `nhap_lieu` here, and `nhap_lieu` imports from here (getters), we have a cycle.
-# Solution: Code duplication for `save_...` functions (simpler for now given constraints) OR move them to `ho_so_chi_tiet.py` as shared service functions and have `nhap_lieu` use them.
-# I will move `save_...` functions to HERE (ho_so_chi_tiet.py) or `database.py` (not requested) or `services/` (implied but not explicit in file list).
-# Re-reading task: "Tạo file views/nhap_lieu.py... Di chuyển hàm này và các hàm xử lý form (save_doi_tuong, save_lien_he...)"
-# So `save_...` MUST be in `nhap_lieu.py`.
-# Then `ho_so_chi_tiet.py` needs to Use them.
-# To avoid circularity: I can import inside the function `page_profile_view`.
-
-
 def page_profile_view(cccd):
     """Trang xem chi tiết hồ sơ đối tượng 360 độ"""
-    # Save functions đã được import ở module level từ services
-
     # Lấy thông tin đối tượng
     doi_tuong = get_doi_tuong_detail(cccd)
 
@@ -468,8 +226,6 @@ def page_profile_view(cccd):
                     )
 
                     # Ngày sinh
-
-                    # Ngày sinh
                     current_ngay_sinh = doi_tuong.get('ngay_sinh')
                     ns_value = None
                     if current_ngay_sinh:
@@ -545,7 +301,6 @@ def page_profile_view(cccd):
                     if not edit_ho_ten:
                         st.error("⚠️ Vui lòng nhập họ tên!")
                     else:
-                        # Parse ngày sinh
                         # Parse ngày sinh
                         edit_ngay_sinh = edit_ngay_sinh_obj.strftime(
                             '%Y-%m-%d') if edit_ngay_sinh_obj else None

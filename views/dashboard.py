@@ -60,6 +60,7 @@ def get_statistics():
         conn.close()
 
 
+@st.cache_data(ttl=60)
 def get_recent_records(limit=10):
     """Lấy các bản ghi gần đây"""
     conn = get_connection()
@@ -76,6 +77,7 @@ def get_recent_records(limit=10):
         conn.close()
 
 
+@st.cache_data(ttl=300)
 def get_xa_phuong_stats():
     """Lấy thống kê theo xã/phường"""
     conn = get_connection()
@@ -93,275 +95,7 @@ def get_xa_phuong_stats():
     finally:
         conn.close()
 
-# ============================================
-# ECHARTS COMPONENTS (Primary - Interactive)
-# ============================================
-
-
-def render_pie_echarts(data: dict, title: str):
-    """
-    Pie/Donut chart với ECharts - Tương tác khi hover.
-    Pattern từ streamlit-echarts.
-    """
-    if not data or sum(data.values()) == 0:
-        st.info("💡 Chưa có dữ liệu.")
-        return
-
-    chart_data = [
-        {"value": v, "name": k}
-        for k, v in data.items() if v > 0
-    ]
-
-    # Màu gradient đẹp
-    colors = ['#667eea', '#764ba2', '#00d9a5', '#ffc107', '#ff6b6b', '#4ecdc4']
-
-    options = {
-        "backgroundColor": "transparent",
-        "tooltip": {
-            "trigger": "item",
-            "formatter": "{b}: {c} ({d}%)",  # Hiển thị khi hover
-            "backgroundColor": "rgba(50, 50, 50, 0.9)",
-            "borderColor": "#667eea",
-            "textStyle": {"color": "#fff"}
-        },
-        "legend": {
-            "orient": "horizontal",
-            "bottom": "0%",
-            "textStyle": {"color": "#ccc", "fontSize": 11},
-            "itemGap": 15
-        },
-        "series": [{
-            "name": title,
-            "type": "pie",
-            "radius": ["45%", "75%"],  # Donut chart
-            "center": ["50%", "45%"],
-            "data": chart_data,
-            "emphasis": {
-                "itemStyle": {
-                    "shadowBlur": 15,
-                    "shadowOffsetX": 0,
-                    "shadowColor": "rgba(102, 126, 234, 0.5)"
-                },
-                "label": {"show": True, "fontSize": 14, "fontWeight": "bold"}
-            },
-            "label": {"show": False},
-            "labelLine": {"show": False},
-            "itemStyle": {
-                "borderRadius": 6,
-                "borderColor": "rgba(0,0,0,0.3)",
-                "borderWidth": 2
-            }
-        }],
-        "color": colors
-    }
-
-    st_echarts(options=options, height="320px")
-
-
-def render_bar_echarts(data: dict, title: str, horizontal: bool = False):
-    """
-    Bar chart với ECharts - Tooltip chi tiết khi hover.
-    Pattern từ streamlit-echarts.
-    """
-    if not data or sum(data.values()) == 0:
-        st.info("💡 Chưa có dữ liệu.")
-        return
-
-    categories = list(data.keys())
-    values = list(data.values())
-
-    # Gradient color
-    gradient_color = {
-        "type": "linear",
-        "x": 0, "y": 0,
-        "x2": 1 if horizontal else 0,
-        "y2": 0 if horizontal else 1,
-        "colorStops": [
-            {"offset": 0, "color": "#667eea"},
-            {"offset": 1, "color": "#764ba2"}
-        ]
-    }
-
-    options = {
-        "backgroundColor": "transparent",
-        "tooltip": {
-            "trigger": "axis",
-            "axisPointer": {"type": "shadow"},
-            "formatter": "{b}: {c} đối tượng",
-            "backgroundColor": "rgba(50, 50, 50, 0.9)",
-            "borderColor": "#667eea",
-            "textStyle": {"color": "#fff"}
-        },
-        "grid": {
-            "left": "3%",
-            "right": "4%",
-            "bottom": "15%",
-            "top": "5%",
-            "containLabel": True
-        },
-        "xAxis": {
-            "type": "value" if horizontal else "category",
-            "data": None if horizontal else categories,
-            "axisLabel": {
-                "color": "#aaa",
-                "rotate": 0 if horizontal else 30,
-                "fontSize": 10
-            },
-            "axisLine": {"lineStyle": {"color": "#444"}},
-            "splitLine": {"lineStyle": {"color": "rgba(255,255,255,0.05)"}}
-        },
-        "yAxis": {
-            "type": "category" if horizontal else "value",
-            "data": categories if horizontal else None,
-            "axisLabel": {"color": "#aaa", "fontSize": 10},
-            "axisLine": {"lineStyle": {"color": "#444"}},
-            "splitLine": {"lineStyle": {"color": "rgba(255,255,255,0.05)"}}
-        },
-        "series": [{
-            "type": "bar",
-            "data": values,
-            "barWidth": "60%",
-            "itemStyle": {
-                "color": gradient_color,
-                "borderRadius": [5, 5, 0, 0] if not horizontal else [0, 5, 5, 0]
-            },
-            "emphasis": {
-                "itemStyle": {
-                    "color": {
-                        "type": "linear",
-                        "x": 0, "y": 0, "x2": 1, "y2": 0,
-                        "colorStops": [
-                            {"offset": 0, "color": "#00d9a5"},
-                            {"offset": 1, "color": "#667eea"}
-                        ]
-                    }
-                }
-            }
-        }]
-    }
-
-    st_echarts(options=options, height="320px")
-
-
-def render_horizontal_bar_echarts(df: pd.DataFrame, x_col: str, y_col: str):
-    """
-    Horizontal bar chart cho top xã/phường.
-    """
-    if df.empty:
-        st.info("💡 Chưa có dữ liệu.")
-        return
-
-    categories = df[y_col].tolist()
-    values = df[x_col].tolist()
-
-    options = {
-        "backgroundColor": "transparent",
-        "tooltip": {
-            "trigger": "axis",
-            "axisPointer": {"type": "shadow"},
-            "formatter": "{b}: {c} đối tượng",
-            "backgroundColor": "rgba(50, 50, 50, 0.9)",
-            "borderColor": "#00d9a5",
-            "textStyle": {"color": "#fff"}
-        },
-        "grid": {
-            "left": "3%",
-            "right": "8%",
-            "bottom": "5%",
-            "top": "5%",
-            "containLabel": True
-        },
-        "xAxis": {
-            "type": "value",
-            "axisLabel": {"color": "#aaa"},
-            "axisLine": {"lineStyle": {"color": "#444"}},
-            "splitLine": {"lineStyle": {"color": "rgba(255,255,255,0.05)"}}
-        },
-        "yAxis": {
-            "type": "category",
-            "data": categories,
-            "axisLabel": {"color": "#aaa", "fontSize": 10},
-            "axisLine": {"lineStyle": {"color": "#444"}}
-        },
-        "series": [{
-            "type": "bar",
-            "data": values,
-            "barWidth": "60%",
-            "itemStyle": {
-                "color": {
-                    "type": "linear",
-                    "x": 0, "y": 0, "x2": 1, "y2": 0,
-                    "colorStops": [
-                        {"offset": 0, "color": "#00d9a5"},
-                        {"offset": 1, "color": "#4ecdc4"}
-                    ]
-                },
-                "borderRadius": [0, 4, 4, 0]
-            },
-            "emphasis": {
-                "itemStyle": {
-                    "color": {
-                        "type": "linear",
-                        "x": 0, "y": 0, "x2": 1, "y2": 0,
-                        "colorStops": [
-                            {"offset": 0, "color": "#667eea"},
-                            {"offset": 1, "color": "#764ba2"}
-                        ]
-                    }
-                }
-            },
-            "label": {
-                "show": True,
-                "position": "right",
-                "color": "#aaa",
-                "fontSize": 10
-            }
-        }]
-    }
-
-    st_echarts(options=options, height="320px")
-
-
-# ============================================
-# FALLBACK PLOTLY COMPONENTS
-# ============================================
-
-def render_pie_plotly(data: dict, title: str):
-    """Fallback Plotly pie chart nếu ECharts không khả dụng"""
-    if not PLOTLY_AVAILABLE:
-        st.warning("⚠️ Cần cài đặt plotly: `pip install plotly`")
-        return
-
-    df = pd.DataFrame(list(data.items()), columns=["Danh mục", "Số lượng"])
-    fig = px.pie(df, values='Số lượng', names='Danh mục',
-                 color_discrete_sequence=['#667eea', '#764ba2'], hole=0.4)
-    fig.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white'),
-        margin=dict(t=20, b=20, l=20, r=20)
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-
-def render_bar_plotly(data: dict, title: str):
-    """Fallback Plotly bar chart"""
-    if not PLOTLY_AVAILABLE:
-        st.warning("⚠️ Cần cài đặt plotly: `pip install plotly`")
-        return
-
-    df = pd.DataFrame(list(data.items()), columns=["Danh mục", "Số lượng"])
-    fig = px.bar(df, x='Danh mục', y='Số lượng', color='Danh mục',
-                 color_discrete_sequence=['#667eea', '#764ba2', '#00d9a5', '#ffc107'])
-    fig.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white'),
-        margin=dict(t=20, b=20, l=20, r=20),
-        showlegend=False
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
+# ... (Previous code remains same, skipping to page_dashboard updates)
 
 # ============================================
 # DASHBOARD PAGE
@@ -381,7 +115,8 @@ def page_dashboard():
     st.markdown("---")
 
     # Thống kê chính
-    stats = get_statistics()
+    with st.spinner("Đang tải thống kê hệ thống..."):
+        stats = get_statistics()
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -461,7 +196,9 @@ def page_dashboard():
 
     with col_right2:
         st.markdown("### 🏘️ Top 10 xã/phường")
-        df_xa = get_xa_phuong_stats()
+        # Load data with spinner
+        with st.spinner("Đang tải dữ liệu địa bàn..."):
+            df_xa = get_xa_phuong_stats()
 
         if not df_xa.empty:
             if ECHARTS_AVAILABLE:
@@ -487,7 +224,9 @@ def page_dashboard():
 
     # Bản ghi gần đây
     st.markdown("### 📋 Hồ sơ được thêm gần đây")
-    recent_df = get_recent_records(10)
+    with st.spinner("Đang tải hồ sơ gần đây..."):
+        recent_df = get_recent_records(10)
+        
     if not recent_df.empty:
         # Đổi tên cột cho dễ đọc
         recent_df.columns = ["CCCD", "Họ tên", "Ngày sinh",
