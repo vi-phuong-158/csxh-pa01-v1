@@ -5,3 +5,7 @@
 ## 2026-01-27 - [Push Filters to SQL (Predicate Pushdown)]
 **Learning:** Loading full datasets into Pandas for filtering is a major bottleneck (O(N) data transfer). Even with vectorized operations, the memory overhead is unnecessary.
 **Action:** Always push categorical filters (`WHERE column = value`) to the SQL query layer before loading data into Pandas for complex text processing.
+
+## 2026-01-31 - [Column Pruning + Deferred Loading]
+**Learning:** Fetching `SELECT *` (all columns) for Python-based fuzzy matching is wasteful when only a few columns (`cccd`, `ho_ten`) are needed for the match logic. For 2000 rows, switching to `SELECT cccd, ho_ten` -> Match -> `SELECT * WHERE cccd IN (...)` improved search speed by ~30% for typical narrow searches.
+**Action:** When performing client-side (or Python-side) filtering on large datasets, fetch only the necessary columns for the filter first (Lightweight Fetch), identify matches, and then fetch full details only for the result set (Deferred Loading).
