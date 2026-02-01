@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 # HELPER FUNCTIONS
 # ============================================
 
+
 def validate_cccd(cccd: str) -> bool:
     """
     Validate CCCD string to prevent path traversal and injection.
@@ -31,6 +32,7 @@ def validate_cccd(cccd: str) -> bool:
         return False
     # Only allow alphanumeric characters
     return cccd.isalnum()
+
 
 def sanitize_filename(filename: str) -> str:
     """
@@ -256,10 +258,22 @@ def save_doi_tuong(data):
         if avatar_file:
             try:
                 import time
+                # Validate extension
+                parts = avatar_file.name.split('.')
+                if len(parts) > 1:
+                    file_ext = parts[-1].lower()
+                else:
+                    file_ext = ''
+
+                if file_ext not in ALLOWED_EXTENSIONS:
+                    conn.rollback()
+                    msg = (f"Định dạng ảnh không hỗ trợ! "
+                           f"Chỉ chấp nhận: {', '.join(ALLOWED_EXTENSIONS)}")
+                    return False, msg
+
                 base_path = Path(__file__).parent / "uploads" / data['cccd']
                 base_path.mkdir(parents=True, exist_ok=True)
 
-                file_ext = avatar_file.name.split('.')[-1]
                 safe_name = f"avatar_{int(time.time())}.{file_ext}"
                 save_path = base_path / safe_name
 
@@ -267,8 +281,10 @@ def save_doi_tuong(data):
                     f.write(avatar_file.getbuffer())
 
                 relative_path = f"uploads/{data['cccd']}/{safe_name}"
-                cursor.execute("UPDATE doi_tuong SET anh_chan_dung = ? WHERE cccd = ?",
-                               (relative_path, data['cccd']))
+                cursor.execute(
+                    "UPDATE doi_tuong SET anh_chan_dung = ? WHERE cccd = ?",
+                    (relative_path, data['cccd'])
+                )
             except Exception as e:
                 logger.error(f"Error saving avatar on create: {e}")
 

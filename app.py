@@ -5,6 +5,7 @@ Hệ thống Quản trị An ninh PA01
 Phiên bản: 1.0 (với Authentication)
 """
 
+from app.init_db import init_db
 from views.audit_log import page_audit_log
 from views.nguon_du_lieu import page_nguon_du_lieu
 import streamlit as st
@@ -79,14 +80,14 @@ if css_content:
 # KHỞI TẠO DATABASE & SUPER ADMIN
 # ============================================
 # Import new DB init
-from app.init_db import init_db
+
 
 @st.cache_resource
 def init_database():
     """Khởi tạo database và Super Admin nếu chưa tồn tại"""
     # Use new SQLAlchemy init
     init_db()
-    
+
     # Legacy init for backward compatibility if needed, or just use new auth service later
     # For now, we still need init_super_admin from auth.py which uses legacy DB access
     # ideally we refactor auth.py next.

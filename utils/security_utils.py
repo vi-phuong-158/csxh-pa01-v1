@@ -4,6 +4,7 @@ Security Utility Functions
 """
 import pandas as pd
 
+
 def sanitize_for_csv(value):
     """
     Sanitize a value to prevent CSV Injection (Excel Formula Injection).
@@ -12,6 +13,7 @@ def sanitize_for_csv(value):
     if isinstance(value, str) and value.startswith(('=', '+', '-', '@')):
         return "'" + value
     return value
+
 
 def sanitize_dataframe_for_csv(df):
     """

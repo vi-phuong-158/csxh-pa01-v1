@@ -6,6 +6,7 @@ from database import get_connection
 
 logger = logging.getLogger(__name__)
 
+
 def delete_nhan_than(nhan_than_id):
     conn = get_connection()
     cursor = conn.cursor()

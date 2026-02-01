@@ -4,6 +4,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from .constants import CSXH_TEMPLATES, TEMPLATE_DEFINITIONS
 
+
 def style_header_row(ws, headers):
     header_font = Font(bold=True, color="FFFFFF")
     header_fill = PatternFill(start_color="667eea",
@@ -75,13 +76,12 @@ def create_full_template(wb, csxh_type):
     # Ghi chú
     ws1.cell(row=5, column=1,
              value="Lưu ý: (*) là trường bắt buộc. CCCD phải đủ 12 số.")
-    
+
     # Apply style manually for sheet 1 since it's hardcoded here
     headers_1 = ["CCCD (*)", "Họ và tên (*)", "Ngày sinh (dd/mm/yyyy)",
                  "Giới tính", "Tỉnh/TP", "Xã/Phường",
                  "Phân loại nghề nghiệp", "Chi tiết nơi làm việc", "Ghi chú chung"]
     style_header_row(ws1, headers_1)
-
 
     # ========== SHEET 2: LIÊN HỆ ==========
     ws2 = wb.create_sheet("2. Liên hệ")
@@ -127,6 +127,7 @@ def create_full_template(wb, csxh_type):
         ws5.cell(row=4, column=1, value=f"Loại hình: {csxh_type}")
     else:
         create_csxh_general_sheet(wb)
+
 
 def create_csxh_general_sheet(wb):
     ws5 = wb.create_sheet("5. Hồ sơ CSXH (Tổng hợp)")

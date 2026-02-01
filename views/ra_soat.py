@@ -35,6 +35,7 @@ from utils.security_utils import sanitize_dataframe_for_csv
 # CORE SCREENING FUNCTIONS
 # ============================================
 
+
 def get_database_names():
     """Lấy danh sách họ tên từ database"""
     conn = get_connection()
@@ -284,7 +285,8 @@ def display_screening_results(results):
             export_df = export_df.drop(columns=['alternatives'])
         st.download_button(
             label="📥 Xuất toàn bộ kết quả (CSV)",
-            data=sanitize_dataframe_for_csv(export_df).to_csv(index=False).encode('utf-8-sig'),
+            data=sanitize_dataframe_for_csv(export_df).to_csv(
+                index=False).encode('utf-8-sig'),
             file_name=f"ket_qua_ra_soat_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
             mime="text/csv"
         )
@@ -298,7 +300,8 @@ def display_screening_results(results):
                 suspect_df = suspect_df.drop(columns=['alternatives'])
             st.download_button(
                 label="⚠️ Xuất chỉ các nghi vấn (CSV)",
-                data=sanitize_dataframe_for_csv(suspect_df).to_csv(index=False).encode('utf-8-sig'),
+                data=sanitize_dataframe_for_csv(suspect_df).to_csv(
+                    index=False).encode('utf-8-sig'),
                 file_name=f"nghi_van_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                 mime="text/csv"
             )

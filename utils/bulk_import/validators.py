@@ -19,6 +19,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+
 def normalize_cccd(value) -> str:
     """
     Chuẩn hóa CCCD: xử lý trường hợp Excel đọc như số (mất leading zeros).
@@ -238,7 +239,7 @@ def validate_excel_data(excel_file, import_type='all'):
                 results['lien_he']['valid_count'] = len(valid_rows)
 
         # ===== SHEET: THÂN NHÂN (New) =====
-        if should_read('than_nhan', 99):  
+        if should_read('than_nhan', 99):
             target_sheet = 0
             df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
             df = df.iloc[1:]
@@ -255,7 +256,7 @@ def validate_excel_data(excel_file, import_type='all'):
                     cccd = normalize_cccd(row['cccd'])
                     ho_ten = str(row['ho_ten']).strip(
                     ) if pd.notna(row['ho_ten']) else ""
-                    
+
                     if cccd not in valid_cccds:
                         row_errors.append(
                             f"Dòng {idx+1}: CCCD {cccd} không tồn tại")
@@ -390,7 +391,7 @@ def validate_excel_data(excel_file, import_type='all'):
                     cccd = normalize_cccd(row['cccd'])
                     loai_hinh = str(row['loai_hinh']).strip(
                     ) if pd.notna(row['loai_hinh']) else ""
-                    
+
                     if cccd not in valid_cccds:
                         row_errors.append(
                             f"Dòng {idx+1}: CCCD {cccd} không tồn tại")
