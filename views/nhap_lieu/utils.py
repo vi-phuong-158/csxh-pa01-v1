@@ -2,6 +2,7 @@
 from services import check_cccd_exists
 from constants import Messages
 
+
 def validate_cccd_for_action(cccd: str, *required_fields) -> tuple[bool, str | None]:
     if not cccd:
         return False, Messages.MISSING_REQUIRED

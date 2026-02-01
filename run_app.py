@@ -1,5 +1,7 @@
 import streamlit.web.cli as stcli
-import os, sys
+import os
+import sys
+
 
 def resolve_path(path):
     if getattr(sys, "frozen", False):
@@ -7,6 +9,7 @@ def resolve_path(path):
     else:
         basedir = os.path.dirname(__file__)
     return os.path.join(basedir, path)
+
 
 if __name__ == "__main__":
     import sys

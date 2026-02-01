@@ -23,9 +23,9 @@ try:
     print("3. Checking views.nhap_lieu package...")
     from views import nhap_lieu
     if hasattr(nhap_lieu, 'page_nhap_lieu'):
-         print("   [OK] nhap_lieu package imported and exposes 'page_nhap_lieu'.")
+        print("   [OK] nhap_lieu package imported and exposes 'page_nhap_lieu'.")
     else:
-         print("   [FAIL] nhap_lieu missing 'page_nhap_lieu'.")
+        print("   [FAIL] nhap_lieu missing 'page_nhap_lieu'.")
 except Exception as e:
     print(f"   [FAIL] views.nhap_lieu check error: {e}")
 

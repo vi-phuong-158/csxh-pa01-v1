@@ -7,6 +7,7 @@ from app.models.models import User, DoiTuong, LienHe, TaiChinh, PhuongTien, Nhan
 
 logger = logging.getLogger(__name__)
 
+
 def init_db():
     try:
         logger.info("Creating database tables...")

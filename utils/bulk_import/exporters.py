@@ -4,6 +4,7 @@ import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 
+
 def export_error_excel(validation_results):
     """
     Tạo file Excel chứa các dòng lỗi với cột lý do để user fix
@@ -28,8 +29,8 @@ def export_error_excel(validation_results):
         ('3. Tài chính - LỖI', 'tai_chinh'),
         ('4. Phương tiện - LỖI', 'phuong_tien'),
         ('5. CSXH - LỖI', 'ho_so_dac_thu'),
-        ('6. Quá trình - LỖI', 'qua_trinh_hoat_dong'), # Added this
-        ('7. Thân nhân - LỖI', 'than_nhan'), # Added this
+        ('6. Quá trình - LỖI', 'qua_trinh_hoat_dong'),  # Added this
+        ('7. Thân nhân - LỖI', 'than_nhan'),  # Added this
     ]
 
     for sheet_name, key in sheet_configs:
@@ -83,5 +84,5 @@ def export_error_excel(validation_results):
     buffer = io.BytesIO()
     wb.save(buffer)
     buffer.seek(0)
-    
+
     return buffer.getvalue()

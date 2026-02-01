@@ -17,8 +17,8 @@ from services import (
     save_ho_so_dac_thu, save_tai_lieu
 )
 from database import (
-     get_qua_trinh_hoat_dong, delete_qua_trinh_hoat_dong,
-     save_qua_trinh_hoat_dong
+    get_qua_trinh_hoat_dong, delete_qua_trinh_hoat_dong,
+    save_qua_trinh_hoat_dong
 )
 from views.profile import (
     get_nhan_than_by_cccd, get_lien_he_by_cccd,
@@ -31,6 +31,7 @@ from views.profile import (
 from .utils import validate_cccd_for_action
 
 logger = logging.getLogger(__name__)
+
 
 def page_nhap_lieu():
     """Trang Nhập liệu - Form thêm mới đối tượng"""
@@ -228,7 +229,7 @@ def page_nhap_lieu():
                             st.markdown(
                                 f"Bạn có chắc muốn xóa **{row['ho_ten']}**?")
                             if st.button(
-                                "Xác nhận xóa", key=f"confirm_del_nt_{row['id']}", type="primary"):
+                                    "Xác nhận xóa", key=f"confirm_del_nt_{row['id']}", type="primary"):
                                 delete_nhan_than(row['id'])
                                 st.toast(
                                     f"✅ Đã xóa {row['loai_quan_he']}: {row['ho_ten']}")
@@ -391,7 +392,7 @@ def page_nhap_lieu():
                             st.markdown(
                                 f"Xóa hoạt động: **{item['thoi_gian']}**?")
                             if st.button(
-                                "Xác nhận", key=f"confirm_del_qt_{item['id']}", type="primary"):
+                                    "Xác nhận", key=f"confirm_del_qt_{item['id']}", type="primary"):
                                 delete_qua_trinh_hoat_dong(item['id'])
                                 st.rerun()
 
@@ -801,4 +802,5 @@ def page_nhap_lieu():
                     else:
                         st.error(f"❌ {message}")
                 else:
-                    st.warning("⚠️ Vui lòng chọn file và đảm bảo đã nhập CCCD!")
+                    st.warning(
+                        "⚠️ Vui lòng chọn file và đảm bảo đã nhập CCCD!")

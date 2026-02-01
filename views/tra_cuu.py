@@ -10,7 +10,6 @@ from utils.text_utils import normalize_string
 from utils.security_utils import sanitize_dataframe_for_csv
 
 
-
 def is_fuzzy_match(query, text):
     """
     Kiểm tra query có phải là match của text không.
@@ -235,7 +234,14 @@ def page_tra_cuu():
             display_df = display_df.rename(
                 columns={k: v for k, v in col_map.items() if k in display_df.columns})
 
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        # Enable selection in dataframe
+        selection = st.dataframe(
+            display_df,
+            use_container_width=True,
+            hide_index=True,
+            on_select="rerun",
+            selection_mode="single-row"
+        )
 
         st.markdown("---")
 
@@ -247,8 +253,19 @@ def page_tra_cuu():
             # Tạo danh sách options: CCCD - Họ tên
             cccd_col = 'cccd' if 'cccd' in df.columns else 'CCCD'
             hoten_col = 'ho_ten' if 'ho_ten' in df.columns else 'Họ tên'
-            options = [f"{row[cccd_col]} - {row[hoten_col]}" for _,
-                       row in df.iterrows()]
+            options = [
+                f"{row[cccd_col]} - {row[hoten_col]}"
+                for _, row in df.iterrows()
+            ]
+
+            # Sync dataframe selection with selectbox
+            if selection.selection.rows:
+                selected_index = selection.selection.rows[0]
+                if 0 <= selected_index < len(options):
+                    st.session_state["select_profile"] = (
+                        options[selected_index]
+                    )
+
             selected = st.selectbox(
                 "Chọn đối tượng", options, key="select_profile")
 
@@ -269,7 +286,8 @@ def page_tra_cuu():
         # Nút xuất Excel
         st.download_button(
             label="📥 Xuất Excel",
-            data=sanitize_dataframe_for_csv(df).to_csv(index=False).encode('utf-8-sig'),
+            data=sanitize_dataframe_for_csv(df).to_csv(
+                index=False).encode('utf-8-sig'),
             file_name=f"danh_sach_doi_tuong_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
         )

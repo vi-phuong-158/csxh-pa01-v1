@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 # HELPER FUNCTIONS
 # ============================================
 
+
 def validate_cccd(cccd: str) -> bool:
     """
     Validate CCCD string to prevent path traversal and injection.
@@ -31,6 +32,7 @@ def validate_cccd(cccd: str) -> bool:
         return False
     # Only allow alphanumeric characters
     return cccd.isalnum()
+
 
 def sanitize_filename(filename: str) -> str:
     """

@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 from database import get_connection
 
+
 def get_doi_tuong_detail(cccd):
     conn = get_connection()
     try:

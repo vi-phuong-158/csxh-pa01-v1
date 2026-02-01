@@ -100,6 +100,8 @@ def get_xa_phuong_stats():
 # ============================================
 # DASHBOARD PAGE
 # ============================================
+
+
 def page_dashboard():
     """Trang Dashboard - Tổng quan hệ thống với ECharts tương tác"""
 
@@ -226,7 +228,7 @@ def page_dashboard():
     st.markdown("### 📋 Hồ sơ được thêm gần đây")
     with st.spinner("Đang tải hồ sơ gần đây..."):
         recent_df = get_recent_records(10)
-        
+
     if not recent_df.empty:
         # Đổi tên cột cho dễ đọc
         recent_df.columns = ["CCCD", "Họ tên", "Ngày sinh",
