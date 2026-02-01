@@ -10,7 +10,6 @@ from utils.text_utils import normalize_string
 from utils.security_utils import sanitize_dataframe_for_csv
 
 
-
 def is_fuzzy_match(query, text):
     """
     Kiểm tra query có phải là match của text không.
@@ -173,9 +172,25 @@ def page_tra_cuu():
             st.info(
                 f"🔍 Tìm thấy **{total_count}** kết quả cho: '{search_query}'")
         else:
-            # Đếm tổng số records
-            count_query = "SELECT COUNT(*) as total FROM doi_tuong"
-            total_count = pd.read_sql_query(count_query, conn).iloc[0, 0]
+            # Construct WHERE clause for filters
+            where_clauses = []
+            params = []
+
+            if filter_tinh != "Tất cả":
+                where_clauses.append("dia_chi_tinh = ?")
+                params.append(filter_tinh)
+
+            if filter_gioi_tinh != "Tất cả":
+                where_clauses.append("gioi_tinh = ?")
+                params.append(filter_gioi_tinh)
+
+            where_sql = "WHERE " + \
+                " AND ".join(where_clauses) if where_clauses else ""
+
+            # Đếm tổng số records (with filters)
+            count_query = f"SELECT COUNT(*) as total FROM doi_tuong {where_sql}"
+            total_count = pd.read_sql_query(
+                count_query, conn, params=params).iloc[0, 0]
 
             # Pagination UI
             total_pages = max(
@@ -193,28 +208,25 @@ def page_tra_cuu():
 
             offset = (current_page - 1) * ITEMS_PER_PAGE
 
-            # Hiển thị với pagination
+            # Hiển thị với pagination and filters
+            # Optimized by Bolt: Push filters to SQL for correct pagination
             query = f"""
                 SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa, 
                        phan_loai_nghe_nghiep, dia_chi_tinh, chi_tiet_nghe_nghiep, 
                        ghi_chu_chung, created_at 
                 FROM doi_tuong 
+                {where_sql}
                 ORDER BY created_at DESC 
                 LIMIT {ITEMS_PER_PAGE} OFFSET {offset}
             """
-            df = pd.read_sql_query(query, conn)
+            df = pd.read_sql_query(query, conn, params=params)
     finally:
         conn.close()
 
-    # Áp dụng bộ lọc (filters) - Thực hiện trên DataFrame cho đơn giản
+    # Áp dụng bộ lọc (filters) - Đã thực hiện ở SQL
+    # Lọc đặc thù phức tạp hơn vì thông tin nằm ở bảng khác.
+    # Logic này chưa được implement trong phiên bản gốc.
     if not df.empty:
-        if filter_tinh != "Tất cả":
-            df = df[df['dia_chi_tinh'] == filter_tinh]
-        if filter_gioi_tinh != "Tất cả":
-            df = df[df['gioi_tinh'] == filter_gioi_tinh]
-
-        # Lọc đặc thù phức tạp hơn vì thông tin nằm ở bảng khác.
-        # Logic này chưa được implement trong phiên bản gốc.
         pass
 
     if not df.empty:
@@ -269,7 +281,8 @@ def page_tra_cuu():
         # Nút xuất Excel
         st.download_button(
             label="📥 Xuất Excel",
-            data=sanitize_dataframe_for_csv(df).to_csv(index=False).encode('utf-8-sig'),
+            data=sanitize_dataframe_for_csv(df).to_csv(
+                index=False).encode('utf-8-sig'),
             file_name=f"danh_sach_doi_tuong_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
         )
