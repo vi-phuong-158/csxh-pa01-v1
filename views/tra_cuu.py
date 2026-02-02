@@ -10,7 +10,6 @@ from utils.text_utils import normalize_string
 from utils.security_utils import sanitize_dataframe_for_csv
 
 
-
 def is_fuzzy_match(query, text):
     """
     Kiểm tra query có phải là match của text không.
@@ -70,7 +69,7 @@ def page_tra_cuu():
         )
 
     with col3:
-        search_clicked = st.button(
+        _ = st.button(
             "🔍 Tìm kiếm", type="primary", use_container_width=True)
 
     st.markdown("---")
@@ -92,7 +91,7 @@ def page_tra_cuu():
                 help="Lọc danh sách theo Giới tính"
             )
         with col3:
-            filter_dac_thu = st.selectbox(
+            _ = st.selectbox(
                 "Yếu tố đặc thù",
                 ["Tất cả"] + list(LOAI_HINH_DAC_THU.values()),
                 help="Lọc theo các loại hồ sơ chính sách xã hội "
@@ -173,9 +172,30 @@ def page_tra_cuu():
             st.info(
                 f"🔍 Tìm thấy **{total_count}** kết quả cho: '{search_query}'")
         else:
-            # Đếm tổng số records
-            count_query = "SELECT COUNT(*) as total FROM doi_tuong"
-            total_count = pd.read_sql_query(count_query, conn).iloc[0, 0]
+            # Optimized by Bolt: Push filters to SQL (Predicate Pushdown)
+            # This ensures pagination is correct and we don't fetch unnecessary
+            # data
+            where_clauses = ["1=1"]
+            params = []
+
+            if filter_tinh != "Tất cả":
+                where_clauses.append("dia_chi_tinh = ?")
+                params.append(filter_tinh)
+
+            if filter_gioi_tinh != "Tất cả":
+                where_clauses.append("gioi_tinh = ?")
+                params.append(filter_gioi_tinh)
+
+            where_str = " AND ".join(where_clauses)
+
+            # Đếm tổng số records matching filters
+            count_query = f"SELECT COUNT(*) as total FROM doi_tuong WHERE {where_str}"
+
+            # Use cursor directly for simple scalar query
+            cursor = conn.cursor()
+            cursor.execute(count_query, params)
+            total_count = cursor.fetchone()[0]
+            cursor.close()
 
             # Pagination UI
             total_pages = max(
@@ -193,29 +213,23 @@ def page_tra_cuu():
 
             offset = (current_page - 1) * ITEMS_PER_PAGE
 
-            # Hiển thị với pagination
+            # Hiển thị với pagination và filters
             query = f"""
-                SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa, 
-                       phan_loai_nghe_nghiep, dia_chi_tinh, chi_tiet_nghe_nghiep, 
-                       ghi_chu_chung, created_at 
-                FROM doi_tuong 
-                ORDER BY created_at DESC 
+                SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa,
+                       phan_loai_nghe_nghiep, dia_chi_tinh, chi_tiet_nghe_nghiep,
+                       ghi_chu_chung, created_at
+                FROM doi_tuong
+                WHERE {where_str}
+                ORDER BY created_at DESC
                 LIMIT {ITEMS_PER_PAGE} OFFSET {offset}
             """
-            df = pd.read_sql_query(query, conn)
+            df = pd.read_sql_query(query, conn, params=params)
     finally:
         conn.close()
 
-    # Áp dụng bộ lọc (filters) - Thực hiện trên DataFrame cho đơn giản
-    if not df.empty:
-        if filter_tinh != "Tất cả":
-            df = df[df['dia_chi_tinh'] == filter_tinh]
-        if filter_gioi_tinh != "Tất cả":
-            df = df[df['gioi_tinh'] == filter_gioi_tinh]
-
-        # Lọc đặc thù phức tạp hơn vì thông tin nằm ở bảng khác.
-        # Logic này chưa được implement trong phiên bản gốc.
-        pass
+    # Lọc đặc thù phức tạp hơn vì thông tin nằm ở bảng khác.
+    # Logic này chưa được implement trong phiên bản gốc.
+    pass
 
     if not df.empty:
         # Đổi tên cột
@@ -233,7 +247,9 @@ def page_tra_cuu():
                 'ghi_chu_chung': 'Ghi chú'
             }
             display_df = display_df.rename(
-                columns={k: v for k, v in col_map.items() if k in display_df.columns})
+                columns={
+                    k: v for k,
+                    v in col_map.items() if k in display_df.columns})
 
         st.dataframe(display_df, use_container_width=True, hide_index=True)
 
@@ -257,8 +273,7 @@ def page_tra_cuu():
                 "👁️ Xem hồ sơ",
                 type="primary",
                 use_container_width=True,
-                help="Nhấn để xem chi tiết toàn bộ thông tin của đối tượng đã chọn"
-            ):
+                    help="Nhấn để xem chi tiết toàn bộ thông tin của đối tượng đã chọn"):
                 if selected:
                     selected_cccd = selected.split(" - ")[0]
                     st.session_state.view_profile_cccd = selected_cccd
@@ -269,14 +284,19 @@ def page_tra_cuu():
         # Nút xuất Excel
         st.download_button(
             label="📥 Xuất Excel",
-            data=sanitize_dataframe_for_csv(df).to_csv(index=False).encode('utf-8-sig'),
-            file_name=f"danh_sach_doi_tuong_{datetime.now().strftime('%Y%m%d')}.csv",
+            data=sanitize_dataframe_for_csv(df).to_csv(
+                index=False).encode('utf-8-sig'),
+            file_name=f"danh_sach_doi_tuong_{
+                datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
         )
     else:
         st.info("💡 Không có dữ liệu.")
         if search_query:
-            if st.button(f"➕ Thêm mới hồ sơ: {search_query}", type="secondary", use_container_width=True):
+            if st.button(
+                    f"➕ Thêm mới hồ sơ: {search_query}",
+                    type="secondary",
+                    use_container_width=True):
                 # Determine if numeric (CCCD) or text (Name)
                 if search_query.isdigit() and len(search_query) == 12:
                     st.session_state.nl_cccd = search_query
