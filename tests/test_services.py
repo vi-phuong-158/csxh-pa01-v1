@@ -1,7 +1,13 @@
 import unittest
 import sqlite3
 import json
+import sys
+import os
 from unittest.mock import patch, MagicMock
+
+# Add project root to path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from services import (
     validate_cccd,
     sanitize_filename,

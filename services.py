@@ -230,6 +230,13 @@ def save_tai_lieu(cccd, uploaded_file, loai_tai_lieu, mo_ta=""):
 
 def save_doi_tuong(data):
     """Lưu thông tin đối tượng chính"""
+    # Validate avatar extension if present
+    avatar_file = data.get('avatar_file')
+    if avatar_file:
+        file_ext = avatar_file.name.split('.')[-1].lower()
+        if file_ext not in ALLOWED_EXTENSIONS:
+            return False, f"Định dạng không hỗ trợ! Chỉ chấp nhận: {', '.join(ALLOWED_EXTENSIONS)}"
+
     conn = get_connection()
     try:
         cursor = conn.cursor()
