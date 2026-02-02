@@ -235,7 +235,33 @@ def page_tra_cuu():
             display_df = display_df.rename(
                 columns={k: v for k, v in col_map.items() if k in display_df.columns})
 
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        # Initialize search key counter
+        if 'search_key_counter' not in st.session_state:
+            st.session_state.search_key_counter = 0
+
+        # Hiển thị dataframe với khả năng chọn
+        st.caption("💡 *Mẹo: Chọn một dòng trong bảng để xem hồ sơ chi tiết ngay lập tức.*")
+
+        event = st.dataframe(
+            display_df,
+            use_container_width=True,
+            hide_index=True,
+            on_select="rerun",
+            selection_mode="single-row",
+            key=f"search_results_{st.session_state.search_key_counter}"
+        )
+
+        # Handle selection
+        if event.selection.rows:
+            selected_index = event.selection.rows[0]
+            # Get original CCCD from the source dataframe (before rename)
+            # Use iloc because Streamlit returns integer position
+            try:
+                selected_cccd = df.iloc[selected_index]['cccd']
+                st.session_state.view_profile_cccd = selected_cccd
+                st.rerun()
+            except IndexError:
+                pass
 
         st.markdown("---")
 

@@ -162,6 +162,10 @@ def page_profile_view(cccd):
         if st.button("🔙 Quay lại", use_container_width=True):
             st.session_state.view_profile_cccd = None
             st.session_state.edit_mode = False
+            # Reset search table selection by changing its key
+            if 'search_key_counter' not in st.session_state:
+                st.session_state.search_key_counter = 0
+            st.session_state.search_key_counter += 1
             st.rerun()
 
         if st.button("✏️ Sửa hồ sơ", type="primary", use_container_width=True):
