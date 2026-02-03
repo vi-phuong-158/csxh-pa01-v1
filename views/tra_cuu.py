@@ -10,7 +10,6 @@ from utils.text_utils import normalize_string
 from utils.security_utils import sanitize_dataframe_for_csv
 
 
-
 def is_fuzzy_match(query, text):
     """
     Kiểm tra query có phải là match của text không.
@@ -70,7 +69,7 @@ def page_tra_cuu():
         )
 
     with col3:
-        search_clicked = st.button(
+        _ = st.button(
             "🔍 Tìm kiếm", type="primary", use_container_width=True)
 
     st.markdown("---")
@@ -92,7 +91,7 @@ def page_tra_cuu():
                 help="Lọc danh sách theo Giới tính"
             )
         with col3:
-            filter_dac_thu = st.selectbox(
+            _ = st.selectbox(
                 "Yếu tố đặc thù",
                 ["Tất cả"] + list(LOAI_HINH_DAC_THU.values()),
                 help="Lọc theo các loại hồ sơ chính sách xã hội "
@@ -110,11 +109,9 @@ def page_tra_cuu():
     conn = get_connection()
     try:
         if search_query:
-            # Lấy TOÀN BỘ dữ liệu để lọc bằng Python (Flexible Search)
-            # Vì SQLite LIKE hạn chế với tiếng Việt có dấu/không dấu
-            # Optimized by Bolt: Vectorized search (~7.5x faster)
-            # Optimized by Bolt: Push filters (Tỉnh, Giới tính) to SQL
-            sql = "SELECT * FROM doi_tuong WHERE 1=1"
+            # Optimized by Bolt: Column Pruning + Deferred Loading
+            # 1. Fetch lightweight data (CCCD + Name) + Apply SQL filters
+            sql = "SELECT cccd, ho_ten FROM doi_tuong WHERE 1=1"
             params = []
 
             if filter_tinh != "Tất cả":
@@ -125,53 +122,70 @@ def page_tra_cuu():
                 sql += " AND gioi_tinh = ?"
                 params.append(filter_gioi_tinh)
 
-            df_all = pd.read_sql_query(sql, conn, params=params)
+            df_light = pd.read_sql_query(sql, conn, params=params)
+
             # Pre-compute normalization
             query_norm = normalize_string(search_query)
             query_lower = search_query.lower()
 
-            # 1. CCCD Match (Vectorized)
-            mask_cccd = pd.Series(False, index=df_all.index)
+            # 2. Filter using fuzzy matching
+            # CCCD Match (Vectorized)
+            mask_cccd = pd.Series(False, index=df_light.index)
             if search_type in ["Tất cả", "CCCD"]:
-                mask_cccd = df_all['cccd'].astype(str).str.contains(
+                mask_cccd = df_light['cccd'].astype(str).str.contains(
                     query_lower, case=False, na=False)
 
-            # 2. Ho ten Match (Vectorized + Subsequence)
-            mask_hoten = pd.Series(False, index=df_all.index)
+            # Ho ten Match (Vectorized + Subsequence)
+            mask_hoten = pd.Series(False, index=df_light.index)
             if search_type in ["Tất cả", "Họ tên"]:
-                # Normalize 'ho_ten' column
-                normalized_hoten = df_all['ho_ten'].apply(
+                normalized_hoten = df_light['ho_ten'].apply(
                     lambda x: normalize_string(x) if x else "")
 
-                # Check containment (Fast)
+                # Check containment
                 mask_hoten_contains = normalized_hoten.str.contains(
                     query_norm, na=False, regex=False)
                 mask_hoten = mask_hoten_contains
 
-                # Check subsequence (Slower, only if query >= 3 chars)
+                # Check subsequence
                 if len(query_norm) >= 3:
                     def check_subsequence(text_norm):
                         it = iter(text_norm)
                         return all(char in it for char in query_norm)
 
-                    # Only check rows that failed containment
                     remaining_indices = ~mask_hoten_contains
                     if remaining_indices.any():
-                        # We apply only to the remaining part
                         subsequence_matches = normalized_hoten[remaining_indices].apply(
                             check_subsequence)
-                        # Update mask (using index alignment)
                         mask_hoten = mask_hoten | subsequence_matches.reindex(
-                            df_all.index, fill_value=False)
+                            df_light.index, fill_value=False)
 
-            # Combine masks
             final_mask = mask_cccd | mask_hoten
+            df_matches = df_light[final_mask]
 
-            df = df_all[final_mask]
-
-            total_count = len(df)
+            total_count = len(df_matches)
             st.info(
-                f"🔍 Tìm thấy **{total_count}** kết quả cho: '{search_query}'")
+                f"🔍 Tìm thấy **{total_count}** kết quả cho: '{search_query}'"
+            )
+
+            # 3. Fetch full details for matches (Chunked)
+            if not df_matches.empty:
+                matching_cccds = df_matches['cccd'].tolist()
+                chunk_size = 900
+                full_rows = []
+
+                for i in range(0, len(matching_cccds), chunk_size):
+                    chunk = matching_cccds[i:i + chunk_size]
+                    placeholders = ','.join(['?'] * len(chunk))
+                    sql_full = f"SELECT * FROM doi_tuong WHERE cccd IN ({placeholders})"
+                    df_chunk = pd.read_sql_query(sql_full, conn, params=chunk)
+                    full_rows.append(df_chunk)
+
+                if full_rows:
+                    df = pd.concat(full_rows)
+                else:
+                    df = pd.DataFrame()
+            else:
+                df = pd.DataFrame()
         else:
             # Đếm tổng số records
             count_query = "SELECT COUNT(*) as total FROM doi_tuong"
@@ -269,7 +283,8 @@ def page_tra_cuu():
         # Nút xuất Excel
         st.download_button(
             label="📥 Xuất Excel",
-            data=sanitize_dataframe_for_csv(df).to_csv(index=False).encode('utf-8-sig'),
+            data=sanitize_dataframe_for_csv(df).to_csv(
+                index=False).encode('utf-8-sig'),
             file_name=f"danh_sach_doi_tuong_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
         )
