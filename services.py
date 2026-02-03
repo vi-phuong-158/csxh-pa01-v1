@@ -12,7 +12,6 @@ import logging
 import re
 import uuid
 from pathlib import Path
-from datetime import datetime
 from database import get_connection
 from constants import ALLOWED_EXTENSIONS, MAX_FILE_SIZE_MB
 
@@ -21,6 +20,7 @@ logger = logging.getLogger(__name__)
 # ============================================
 # HELPER FUNCTIONS
 # ============================================
+
 
 def validate_cccd(cccd: str) -> bool:
     """
@@ -31,6 +31,7 @@ def validate_cccd(cccd: str) -> bool:
         return False
     # Only allow alphanumeric characters
     return cccd.isalnum()
+
 
 def sanitize_filename(filename: str) -> str:
     """
@@ -255,20 +256,29 @@ def save_doi_tuong(data):
         avatar_file = data.get('avatar_file')
         if avatar_file:
             try:
-                import time
-                base_path = Path(__file__).parent / "uploads" / data['cccd']
-                base_path.mkdir(parents=True, exist_ok=True)
+                # Security check: Validate file extension
+                file_ext = avatar_file.name.split('.')[-1].lower()
+                if file_ext not in ALLOWED_EXTENSIONS:
+                    logger.error(
+                        "Security: Attempted to upload invalid extension "
+                        f"'{file_ext}' for CCCD {data['cccd']}"
+                    )
+                    # We don't raise exception to keep the record created, just skip avatar
+                else:
+                    import time
+                    base_path = Path(__file__).parent / \
+                        "uploads" / data['cccd']
+                    base_path.mkdir(parents=True, exist_ok=True)
 
-                file_ext = avatar_file.name.split('.')[-1]
-                safe_name = f"avatar_{int(time.time())}.{file_ext}"
-                save_path = base_path / safe_name
+                    safe_name = f"avatar_{int(time.time())}.{file_ext}"
+                    save_path = base_path / safe_name
 
-                with open(save_path, "wb") as f:
-                    f.write(avatar_file.getbuffer())
+                    with open(save_path, "wb") as f:
+                        f.write(avatar_file.getbuffer())
 
-                relative_path = f"uploads/{data['cccd']}/{safe_name}"
-                cursor.execute("UPDATE doi_tuong SET anh_chan_dung = ? WHERE cccd = ?",
-                               (relative_path, data['cccd']))
+                    relative_path = f"uploads/{data['cccd']}/{safe_name}"
+                    cursor.execute("UPDATE doi_tuong SET anh_chan_dung = ? WHERE cccd = ?",
+                                   (relative_path, data['cccd']))
             except Exception as e:
                 logger.error(f"Error saving avatar on create: {e}")
 
