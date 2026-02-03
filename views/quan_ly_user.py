@@ -112,19 +112,29 @@ def show_user_list():
                 # Don't allow deleting self
                 current_user = st.session_state.get('user', {})
                 if user['id'] != current_user.get('id'):
-                    if st.button("🗑️", key=f"del_{user['id']}", help="Xóa tài khoản"):
-                        st.session_state.delete_user_id = user['id']
-                        st.session_state.delete_username = user['username']
+                    with st.popover(
+                        "🗑️",
+                        help=f"Xóa tài khoản {user['username']}"
+                    ):
+                        st.markdown(f"⚠️ **Xóa {user['username']}?**")
+                        st.caption("Hành động này không thể hoàn tác.")
+                        if st.button(
+                            "Xóa ngay",
+                            type="primary",
+                            key=f"btn_del_{user['id']}"
+                        ):
+                            success, msg = delete_user(user['id'])
+                            if success:
+                                st.success("Đã xóa!")
+                                st.rerun()
+                            else:
+                                st.error(msg)
 
             st.markdown("---")
 
     # Reset password dialog
     if st.session_state.get('reset_user_id'):
         show_reset_password_dialog()
-
-    # Delete confirmation dialog
-    if st.session_state.get('delete_user_id'):
-        show_delete_confirmation_dialog()
 
 
 def show_reset_password_dialog():
@@ -162,33 +172,6 @@ def show_reset_password_dialog():
                 st.session_state.reset_user_id = None
                 st.session_state.reset_username = None
                 st.rerun()
-
-
-def show_delete_confirmation_dialog():
-    """Dialog xác nhận xóa."""
-    user_id = st.session_state.delete_user_id
-    username = st.session_state.delete_username
-
-    st.error(f"⚠️ Bạn có chắc muốn xóa tài khoản **{username}**?")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        if st.button("🗑️ Xóa", type="primary"):
-            success, msg = delete_user(user_id)
-            if success:
-                st.success(f"✅ {msg}")
-                st.session_state.delete_user_id = None
-                st.session_state.delete_username = None
-                st.rerun()
-            else:
-                st.error(f"❌ {msg}")
-
-    with col2:
-        if st.button("❌ Hủy"):
-            st.session_state.delete_user_id = None
-            st.session_state.delete_username = None
-            st.rerun()
 
 
 def show_create_user_form():
