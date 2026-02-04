@@ -4,11 +4,12 @@ import pandas as pd
 from datetime import datetime
 from database import get_connection
 from constants import (
-    TINH_OPTIONS, GIOI_TINH_OPTIONS, LOAI_HINH_DAC_THU
+    TINH_OPTIONS,
+    GIOI_TINH_OPTIONS,
+    LOAI_HINH_DAC_THU
 )
 from utils.text_utils import normalize_string
 from utils.security_utils import sanitize_dataframe_for_csv
-
 
 
 def is_fuzzy_match(query, text):
@@ -16,7 +17,8 @@ def is_fuzzy_match(query, text):
     Kiểm tra query có phải là match của text không.
     Hỗ trợ:
     1. Containment (sau khi chuẩn hóa)
-    2. Subsequence (các ký tự của query xuất hiện thứ tự trong text) - VIPHUONG -> Vi Ngoc Phuong
+    2. Subsequence (các ký tự của query xuất hiện thứ tự trong text)
+       - VIPHUONG -> Vi Ngoc Phuong
     """
     if not query or not text:
         return False
@@ -70,7 +72,7 @@ def page_tra_cuu():
         )
 
     with col3:
-        search_clicked = st.button(
+        _ = st.button(
             "🔍 Tìm kiếm", type="primary", use_container_width=True)
 
     st.markdown("---")
@@ -92,7 +94,7 @@ def page_tra_cuu():
                 help="Lọc danh sách theo Giới tính"
             )
         with col3:
-            filter_dac_thu = st.selectbox(
+            _ = st.selectbox(
                 "Yếu tố đặc thù",
                 ["Tất cả"] + list(LOAI_HINH_DAC_THU.values()),
                 help="Lọc theo các loại hồ sơ chính sách xã hội "
@@ -158,11 +160,14 @@ def page_tra_cuu():
                     remaining_indices = ~mask_hoten_contains
                     if remaining_indices.any():
                         # We apply only to the remaining part
-                        subsequence_matches = normalized_hoten[remaining_indices].apply(
-                            check_subsequence)
+                        subsequence_matches = normalized_hoten[
+                            remaining_indices
+                        ].apply(check_subsequence)
                         # Update mask (using index alignment)
                         mask_hoten = mask_hoten | subsequence_matches.reindex(
-                            df_all.index, fill_value=False)
+                            df_all.index,
+                            fill_value=False
+                        )
 
             # Combine masks
             final_mask = mask_cccd | mask_hoten
@@ -195,11 +200,11 @@ def page_tra_cuu():
 
             # Hiển thị với pagination
             query = f"""
-                SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa, 
-                       phan_loai_nghe_nghiep, dia_chi_tinh, chi_tiet_nghe_nghiep, 
-                       ghi_chu_chung, created_at 
-                FROM doi_tuong 
-                ORDER BY created_at DESC 
+                SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa,
+                       phan_loai_nghe_nghiep, dia_chi_tinh,
+                       chi_tiet_nghe_nghiep, ghi_chu_chung, created_at
+                FROM doi_tuong
+                ORDER BY created_at DESC
                 LIMIT {ITEMS_PER_PAGE} OFFSET {offset}
             """
             df = pd.read_sql_query(query, conn)
@@ -233,50 +238,59 @@ def page_tra_cuu():
                 'ghi_chu_chung': 'Ghi chú'
             }
             display_df = display_df.rename(
-                columns={k: v for k, v in col_map.items() if k in display_df.columns})
+                columns={k: v for k, v in col_map.items() if k in display_df.columns})  # noqa: E501
 
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        event = st.dataframe(
+            display_df,
+            use_container_width=True,
+            hide_index=True,
+            selection_mode="single-row",
+            on_select="rerun"
+        )
 
         st.markdown("---")
 
-        # Chọn và xem hồ sơ chi tiết
-        st.markdown("##### 👤 Xem hồ sơ chi tiết")
-        col_select, col_btn = st.columns([3, 1])
+        # Handle Selection
+        if event.selection.rows:
+            selected_row_index = event.selection.rows[0]
+            # Use iloc on display_df to get the row
+            selected_row = display_df.iloc[selected_row_index]
 
-        with col_select:
-            # Tạo danh sách options: CCCD - Họ tên
-            cccd_col = 'cccd' if 'cccd' in df.columns else 'CCCD'
-            hoten_col = 'ho_ten' if 'ho_ten' in df.columns else 'Họ tên'
-            options = [f"{row[cccd_col]} - {row[hoten_col]}" for _,
-                       row in df.iterrows()]
-            selected = st.selectbox(
-                "Chọn đối tượng", options, key="select_profile")
+            # Get CCCD and Name safely handling potential column renaming
+            cccd_col_name = 'CCCD' if 'CCCD' in display_df.columns else 'cccd'
+            hoten_col_name = 'Họ tên' if 'Họ tên' in display_df.columns else 'ho_ten'  # noqa: E501
 
-        with col_btn:
+            selected_cccd = selected_row.get(cccd_col_name)
+            selected_name = selected_row.get(hoten_col_name, "N/A")
+
+            st.markdown(
+                f"##### 👤 Đã chọn: **{selected_name}** ({selected_cccd})")
+
             if st.button(
-                "👁️ Xem hồ sơ",
+                "👁️ Xem chi tiết hồ sơ",
                 type="primary",
                 use_container_width=True,
-                help="Nhấn để xem chi tiết toàn bộ thông tin của đối tượng đã chọn"
+                key="btn_view_profile_action"
             ):
-                if selected:
-                    selected_cccd = selected.split(" - ")[0]
-                    st.session_state.view_profile_cccd = selected_cccd
-                    st.rerun()
+                st.session_state.view_profile_cccd = str(selected_cccd)
+                st.rerun()
+        else:
+            st.info("👆 Chọn một dòng trong bảng trên để xem chi tiết hồ sơ.")
 
         st.markdown("---")
 
         # Nút xuất Excel
         st.download_button(
             label="📥 Xuất Excel",
-            data=sanitize_dataframe_for_csv(df).to_csv(index=False).encode('utf-8-sig'),
-            file_name=f"danh_sach_doi_tuong_{datetime.now().strftime('%Y%m%d')}.csv",
+            data=sanitize_dataframe_for_csv(df).to_csv(
+                index=False).encode('utf-8-sig'),
+            file_name=f"danh_sach_doi_tuong_{datetime.now().strftime('%Y%m%d')}.csv",  # noqa: E501
             mime="text/csv",
         )
     else:
         st.info("💡 Không có dữ liệu.")
         if search_query:
-            if st.button(f"➕ Thêm mới hồ sơ: {search_query}", type="secondary", use_container_width=True):
+            if st.button(f"➕ Thêm mới hồ sơ: {search_query}", type="secondary", use_container_width=True):  # noqa: E501
                 # Determine if numeric (CCCD) or text (Name)
                 if search_query.isdigit() and len(search_query) == 12:
                     st.session_state.nl_cccd = search_query
