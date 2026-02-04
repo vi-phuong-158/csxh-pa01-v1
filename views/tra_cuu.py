@@ -10,7 +10,6 @@ from utils.text_utils import normalize_string
 from utils.security_utils import sanitize_dataframe_for_csv
 
 
-
 def is_fuzzy_match(query, text):
     """
     Kiểm tra query có phải là match của text không.
@@ -70,7 +69,7 @@ def page_tra_cuu():
         )
 
     with col3:
-        search_clicked = st.button(
+        _ = st.button(
             "🔍 Tìm kiếm", type="primary", use_container_width=True)
 
     st.markdown("---")
@@ -92,7 +91,7 @@ def page_tra_cuu():
                 help="Lọc danh sách theo Giới tính"
             )
         with col3:
-            filter_dac_thu = st.selectbox(
+            _ = st.selectbox(
                 "Yếu tố đặc thù",
                 ["Tất cả"] + list(LOAI_HINH_DAC_THU.values()),
                 help="Lọc theo các loại hồ sơ chính sách xã hội "
@@ -114,7 +113,8 @@ def page_tra_cuu():
             # Vì SQLite LIKE hạn chế với tiếng Việt có dấu/không dấu
             # Optimized by Bolt: Vectorized search (~7.5x faster)
             # Optimized by Bolt: Push filters (Tỉnh, Giới tính) to SQL
-            sql = "SELECT * FROM doi_tuong WHERE 1=1"
+            # Optimized by Bolt (v2): Column Pruning + Deferred Loading (Fetch only needed cols first)
+            sql = "SELECT cccd, ho_ten FROM doi_tuong WHERE 1=1"
             params = []
 
             if filter_tinh != "Tất cả":
@@ -167,7 +167,22 @@ def page_tra_cuu():
             # Combine masks
             final_mask = mask_cccd | mask_hoten
 
-            df = df_all[final_mask]
+            # Deferred Loading: Fetch full data only for matches
+            matched_cccds = df_all.loc[final_mask, 'cccd'].tolist()
+
+            if matched_cccds:
+                chunk_size = 900
+                dfs = []
+                for i in range(0, len(matched_cccds), chunk_size):
+                    chunk = matched_cccds[i:i + chunk_size]
+                    placeholders = ','.join(['?'] * len(chunk))
+                    q = f"SELECT * FROM doi_tuong WHERE cccd IN ({placeholders})"
+                    dfs.append(pd.read_sql_query(q, conn, params=chunk))
+
+                df = (pd.concat(dfs, ignore_index=True)
+                      if dfs else pd.DataFrame())
+            else:
+                df = pd.DataFrame()
 
             total_count = len(df)
             st.info(
@@ -269,14 +284,16 @@ def page_tra_cuu():
         # Nút xuất Excel
         st.download_button(
             label="📥 Xuất Excel",
-            data=sanitize_dataframe_for_csv(df).to_csv(index=False).encode('utf-8-sig'),
+            data=sanitize_dataframe_for_csv(df).to_csv(
+                index=False).encode('utf-8-sig'),
             file_name=f"danh_sach_doi_tuong_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
         )
     else:
         st.info("💡 Không có dữ liệu.")
         if search_query:
-            if st.button(f"➕ Thêm mới hồ sơ: {search_query}", type="secondary", use_container_width=True):
+            if st.button(f"➕ Thêm mới hồ sơ: {search_query}",
+                         type="secondary", use_container_width=True):
                 # Determine if numeric (CCCD) or text (Name)
                 if search_query.isdigit() and len(search_query) == 12:
                     st.session_state.nl_cccd = search_query
