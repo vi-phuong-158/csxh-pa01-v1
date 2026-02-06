@@ -24,6 +24,10 @@ def get_connection():
     conn.row_factory = sqlite3.Row  # Cho phép truy cập cột theo tên
     # Bật foreign key constraints
     conn.execute("PRAGMA foreign_keys = ON")
+    # Enable Write-Ahead Logging (WAL) for concurrency and speed
+    conn.execute("PRAGMA journal_mode = WAL")
+    # Reduce fsync requirements for better write performance
+    conn.execute("PRAGMA synchronous = NORMAL")
     return conn
 
 
