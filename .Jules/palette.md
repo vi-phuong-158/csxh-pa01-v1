@@ -5,3 +5,7 @@
 ## 2026-01-26 - Surfacing Hidden Power with Tooltips
 **Learning:** Streamlit's `text_input` and `selectbox` UI is often minimal, which can hide powerful logic like fuzzy/subsequence search or advanced filter defaults. Users don't know they can type "viphuong" to find "Vi Ngoc Phuong" unless explicitly told.
 **Action:** Always use the `help` parameter and descriptive `placeholder` text to surface advanced capabilities directly in the UI context, rather than relying on external documentation.
+
+## 2026-02-14 - Streamlining Master-Detail Navigation
+**Learning:** The "Selectbox + Button" pattern for selecting items from a list is a legacy Streamlit workaround that adds unnecessary friction. With modern `st.dataframe` selection support, allowing users to click directly on a row to navigate is far more intuitive and reduces clicks by 50%.
+**Action:** Replace "Select ID from Dropdown" patterns with interactive `st.dataframe(selection_mode='single-row', on_select='rerun')` for master-detail views.

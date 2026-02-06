@@ -273,36 +273,22 @@ def page_tra_cuu():
                 columns={k: v for k, v in col_map.items()
                          if k in display_df.columns})
 
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        st.caption("💡 Chọn một dòng trong bảng để xem chi tiết hồ sơ.")
+        event = st.dataframe(
+            display_df,
+            use_container_width=True,
+            hide_index=True,
+            selection_mode="single-row",
+            on_select="rerun",
+            key="search_result_table"
+        )
 
-        st.markdown("---")
-
-        # Chọn và xem hồ sơ chi tiết
-        st.markdown("##### 👤 Xem hồ sơ chi tiết")
-        col_select, col_btn = st.columns([3, 1])
-
-        with col_select:
-            # Tạo danh sách options: CCCD - Họ tên
-            cccd_col = 'cccd' if 'cccd' in df.columns else 'CCCD'
-            hoten_col = 'ho_ten' if 'ho_ten' in df.columns else 'Họ tên'
-            options = [f"{row[cccd_col]} - {row[hoten_col]}" for _,
-                       row in df.iterrows()]
-            selected = st.selectbox(
-                "Chọn đối tượng", options, key="select_profile")
-
-        with col_btn:
-            if st.button(
-                "👁️ Xem hồ sơ",
-                type="primary",
-                use_container_width=True,
-                help="Nhấn để xem chi tiết toàn bộ thông tin của đối tượng "
-                     "đã chọn"
-            ):
-                if selected:
-                    selected_cccd = selected.split(" - ")[0]
-                    st.session_state.view_profile_cccd = \
-                        selected_cccd
-                    st.rerun()
+        if event.selection.rows:
+            selected_index = event.selection.rows[0]
+            # Use original df to get CCCD safely (indices align with display_df)
+            selected_cccd = str(df.iloc[selected_index]['cccd'])
+            st.session_state.view_profile_cccd = selected_cccd
+            st.rerun()
 
         st.markdown("---")
 
