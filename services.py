@@ -255,11 +255,22 @@ def save_doi_tuong(data):
         avatar_file = data.get('avatar_file')
         if avatar_file:
             try:
+                # SECURITY CHECK: Validate file extension
+                parts = avatar_file.name.split('.')
+                if len(parts) > 1:
+                    file_ext = parts[-1].lower()
+                else:
+                    file_ext = ""
+
+                if file_ext not in ALLOWED_EXTENSIONS:
+                    logger.error(f"Security: Attempted to upload invalid extension '{file_ext}' for CCCD {data['cccd']}")
+                    conn.rollback()
+                    return False, f"Định dạng ảnh không hợp lệ! Chỉ chấp nhận: {', '.join(ALLOWED_EXTENSIONS)}"
+
                 import time
                 base_path = Path(__file__).parent / "uploads" / data['cccd']
                 base_path.mkdir(parents=True, exist_ok=True)
 
-                file_ext = avatar_file.name.split('.')[-1]
                 safe_name = f"avatar_{int(time.time())}.{file_ext}"
                 save_path = base_path / safe_name
 
