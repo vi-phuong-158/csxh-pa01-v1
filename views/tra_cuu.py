@@ -221,15 +221,48 @@ def page_tra_cuu():
             total_pages = max(
                 1, (total_count + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE)
 
-            col_page1, col_page2, col_page3 = st.columns([1, 2, 1])
-            with col_page2:
+            # Pagination Controls
+            col_page_prev, col_page_input, col_page_next = st.columns(
+                [1, 2, 1])
+
+            # Ensure key exists to avoid key error if accessed before widget
+            if "search_page" not in st.session_state:
+                st.session_state.search_page = 1
+
+            with col_page_prev:
+                if st.button("⬅️ Trước",
+                             disabled=(st.session_state.search_page <= 1),
+                             use_container_width=True,
+                             help="Trang trước"):
+                    st.session_state.search_page -= 1
+                    st.rerun()
+
+            with col_page_input:
                 current_page = st.number_input(
-                    f"Trang (tổng {total_pages} trang, {total_count} hồ sơ)",
+                    f"Trang (tổng {total_pages})",
                     min_value=1,
                     max_value=total_pages,
-                    value=1,
-                    key="search_page"
+                    key="search_page",
+                    label_visibility="collapsed",
+                    help=f"Nhập số trang (Tổng {total_pages} trang)"
                 )
+                # Helper text
+                st.markdown(
+                    f"<div style='text-align: center; color: gray; "
+                    f"font-size: 0.8em; margin-top: -10px;'>"
+                    f"Trang {current_page} / {total_pages} "
+                    f"(Tổng {total_count} hồ sơ)</div>",
+                    unsafe_allow_html=True
+                )
+
+            with col_page_next:
+                if st.button("Sau ➡️",
+                             disabled=(
+                                 st.session_state.search_page >= total_pages),
+                             use_container_width=True,
+                             help="Trang sau"):
+                    st.session_state.search_page += 1
+                    st.rerun()
 
             offset = (current_page - 1) * ITEMS_PER_PAGE
 
@@ -285,7 +318,7 @@ def page_tra_cuu():
 
         if event.selection.rows:
             selected_index = event.selection.rows[0]
-            # Use original df to get CCCD safely (indices align with display_df)
+            # Use original df to get CCCD safely
             selected_cccd = str(df.iloc[selected_index]['cccd'])
             st.session_state.view_profile_cccd = selected_cccd
             st.rerun()
