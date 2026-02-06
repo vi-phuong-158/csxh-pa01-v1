@@ -5,3 +5,8 @@
 1. Use `secrets.token_urlsafe()` to generate random secure passwords during initial setup.
 2. Allow overriding via environment variables (`ADMIN_PASSWORD`).
 3. Never store default passwords in the source code.
+
+## 2026-02-05 - Arbitrary File Upload via Avatar
+**Vulnerability:** The `save_doi_tuong` function allowed uploading avatar files with any extension (e.g., `.php`, `.exe`) because it only renamed the file but preserved the original extension without validation.
+**Learning:** Renaming files (e.g., to a timestamp) prevents file overwrite and some traversal attacks but is insufficient if the extension is not validated. Malicious extensions can lead to Remote Code Execution (RCE) if the server executes them.
+**Prevention:** Always validate file extensions against a strict allowlist (e.g., `ALLOWED_EXTENSIONS`) before saving.
