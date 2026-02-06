@@ -9,3 +9,7 @@
 ## 2026-02-14 - Streamlining Master-Detail Navigation
 **Learning:** The "Selectbox + Button" pattern for selecting items from a list is a legacy Streamlit workaround that adds unnecessary friction. With modern `st.dataframe` selection support, allowing users to click directly on a row to navigate is far more intuitive and reduces clicks by 50%.
 **Action:** Replace "Select ID from Dropdown" patterns with interactive `st.dataframe(selection_mode='single-row', on_select='rerun')` for master-detail views.
+
+## 2026-02-15 - Ergonomic Pagination Controls
+**Learning:** Default Streamlit `number_input` for pagination is functional but breaks flow; users have to target small spinner arrows or switch to keyboard to type. Large, distinct "Previous/Next" buttons reduce cognitive load and allow for "mindless browsing".
+**Action:** Replace standalone number inputs with a "Prev | Page Input | Next" button group for paginated views.
