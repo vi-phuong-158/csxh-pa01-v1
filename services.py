@@ -230,6 +230,9 @@ def save_tai_lieu(cccd, uploaded_file, loai_tai_lieu, mo_ta=""):
 
 def save_doi_tuong(data):
     """Lưu thông tin đối tượng chính"""
+    if not validate_cccd(data['cccd']):
+        return False, "CCCD không hợp lệ! Chỉ chấp nhận ký tự chữ và số."
+
     conn = get_connection()
     try:
         cursor = conn.cursor()
@@ -268,8 +271,7 @@ def save_doi_tuong(data):
                     return False, f"Định dạng ảnh không hợp lệ! Chỉ chấp nhận: {', '.join(ALLOWED_EXTENSIONS)}"
 
                 import time
-                base_path = Path(__file__).parent / "uploads" / data['cccd']
-                base_path.mkdir(parents=True, exist_ok=True)
+                base_path = get_upload_folder(data['cccd'])
 
                 safe_name = f"avatar_{int(time.time())}.{file_ext}"
                 save_path = base_path / safe_name
