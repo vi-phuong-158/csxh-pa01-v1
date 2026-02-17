@@ -8,6 +8,7 @@ import logging
 import re
 import sqlite3
 import os
+import streamlit as st
 
 # Tên file database
 DB_NAME = "security_profile.db"
@@ -23,6 +24,16 @@ def get_connection():
     conn = sqlite3.connect(get_db_path())
     conn.row_factory = sqlite3.Row  # Cho phép truy cập cột theo tên
     # Bật foreign key constraints
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
+
+@st.cache_resource
+def get_cached_connection():
+    """Tạo connection dùng lại (cached), dùng cho read-only queries"""
+    conn = sqlite3.connect(get_db_path(), check_same_thread=False)
+    conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
@@ -256,8 +267,6 @@ def create_tables():
 
     # Index cho các bảng mới
     cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_doi_tuong_nguon_cccd ON quan_he_doi_tuong(cccd_1)")
-    cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_quan_he_cccd1 ON quan_he_doi_tuong(cccd_1)")
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_quan_he_cccd2 ON quan_he_doi_tuong(cccd_2)")
@@ -335,10 +344,6 @@ def delete_qua_trinh_hoat_dong(qt_id: int) -> bool:
 
 
 # Logging configuration
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
 logger = logging.getLogger(__name__)
 
 

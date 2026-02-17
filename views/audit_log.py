@@ -3,11 +3,15 @@
 Audit Log Viewer - Security Profile 360
 Xem lịch sử thay đổi dữ liệu
 """
+import logging
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 from database import get_connection
-from auth import is_super_admin
+from app.services.auth_service import is_super_admin
+from utils.security_utils import sanitize_dataframe_for_csv
+
+logger = logging.getLogger(__name__)
 
 
 def get_audit_logs(limit=100, table_filter=None, action_filter=None, date_from=None, date_to=None):
@@ -39,7 +43,8 @@ def get_audit_logs(limit=100, table_filter=None, action_filter=None, date_from=N
             query += " AND DATE(created_at) <= ?"
             params.append(date_to.strftime('%Y-%m-%d'))
 
-        query += f" ORDER BY created_at DESC LIMIT {limit}"
+        query += " ORDER BY created_at DESC LIMIT ?"
+        params.append(limit)
 
         df = pd.read_sql_query(query, conn, params=params)
         return df
@@ -58,7 +63,8 @@ def get_table_list():
         cursor.execute("SELECT DISTINCT bang FROM audit_log")
         tables = [row[0] for row in cursor.fetchall()]
         return ["Tất cả"] + tables
-    except:
+    except Exception as e:
+        logger.warning(f"Lỗi lấy danh sách bảng audit: {e}")
         return ["Tất cả"]
     finally:
         conn.close()
@@ -80,7 +86,8 @@ def add_audit_log(bang, hanh_dong, khoa_chinh, du_lieu_cu=None, du_lieu_moi=None
         """, (bang, hanh_dong, khoa_chinh, du_lieu_cu, du_lieu_moi, nguoi_thuc_hien))
         conn.commit()
         return True
-    except:
+    except Exception as e:
+        logger.error(f"Lỗi ghi audit log: {e}")
         return False
     finally:
         conn.close()
@@ -223,7 +230,7 @@ def page_audit_log():
     st.markdown("---")
     st.download_button(
         label="📥 Xuất Audit Log (CSV)",
-        data=df.to_csv(index=False).encode('utf-8-sig'),
+        data=sanitize_dataframe_for_csv(df).to_csv(index=False).encode('utf-8-sig'),
         file_name=f"audit_log_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
         mime="text/csv"
     )

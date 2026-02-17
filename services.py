@@ -267,6 +267,12 @@ def save_doi_tuong(data):
                     conn.rollback()
                     return False, f"Định dạng ảnh không hợp lệ! Chỉ chấp nhận: {', '.join(ALLOWED_EXTENSIONS)}"
 
+                # SECURITY: Validate CCCD before using in file path
+                if not validate_cccd(data['cccd']):
+                    logger.error("Security: Invalid CCCD for avatar path")
+                    conn.rollback()
+                    return False, "CCCD không hợp lệ"
+
                 import time
                 base_path = Path(__file__).parent / "uploads" / data['cccd']
                 base_path.mkdir(parents=True, exist_ok=True)

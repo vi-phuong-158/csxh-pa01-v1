@@ -35,8 +35,9 @@ from utils.security_utils import sanitize_dataframe_for_csv
 # CORE SCREENING FUNCTIONS
 # ============================================
 
+@st.cache_data(ttl=300)
 def get_database_names():
-    """Lấy danh sách họ tên từ database"""
+    """Lấy danh sách họ tên từ database (Cached 5 min)"""
     conn = get_connection()
     try:
         df = pd.read_sql_query(
@@ -88,6 +89,21 @@ def process_batch_screening_v2(df_input):
         col_name = df_input.columns[0]
         search_by = 'auto'
 
+    # Pre-process database for fast lookup
+    db_names = df_db['ho_ten'].tolist()
+    # Create Name -> CCCD mapping for O(1) lookup
+    # Note: If duplicate names exist, this takes the last one. 
+    # To match original logic (finding *a* match), this is acceptable or we use first.
+    # Original logic: match.iloc[0] -> first match.
+    # So we should build dict in reverse order or drop duplicates keeping first.
+    df_unique = df_db.drop_duplicates(subset=['ho_ten'], keep='first')
+    name_to_cccd = dict(zip(df_unique['ho_ten'], df_unique['cccd']))
+    
+    # CCCD set for O(1) exact check
+    db_cccd_set = set(df_db['cccd'].astype(str))
+    # Map cccd -> ho_ten
+    cccd_to_name = dict(zip(df_db['cccd'].astype(str), df_db['ho_ten']))
+
     for idx, row in df_input.iterrows():
         input_value = str(row[col_name]).strip()
 
@@ -105,13 +121,12 @@ def process_batch_screening_v2(df_input):
 
         # Tìm kiếm
         if current_search == 'cccd':
-            # Tìm chính xác CCCD
-            match = df_db[df_db['cccd'] == input_value]
-            if not match.empty:
+            # Tìm chính xác CCCD - O(1) lookup
+            if input_value in db_cccd_set:
                 results.append({
                     'input': input_value,
-                    'matched': match.iloc[0]['ho_ten'],
-                    'cccd': match.iloc[0]['cccd'],
+                    'matched': cccd_to_name.get(input_value, ''),
+                    'cccd': input_value,
                     'status': '✅ Khớp chính xác',
                     'score': 100,
                     'alternatives': []
@@ -129,17 +144,17 @@ def process_batch_screening_v2(df_input):
             # Fuzzy matching họ tên - sử dụng module mới
             if FUZZY_MODULE_AVAILABLE:
                 # Sử dụng batch_screen từ fuzzy_matching module
+                # Pass pre-converted list to avoid overhead
                 screen_results = batch_screen(
                     [input_value],
-                    df_db['ho_ten'].tolist(),
+                    db_names,
                     threshold=THRESHOLD_SUSPECT  # 80%
                 )
 
                 if screen_results and screen_results[0]['matched']:
                     result = screen_results[0]
-                    # Tìm CCCD tương ứng
-                    matched_row = df_db[df_db['ho_ten'] == result['matched']]
-                    cccd = matched_row.iloc[0]['cccd'] if not matched_row.empty else ''
+                    # Tìm CCCD tương ứng - O(1) lookup
+                    cccd = name_to_cccd.get(result['matched'], '')
 
                     results.append({
                         'input': input_value,
@@ -162,13 +177,13 @@ def process_batch_screening_v2(df_input):
                 # Fallback to rapidfuzz directly
                 match_result = fuzz_process.extractOne(
                     input_value,
-                    df_db['ho_ten'].tolist(),
+                    db_names,
                     scorer=fuzz.token_set_ratio
                 )
 
                 if match_result and match_result[1] >= 80:  # 80% threshold
-                    matched_row = df_db[df_db['ho_ten'] == match_result[0]]
-                    cccd = matched_row.iloc[0]['cccd'] if not matched_row.empty else ''
+                    matched_name = match_result[0]
+                    cccd = name_to_cccd.get(matched_name, '')
 
                     if match_result[1] >= 95:
                         status = '✅ Khớp chính xác'
@@ -177,7 +192,7 @@ def process_batch_screening_v2(df_input):
 
                     results.append({
                         'input': input_value,
-                        'matched': match_result[0],
+                        'matched': matched_name,
                         'cccd': cccd,
                         'status': status,
                         'score': match_result[1],
@@ -398,10 +413,17 @@ def page_ra_soat():
                 # Xử lý rà soát
                 if st.button("🔍 Bắt đầu rà soát", type="primary", key="btn_ra_soat_excel"):
                     with st.spinner("Đang rà soát với ngưỡng 80%..."):
-                        results = process_batch_screening_v2(df_input)
-                        display_screening_results(results)
+                        try:
+                            results = process_batch_screening_v2(df_input)
+                            display_screening_results(results)
+                        except Exception as e:
+                            import logging
+                            logging.getLogger(__name__).error(f"Lỗi rà soát batch: {e}")
+                            st.error("❌ Đã xảy ra lỗi trong quá trình rà soát. Vui lòng thử lại.")
             except Exception as e:
-                st.error(f"❌ Lỗi đọc file: {e}")
+                import logging
+                logging.getLogger(__name__).error(f"Lỗi đọc file Excel: {e}")
+                st.error("❌ Lỗi đọc file Excel. Vui lòng đảm bảo file đúng định dạng và có cột CCCD hoặc Họ tên.")
 
     with tab_paste:
         st.markdown("#### 📝 Nhập danh sách trực tiếp")

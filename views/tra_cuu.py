@@ -39,13 +39,14 @@ def is_fuzzy_match(query, text):
     return False
 
 
-def search_doi_tuong(conn, search_query, search_type,
-                     filter_tinh, filter_gioi_tinh):
+def get_search_candidates(conn, search_query, search_type,
+                          filter_tinh, filter_gioi_tinh):
     """
-    Thực hiện tìm kiếm đối tượng với chiến lược Column Pruning:
+    Thực hiện tìm kiếm đối tượng và trả về danh sách CCCD phù hợp.
+    Chiến lược Column Pruning:
     1. Lấy index (cccd, ho_ten)
     2. Lọc bằng Python (fuzzy match)
-    3. Lấy dữ liệu chi tiết cho các CCCD khớp
+    3. Trả về danh sách CCCD
     """
     # 1. Fetch lightweight index
     sql_index = "SELECT cccd, ho_ten FROM doi_tuong WHERE 1=1"
@@ -63,7 +64,7 @@ def search_doi_tuong(conn, search_query, search_type,
     df_index = pd.read_sql_query(sql_index, conn, params=params)
 
     if df_index.empty:
-        return pd.DataFrame()
+        return []
 
     # Pre-compute normalization
     query_norm = normalize_string(search_query)
@@ -110,25 +111,23 @@ def search_doi_tuong(conn, search_query, search_type,
     final_mask = mask_cccd | mask_hoten
     matching_cccds = df_index[final_mask]['cccd'].tolist()
 
-    if not matching_cccds:
+    return matching_cccds
+
+
+def fetch_doi_tuong_details(conn, cccd_list):
+    """Lấy thông tin chi tiết cho danh sách CCCD"""
+    if not cccd_list:
         return pd.DataFrame()
-
-    # 3. Fetch Full Details (Chunked)
-    chunk_size = 900  # SQLite limit safe
-    chunks = [matching_cccds[i:i + chunk_size]
-              for i in range(0, len(matching_cccds), chunk_size)]
-
-    dfs = []
-    for chunk in chunks:
-        placeholders = ','.join(['?'] * len(chunk))
-        sql_details = f"SELECT * FROM doi_tuong WHERE cccd IN ({placeholders})"
-        # IMPORTANT: Preserve order if needed?
-        # Current logic sorts by created_at DESC in pagination,
-        # but for search it was implicit (likely insertion order or PK).
-        # We can sort later if needed.
-        dfs.append(pd.read_sql_query(sql_details, conn, params=chunk))
-
-    return pd.concat(dfs, ignore_index=True)
+        
+    placeholders = ','.join(['?'] * len(cccd_list))
+    sql_details = f"SELECT * FROM doi_tuong WHERE cccd IN ({placeholders})"
+    
+    # We want to preserve order of cccd_list if possible, but IN clause doesn't guarantee order.
+    # However, for display purposes, we might want to sort by created_at DESC or relevance.
+    # Let's sort by created_at DESC to match default view.
+    sql_details += " ORDER BY created_at DESC"
+    
+    return pd.read_sql_query(sql_details, conn, params=cccd_list)
 
 
 # ============================================
@@ -205,17 +204,54 @@ def page_tra_cuu():
     conn = get_connection()
     try:
         if search_query:
-            # Optimized by Bolt: Column Pruning Strategy
-            df = search_doi_tuong(
+            # SEARCH MODE with Pagination
+            # 1. Get candidates (List of CCCDs)
+            candidates = get_search_candidates(
                 conn, search_query, search_type, filter_tinh, filter_gioi_tinh)
-
-            total_count = len(df)
+            
+            total_count = len(candidates)
             st.info(
                 f"🔍 Tìm thấy **{total_count}** kết quả cho: '{search_query}'")
+            
+            if total_count > 0:
+                # 2. Pagination UI
+                total_pages = max(
+                    1, (total_count + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE)
+
+                col_page1, col_page2, col_page3 = st.columns([1, 2, 1])
+                with col_page2:
+                    current_page = st.number_input(
+                        f"Trang (tổng {total_pages} trang, {total_count} hồ sơ)",
+                        min_value=1,
+                        max_value=total_pages,
+                        value=1,
+                        key="search_page_query"
+                    )
+                
+                # 3. Slice candidates for current page
+                offset = (current_page - 1) * ITEMS_PER_PAGE
+                page_cccds = candidates[offset : offset + ITEMS_PER_PAGE]
+                
+                # 4. Fetch details for current page
+                df = fetch_doi_tuong_details(conn, page_cccds)
+            else:
+                df = pd.DataFrame()
+
         else:
-            # Đếm tổng số records
-            count_query = "SELECT COUNT(*) as total FROM doi_tuong"
-            total_count = pd.read_sql_query(count_query, conn).iloc[0, 0]
+            # NO SEARCH MODE (Default View)
+            # Đếm tổng số records với filter
+            count_query = "SELECT COUNT(*) as total FROM doi_tuong WHERE 1=1"
+            count_params = []
+            
+            if filter_tinh != "Tất cả":
+                count_query += " AND dia_chi_tinh = ?"
+                count_params.append(filter_tinh)
+            
+            if filter_gioi_tinh != "Tất cả":
+                count_query += " AND gioi_tinh = ?"
+                count_params.append(filter_gioi_tinh)
+
+            total_count = pd.read_sql_query(count_query, conn, params=count_params).iloc[0, 0]
 
             # Pagination UI
             total_pages = max(
@@ -228,31 +264,38 @@ def page_tra_cuu():
                     min_value=1,
                     max_value=total_pages,
                     value=1,
-                    key="search_page"
+                    key="search_page_default"
                 )
 
             offset = (current_page - 1) * ITEMS_PER_PAGE
 
-            # Hiển thị với pagination
-            query = f"""
+            # Hiển thị với pagination và filter SQL
+            query = """
                 SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa,
                        phan_loai_nghe_nghiep, dia_chi_tinh,
                        chi_tiet_nghe_nghiep, ghi_chu_chung, created_at
                 FROM doi_tuong
-                ORDER BY created_at DESC
-                LIMIT {ITEMS_PER_PAGE} OFFSET {offset}
+                WHERE 1=1
             """
-            df = pd.read_sql_query(query, conn)
+            params = []
+            
+            if filter_tinh != "Tất cả":
+                query += " AND dia_chi_tinh = ?"
+                params.append(filter_tinh)
+            
+            if filter_gioi_tinh != "Tất cả":
+                query += " AND gioi_tinh = ?"
+                params.append(filter_gioi_tinh)
+                
+            query += """
+                ORDER BY created_at DESC
+                LIMIT ? OFFSET ?
+            """
+            params.extend([ITEMS_PER_PAGE, offset])
+            
+            df = pd.read_sql_query(query, conn, params=params)
     finally:
         conn.close()
-
-    # Áp dụng bộ lọc (filters) - Thực hiện trên DataFrame cho đơn giản
-    # Note: search_doi_tuong applies filters, but reapplying is safe
-    if not df.empty:
-        if filter_tinh != "Tất cả":
-            df = df[df['dia_chi_tinh'] == filter_tinh]
-        if filter_gioi_tinh != "Tất cả":
-            df = df[df['gioi_tinh'] == filter_gioi_tinh]
 
     if not df.empty:
         # Đổi tên cột

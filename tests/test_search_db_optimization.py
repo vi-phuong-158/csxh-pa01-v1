@@ -20,24 +20,25 @@ class TestSearchOptimization(unittest.TestCase):
     @patch('views.tra_cuu.pd.read_sql_query')
     def test_search_strategy(self, mock_read_sql):
         """
-        Verify that search_doi_tuong uses the 2-step fetch strategy:
-        1. Fetch cccd, ho_ten (index)
-        2. Fetch full details for matches
+        Verify that search implements the 2-step fetch strategy:
+        1. get_search_candidates fetches index (cccd, ho_ten)
+        2. fetch_doi_tuong_details fetches full details
         """
-        from views.tra_cuu import search_doi_tuong
+        from views.tra_cuu import get_search_candidates, fetch_doi_tuong_details
 
         # Mock connection
         mock_conn = MagicMock()
 
         # Setup mock return values
-        # Call 1: Index fetch (returns cccd, ho_ten)
+        
+        # 1. Mock for get_search_candidates
         df_index = pd.DataFrame({
             'cccd': ['001', '002', '003'],
             'ho_ten': ['Nguyen Van A', 'Tran Van B', 'Le Van C'],
             'dia_chi_tinh': ['Phú Thọ', 'Hà Nội', 'Phú Thọ'],
         })
 
-        # Call 2: Details fetch (returns full rows for matches)
+        # 2. Mock for fetch_doi_tuong_details
         df_details = pd.DataFrame({
             'cccd': ['001'],
             'ho_ten': ['Nguyen Van A'],
@@ -53,23 +54,28 @@ class TestSearchOptimization(unittest.TestCase):
 
         mock_read_sql.side_effect = side_effect
 
-        # Execute
-        results = search_doi_tuong(mock_conn, "Nguyen Van A", "Tất cả", "Tất cả", "Tất cả")
-
-        # Verify
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results.iloc[0]['cccd'], '001')
-
-        # Verify calls
-        self.assertTrue(mock_read_sql.call_count >= 2)
-
-        # Verify first call was lightweight
+        # Execute Step 1: Get Candidates
+        candidates = get_search_candidates(mock_conn, "Nguyen Van A", "Tất cả", "Tất cả", "Tất cả")
+        
+        # Verify Step 1
+        self.assertIsInstance(candidates, list)
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0], '001')
+        
+        # Verify SQL for Step 1
         call_args_1 = mock_read_sql.call_args_list[0]
         sql_1 = call_args_1[0][0]
         self.assertIn("SELECT cccd, ho_ten", sql_1)
-        self.assertNotIn("*", sql_1.split("FROM")[0]) # Ensure * is not in SELECT part
+        self.assertNotIn("*", sql_1.split("FROM")[0])
 
-        # Verify second call used IN clause
+        # Execute Step 2: Fetch Details
+        details = fetch_doi_tuong_details(mock_conn, candidates)
+        
+        # Verify Step 2
+        self.assertFalse(details.empty)
+        self.assertEqual(details.iloc[0]['cccd'], '001')
+        
+        # Verify SQL for Step 2
         call_args_2 = mock_read_sql.call_args_list[1]
         sql_2 = call_args_2[0][0]
         self.assertIn("SELECT * FROM doi_tuong WHERE cccd IN", sql_2)

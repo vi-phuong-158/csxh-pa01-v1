@@ -3,11 +3,14 @@
 Quản lý Nguồn dữ liệu - Security Profile 360
 Theo dõi provenance của dữ liệu (OSINT Pattern)
 """
+import logging
 import streamlit as st
 import pandas as pd
 from datetime import datetime
 from database import get_connection
-from auth import is_super_admin
+from app.services.auth_service import is_super_admin
+
+logger = logging.getLogger(__name__)
 
 
 def get_all_nguon_du_lieu():
@@ -21,7 +24,8 @@ def get_all_nguon_du_lieu():
             ORDER BY thoi_gian_import DESC
         """, conn)
         return df
-    except:
+    except Exception as e:
+        logger.warning(f"Lỗi lấy nguồn dữ liệu: {e}")
         return pd.DataFrame()
     finally:
         conn.close()
