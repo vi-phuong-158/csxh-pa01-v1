@@ -98,6 +98,105 @@ def get_xa_phuong_stats():
 # ... (Previous code remains same, skipping to page_dashboard updates)
 
 # ============================================
+# CHART RENDERING FUNCTIONS
+# ============================================
+
+def render_pie_echarts(data_dict, title):
+    """Render Pie Chart using ECharts"""
+    data_entries = [
+        {"value": v, "name": k} 
+        for k, v in data_dict.items()
+    ]
+    
+    option = {
+        "title": {
+            "text": title,
+            "left": "center",
+            "textStyle": {"color": "#fff"}
+        },
+        "tooltip": {
+            "trigger": "item"
+        },
+        "legend": {
+            "orient": "vertical",
+            "left": "left",
+            "textStyle": {"color": "#fff"}
+        },
+        "series": [
+            {
+                "name": title,
+                "type": "pie",
+                "radius": "50%",
+                "data": data_entries,
+                "emphasis": {
+                    "itemStyle": {
+                        "shadowBlur": 10,
+                        "shadowOffsetX": 0,
+                        "shadowColor": "rgba(0, 0, 0, 0.5)"
+                    }
+                }
+            }
+        ]
+    }
+    st_echarts(options=option, height="300px")
+
+
+def render_bar_echarts(data_dict, title, horizontal=True):
+    """Render Bar Chart using ECharts"""
+    keys = list(data_dict.keys())
+    values = list(data_dict.values())
+    
+    if horizontal:
+        option = {
+            "title": {"text": title, "textStyle": {"color": "#fff"}},
+            "tooltip": {"trigger": "axis"},
+            "grid": {"left": "3%", "right": "4%", "bottom": "3%", "containLabel": True},
+            "xAxis": {"type": "value", "axisLabel": {"color": "#fff"}},
+            "yAxis": {"type": "category", "data": keys, "axisLabel": {"color": "#fff"}},
+            "series": [{"type": "bar", "data": values}]
+        }
+    else:
+        option = {
+            "title": {"text": title, "textStyle": {"color": "#fff"}},
+            "tooltip": {"trigger": "axis"},
+            "grid": {"left": "3%", "right": "4%", "bottom": "3%", "containLabel": True},
+            "xAxis": {"type": "category", "data": keys, "axisLabel": {"color": "#fff"}},
+            "yAxis": {"type": "value", "axisLabel": {"color": "#fff"}},
+            "series": [{"type": "bar", "data": values}]
+        }
+        
+    st_echarts(options=option, height="300px")
+
+
+def render_pie_plotly(data_dict, title):
+    """Render Pie Chart using Plotly"""
+    df = pd.DataFrame(list(data_dict.items()), columns=['Category', 'Value'])
+    fig = px.pie(df, values='Value', names='Category', title=title)
+    fig.update_layout(
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white')
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def render_bar_plotly(data_dict, title, horizontal=True):
+    """Render Bar Chart using Plotly"""
+    df = pd.DataFrame(list(data_dict.items()), columns=['Category', 'Value'])
+    if horizontal:
+        fig = px.bar(df, x='Value', y='Category', title=title, orientation='h')
+    else:
+        fig = px.bar(df, x='Category', y='Value', title=title)
+        
+    fig.update_layout(
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white')
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+# ============================================
 # DASHBOARD PAGE
 # ============================================
 def page_dashboard():

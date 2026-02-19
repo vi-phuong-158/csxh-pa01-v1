@@ -116,6 +116,29 @@ if 'user' not in st.session_state:
 if 'show_change_password' not in st.session_state:
     st.session_state.show_change_password = False
 
+# If form submitted, update last_active to prevent timeout during long entry
+if st.session_state.form_submitted:
+    st.session_state.last_active = time.time()
+
+# ============================================
+# SESSION TIMEOUT CHECK (30 minutes)
+# ============================================
+SESSION_TIMEOUT = 1800  # 30 minutes
+import time
+
+if 'last_active' not in st.session_state:
+    st.session_state.last_active = time.time()
+
+if st.session_state.logged_in:
+    if time.time() - st.session_state.last_active > SESSION_TIMEOUT:
+        st.session_state.logged_in = False
+        st.session_state.user = None
+        st.error("⚠️ Phiên làm việc đã hết hạn do không hoạt động. Vui lòng đăng nhập lại.")
+        st.stop()
+    else:
+        # Update activity time
+        st.session_state.last_active = time.time()
+
 # ============================================
 # AUTHENTICATION CHECK
 # ============================================
@@ -182,6 +205,21 @@ if st.session_state.get('show_change_password'):
 
 # Xử lý điều hướng đặc biệt (Xem chi tiết hồ sơ)
 elif st.session_state.view_profile_cccd:
+    # AUDIT LOGGING: Log view action if new CCCD is viewed
+    if st.session_state.get('last_viewed_cccd') != st.session_state.view_profile_cccd:
+        from views.audit_log import add_audit_log
+        user = get_current_user()
+        username = user.get('username') if user else 'Unknown'
+        add_audit_log(
+            bang='doi_tuong',
+            hanh_dong='VIEW',
+            khoa_chinh=st.session_state.view_profile_cccd,
+            du_lieu_cu='',
+            du_lieu_moi='Xem chi tiết hồ sơ',
+            nguoi_thuc_hien=username
+        )
+        st.session_state.last_viewed_cccd = st.session_state.view_profile_cccd
+        
     page_profile_view(st.session_state.view_profile_cccd)
 
 else:

@@ -72,7 +72,7 @@ def get_table_list():
 
 def get_action_list():
     """Lấy danh sách các loại hành động."""
-    return ["Tất cả", "INSERT", "UPDATE", "DELETE"]
+    return ["Tất cả", "INSERT", "UPDATE", "DELETE", "VIEW"]
 
 
 def add_audit_log(bang, hanh_dong, khoa_chinh, du_lieu_cu=None, du_lieu_moi=None, nguoi_thuc_hien=None):
