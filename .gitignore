@@ -43,3 +43,8 @@ uploads/
 Issue.docx
 Bao-cao-*.docx
 Ke-hoach-*.docx
+
+dist_*/
+_build_temp/
+*.pyc
+__pycache__/
