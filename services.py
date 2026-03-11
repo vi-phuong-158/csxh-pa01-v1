@@ -143,7 +143,9 @@ def save_phuong_tien(cccd, loai_xe, bien_so, ten_xe, ghi_chu=""):
         conn.close()
 
 
-def save_nhan_than(cccd, loai_quan_he, ho_ten, cccd_nhan_than="", ngay_sinh=None, nghe_nghiep="", noi_o="", ghi_chu=""):
+def save_nhan_than(cccd, loai_quan_he, ho_ten, cccd_nhan_than="", ngay_sinh=None,
+                   gioi_tinh="", dia_chi_tinh="", dia_chi_xa="",
+                   nghe_nghiep="", noi_o="", ghi_chu=""):
     """Lưu thông tin nhân thân"""
     if not ho_ten:
         return False
@@ -151,9 +153,13 @@ def save_nhan_than(cccd, loai_quan_he, ho_ten, cccd_nhan_than="", ngay_sinh=None
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO nhan_than (cccd, loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh, nghe_nghiep, noi_o, ghi_chu)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (cccd, loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh, nghe_nghiep, noi_o, ghi_chu))
+            INSERT INTO nhan_than (cccd, loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh,
+                                   gioi_tinh, dia_chi_tinh, dia_chi_xa,
+                                   nghe_nghiep, noi_o, ghi_chu)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (cccd, loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh,
+              gioi_tinh, dia_chi_tinh, dia_chi_xa,
+              nghe_nghiep, noi_o, ghi_chu))
         conn.commit()
         return True
     except Exception as e:

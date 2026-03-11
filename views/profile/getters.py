@@ -18,8 +18,26 @@ def get_doi_tuong_detail(cccd):
 
 def get_nhan_than_by_cccd(cccd):
     conn = get_connection()
-    df = pd.read_sql_query(
-        "SELECT * FROM nhan_than WHERE cccd = ?", conn, params=(cccd,))
+    query = """
+        SELECT 
+            nt.id,
+            nt.cccd,
+            nt.loai_quan_he,
+            nt.cccd_nhan_than,
+            COALESCE(dt.ho_ten, nt.ho_ten) AS ho_ten,
+            COALESCE(dt.ngay_sinh, nt.ngay_sinh) AS ngay_sinh,
+            COALESCE(dt.gioi_tinh, nt.gioi_tinh) AS gioi_tinh,
+            COALESCE(dt.dia_chi_tinh, nt.dia_chi_tinh) AS dia_chi_tinh,
+            COALESCE(dt.dia_chi_xa, nt.dia_chi_xa) AS dia_chi_xa,
+            COALESCE(dt.phan_loai_nghe_nghiep, nt.nghe_nghiep) AS nghe_nghiep,
+            COALESCE(dt.dia_chi_xa, nt.noi_o) AS noi_o,
+            nt.ghi_chu,
+            nt.created_at
+        FROM nhan_than nt
+        LEFT JOIN doi_tuong dt ON nt.cccd_nhan_than = dt.cccd
+        WHERE nt.cccd = ?
+    """
+    df = pd.read_sql_query(query, conn, params=(cccd,))
     conn.close()
     return df
 

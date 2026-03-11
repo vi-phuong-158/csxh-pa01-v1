@@ -110,6 +110,9 @@ select,
 /* Cụ thể hơn cho Streamlit Input Widgets */
 .stTextInput>div>div>input,
 .stSelectbox>div>div>div,
+.stMultiSelect>div>div>div,
+.stSelectbox [data-baseweb="select"] div,
+.stMultiSelect [data-baseweb="select"] div,
 .stDateInput>div>div>input,
 .stTextArea textarea,
 .stNumberInput>div>div>input {
@@ -120,48 +123,76 @@ select,
 }
 
 /* 2. Dropdown Menu Items (Danh sách xổ xuống) */
-/* Container của dropdown menu - Nền TỐI, chữ SÁNG */
+/* Container của dropdown menu - Nền TRẮNG, có shadow */
 [data-baseweb="popover"],
 [data-baseweb="menu"],
-[role="listbox"] {
-    background-color: #1e1e3f !important;
+[role="listbox"],
+ul[data-testid="stSelectboxVirtualDropdown"],
+ul[data-testid="stVirtualDropdown"] {
+    background-color: #ffffff !important;
     border-radius: 12px !important;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
     overflow: hidden !important;
 }
 
-/* Các item trong menu dropdown -> Chữ TRẮNG SÁNG, dễ đọc */
-[data-baseweb="popover"] li,
-[data-baseweb="popover"] div,
-[data-baseweb="popover"] span,
-[data-baseweb="menu"] li,
-[data-baseweb="menu"] div,
-[role="option"],
+/* Các item trong menu dropdown (li) phải có nền TRẮNG rõ ràng */
+ul[data-testid="stSelectboxVirtualDropdown"] li[role="option"],
+ul[data-testid="stVirtualDropdown"] li[role="option"],
+[data-baseweb="menu"] li[role="option"],
+[role="option"] {
+    background-color: #ffffff !important;
+    padding: 12px 16px !important;
+    transition: background-color 0.2s ease !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Nội dung chữ bên trong item (div, span, p) -> Chữ ĐEN sẫm */
+ul[data-testid="stSelectboxVirtualDropdown"] li[role="option"] div,
+ul[data-testid="stSelectboxVirtualDropdown"] li[role="option"] span,
+ul[data-testid="stVirtualDropdown"] li[role="option"] div,
+ul[data-testid="stVirtualDropdown"] li[role="option"] span,
+[data-baseweb="menu"] li[role="option"] div,
+[data-baseweb="menu"] li[role="option"] span,
 [role="option"] div,
-[role="option"] span {
-    color: #ffffff !important;
+[role="option"] span,
+[role="option"] p {
+    color: #1a1a2e !important;
     font-weight: 500 !important;
     font-size: 1rem !important;
-    background-color: transparent !important;
+    -webkit-text-fill-color: #1a1a2e !important;
 }
 
-/* Mỗi option item */
-[role="option"] {
-    padding: 12px 16px !important;
-    transition: all 0.2s ease !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+/* Thẻ lựa chọn đã pick trong MultiSelect */
+span[data-baseweb="tag"] {
+    background-color: #667eea !important;
+    color: #ffffff !important;
 }
 
-/* Hover state cho dropdown item - Highlight màu accent */
-[role="option"]:hover {
-    background-color: rgba(102, 126, 234, 0.4) !important;
+span[data-baseweb="tag"] span {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
 }
 
-/* Selected option - Màu đậm hơn */
+/* Hover state cho dropdown item - Highlight nền xanh nhạt, chữ vẫn đậm */
+ul[data-testid="stSelectboxVirtualDropdown"] li[role="option"]:hover,
+ul[data-testid="stSelectboxVirtualDropdown"] li[role="option"][aria-selected="true"],
+ul[data-testid="stVirtualDropdown"] li[role="option"]:hover,
+ul[data-testid="stVirtualDropdown"] li[role="option"][aria-selected="true"],
+[role="option"]:hover,
 [role="option"][aria-selected="true"],
 [role="option"][data-highlighted="true"] {
-    background-color: rgba(102, 126, 234, 0.5) !important;
+    background-color: rgba(102, 126, 234, 0.2) !important;
+}
+
+ul[data-testid="stSelectboxVirtualDropdown"] li[role="option"]:hover div,
+ul[data-testid="stSelectboxVirtualDropdown"] li[role="option"][aria-selected="true"] div,
+ul[data-testid="stVirtualDropdown"] li[role="option"]:hover div,
+ul[data-testid="stVirtualDropdown"] li[role="option"][aria-selected="true"] div,
+[role="option"]:hover div,
+[role="option"][aria-selected="true"] div,
+[role="option"][data-highlighted="true"] div {
+    color: #1a1a2e !important;
     font-weight: 600 !important;
 }
 
@@ -583,14 +614,16 @@ button[aria-label*="menu"] svg {
     background: rgba(255, 255, 255, 0.95) !important;
 }
 
-/* Select Box */
-.stSelectbox>div>div {
+/* Select Box & Multi Select Box */
+.stSelectbox>div>div,
+.stMultiSelect>div>div {
     background: rgba(255, 255, 255, 0.9) !important;
     border: 1px solid var(--glass-border) !important;
     border-radius: var(--radius-md) !important;
 }
 
-.stSelectbox>div>div>div {
+.stSelectbox>div>div>div,
+.stMultiSelect>div>div>div {
     color: #1a1a2e !important;
     font-family: 'Inter', sans-serif !important;
     font-size: 1.05rem !important;

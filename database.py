@@ -117,6 +117,9 @@ def create_tables():
             ho_ten TEXT,
             cccd_nhan_than TEXT,
             ngay_sinh DATE,
+            gioi_tinh TEXT DEFAULT '',
+            dia_chi_tinh TEXT DEFAULT '',
+            dia_chi_xa TEXT DEFAULT '',
             nghe_nghiep TEXT,
             noi_o TEXT,
             ghi_chu TEXT,
@@ -124,6 +127,13 @@ def create_tables():
             FOREIGN KEY (cccd) REFERENCES doi_tuong(cccd) ON DELETE CASCADE
         )
     """)
+
+    # Migration: thêm cột mới cho bảng nhan_than (bỏ qua nếu đã tồn tại)
+    for col in ['gioi_tinh', 'dia_chi_tinh', 'dia_chi_xa']:
+        try:
+            cursor.execute(f"ALTER TABLE nhan_than ADD COLUMN {col} TEXT DEFAULT ''")
+        except Exception:
+            pass  # Cột đã tồn tại
 
     # ========================================
     # BẢNG ĐẶC THÙ - TẦNG 2 (Yếu tố nước ngoài & Nghiệp vụ)

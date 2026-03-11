@@ -87,6 +87,9 @@ def init_database():
     # Use new SQLAlchemy init
     init_db()
     
+    # Run legacy create_tables for migrations (ALTER TABLE statements)
+    create_tables()
+    
     # Legacy init for backward compatibility if needed, or just use new auth service later
     # For now, we still need init_super_admin from auth.py which uses legacy DB access
     # ideally we refactor auth.py next.

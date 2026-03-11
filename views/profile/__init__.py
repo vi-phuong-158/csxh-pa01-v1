@@ -16,7 +16,8 @@ from .actions import (
     delete_phuong_tien,
     delete_ho_so_dac_thu,
     delete_tai_lieu,
-    delete_doi_tuong
+    delete_doi_tuong,
+    update_doi_tuong
 )
 
 __all__ = [
@@ -35,5 +36,6 @@ __all__ = [
     'delete_phuong_tien',
     'delete_ho_so_dac_thu',
     'delete_tai_lieu',
-    'delete_doi_tuong'
+    'delete_doi_tuong',
+    'update_doi_tuong'
 ]

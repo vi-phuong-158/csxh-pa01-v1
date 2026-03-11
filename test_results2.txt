@@ -1,0 +1,25 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.9, pytest-9.0.2, pluggy-1.6.0
+rootdir: D:\Code\csxh-pa01-v1
+plugins: mock-3.15.1
+collected 16 items / 1 error
+
+=================================== ERRORS ====================================
+______________ ERROR collecting tests/test_security_section4.py _______________
+ImportError while importing test module 'D:\Code\csxh-pa01-v1\tests\test_security_section4.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\Vi Phuong\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_security_section4.py:9: in <module>
+    from views.audit_log import add_audit_log, get_audit_logs, get_action_list
+views\audit_log.py:11: in <module>
+    from app.services.auth_service import is_super_admin
+app\services\auth_service.py:8: in <module>
+    from sqlalchemy import select, func
+E   ModuleNotFoundError: No module named 'sqlalchemy'
+=========================== short test summary info ===========================
+ERROR tests/test_security_section4.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+============================== 1 error in 1.62s ===============================

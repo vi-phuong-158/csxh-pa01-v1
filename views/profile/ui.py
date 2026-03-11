@@ -383,11 +383,14 @@ def page_profile_view(cccd):
             for idx, row in df_nhan_than.iterrows():
                 col_info, col_del = st.columns([5, 1])
                 with col_info:
+                    gioi_tinh_txt = f" | 🚻 {row['gioi_tinh']}" if row.get('gioi_tinh') else ""
+                    dia_chi_txt = ""
+                    if row.get('dia_chi_xa') or row.get('dia_chi_tinh'):
+                        dia_chi_txt = f" | 🏠 {row.get('dia_chi_xa', '')} - {row.get('dia_chi_tinh', '')}"
                     st.markdown(f"""
-                    **{row['loai_quan_he']}**: {row['ho_ten']} | 
+                    **{row['loai_quan_he']}**: {row['ho_ten']}{gioi_tinh_txt} | 
                     📅 {row['ngay_sinh'] if row['ngay_sinh'] else 'N/A'} | 
-                    💼 {row['nghe_nghiep'] if row['nghe_nghiep'] else 'N/A'} | 
-                    📍 {row['noi_o'] if row['noi_o'] else 'N/A'}
+                    💼 {row['nghe_nghiep'] if row['nghe_nghiep'] else 'N/A'}{dia_chi_txt}
                     """)
                 with col_del:
                     with st.popover("🗑️", help=f"Xóa {row['ho_ten']}"):
@@ -419,7 +422,10 @@ def page_profile_view(cccd):
                         "Số CCCD (nếu có)", key="pv_nt_cccd")
                     nt_ngay_sinh = st.date_input("Ngày sinh", value=None, key="pv_nt_ngay_sinh",
                                                  format="DD/MM/YYYY", min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
+                    nt_gioi_tinh = st.selectbox("Giới tính", GIOI_TINH_OPTIONS, key="pv_nt_gioi_tinh")
                 with col2:
+                    nt_dia_chi_tinh = st.selectbox("Tỉnh/TP", TINH_OPTIONS, key="pv_nt_dia_chi_tinh")
+                    nt_dia_chi_xa = st.text_input("Địa chỉ chi tiết", key="pv_nt_dia_chi_xa")
                     nt_phan_loai_nghe = st.selectbox(
                         "Phân loại nghề nghiệp", PHAN_LOAI_NGHE_NGHIEP_OPTIONS, key="pv_nt_phan_loai")
                     nt_nghe_nghiep = st.text_input(
@@ -431,7 +437,6 @@ def page_profile_view(cccd):
 
                 if st.form_submit_button("💾 Lưu thân nhân", type="primary"):
                     if nt_ho_ten:
-                        # Kết hợp phân loại và chi tiết nghề nghiệp
                         nghe_nghiep_full = f"{nt_phan_loai_nghe}: {nt_nghe_nghiep}" if nt_nghe_nghiep else nt_phan_loai_nghe
                         save_nhan_than(
                             cccd=cccd,
@@ -440,6 +445,9 @@ def page_profile_view(cccd):
                             cccd_nhan_than=nt_cccd_nt,
                             ngay_sinh=nt_ngay_sinh.strftime(
                                 '%Y-%m-%d') if nt_ngay_sinh else None,
+                            gioi_tinh=nt_gioi_tinh,
+                            dia_chi_tinh=nt_dia_chi_tinh,
+                            dia_chi_xa=nt_dia_chi_xa,
                             nghe_nghiep=nghe_nghiep_full,
                             noi_o=nt_noi_o,
                             ghi_chu=nt_ghi_chu
