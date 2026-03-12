@@ -393,7 +393,7 @@ def page_profile_view(cccd):
                     💼 {row['nghe_nghiep'] if row['nghe_nghiep'] else 'N/A'}{dia_chi_txt}
                     """)
                 with col_del:
-                    with st.popover("🗑️", help=f"Xóa {row['ho_ten']}"):
+                    with st.popover("🗑️"):
                         st.markdown(f"Xóa **{row['ho_ten']}**?")
                         if st.button("Xác nhận", key=f"confirm_del_nt_{row['id']}", type="primary"):
                             delete_nhan_than(row['id'])
@@ -475,7 +475,7 @@ def page_profile_view(cccd):
                         if item['ghi_chu']:
                             st.caption(f"📝 {item['ghi_chu']}")
                     with col_del:
-                        with st.popover("🗑️", help="Xóa mục này"):
+                        with st.popover("🗑️"):
                             st.markdown("Xóa quá trình này?")
                             if st.button("Xác nhận", key=f"confirm_del_qt_pv_{item['id']}", type="primary"):
                                 if delete_qua_trinh_hoat_dong(item['id']):
@@ -534,7 +534,7 @@ def page_profile_view(cccd):
                     st.markdown(
                         f"**{row['loai_lien_he']}**: {row['gia_tri']}{ghi_chu_text}")
                 with col_del:
-                    with st.popover("🗑️", help=f"Xóa {row['loai_lien_he']}"):
+                    with st.popover("🗑️"):
                         st.markdown(f"Xóa **{row['loai_lien_he']}**?")
                         if st.button("Xác nhận", key=f"confirm_del_lh_{row['id']}", type="primary"):
                             if delete_lien_he(row['id']):
@@ -577,7 +577,7 @@ def page_profile_view(cccd):
                     st.markdown(
                         f"**{row['ngan_hang']}**: {row['so_tai_khoan']}{chu_tk}{ghi_chu_text}")
                 with col_del:
-                    with st.popover("🗑️", help=f"Xóa TK {row['ngan_hang']}"):
+                    with st.popover("🗑️"):
                         st.markdown(f"Xóa TK **{row['ngan_hang']}**?")
                         if st.button("Xác nhận", key=f"confirm_del_tc_{row['id']}", type="primary"):
                             if delete_tai_chinh(row['id']):
@@ -623,7 +623,7 @@ def page_profile_view(cccd):
                     st.markdown(
                         f"**{row['loai_xe']}**: {row['bien_kiem_soat']}{ten_xe}{ghi_chu_text}")
                 with col_del:
-                    with st.popover("🗑️", help=f"Xóa {row['bien_kiem_soat']}"):
+                    with st.popover("🗑️"):
                         st.markdown(f"Xóa xe **{row['bien_kiem_soat']}**?")
                         if st.button("Xác nhận", key=f"confirm_del_pt_{row['id']}", type="primary"):
                             if delete_phuong_tien(row['id']):
@@ -698,7 +698,7 @@ def page_profile_view(cccd):
                         st.caption(
                             f"📅 Ngày tạo: {row.get('created_at', 'N/A')}")
                     with col_del:
-                        with st.popover("🗑️ Xóa", help=f"Xóa hồ sơ {loai_hinh_text}"):
+                        with st.popover("🗑️ Xóa"):
                             st.markdown(f"Xóa hồ sơ **{loai_hinh_text}**?")
                             if st.button("Xác nhận", key=f"confirm_del_csxh_{row['id']}", type="primary"):
                                 if delete_ho_so_dac_thu(row['id']):
@@ -880,11 +880,10 @@ def page_profile_view(cccd):
                                 "⬇️",
                                 data=f.read(),
                                 file_name=original_name,
-                                key=f"pv_dl_tl_{row['id']}",
-                                help="Tải xuống"
+                                key=f"pv_dl_tl_{row['id']}"
                             )
                 with col_del:
-                    with st.popover("🗑️", help=f"Xóa {row['ten_file_goc']}"):
+                    with st.popover("🗑️"):
                         st.markdown(f"Xóa file **{row['ten_file_goc']}**?")
                         if st.button("Xác nhận", key=f"confirm_pv_del_tl_{row['id']}", type="primary"):
                             delete_tai_lieu(row['id'])

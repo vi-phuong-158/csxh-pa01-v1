@@ -244,6 +244,16 @@ def save_doi_tuong(data):
                                    dia_chi_xa, anh_chan_dung, phan_loai_nghe_nghiep, 
                                    chi_tiet_nghe_nghiep, ghi_chu_chung)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(cccd) DO UPDATE SET
+                ho_ten = excluded.ho_ten,
+                ngay_sinh = excluded.ngay_sinh,
+                gioi_tinh = excluded.gioi_tinh,
+                dia_chi_tinh = excluded.dia_chi_tinh,
+                dia_chi_xa = excluded.dia_chi_xa,
+                phan_loai_nghe_nghiep = excluded.phan_loai_nghe_nghiep,
+                chi_tiet_nghe_nghiep = excluded.chi_tiet_nghe_nghiep,
+                ghi_chu_chung = excluded.ghi_chu_chung,
+                updated_at = CURRENT_TIMESTAMP
         """, (
             data['cccd'],
             data['ho_ten'],

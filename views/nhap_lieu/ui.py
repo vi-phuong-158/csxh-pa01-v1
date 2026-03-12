@@ -85,7 +85,7 @@ def _render_staging_list(key: str, label_fn, empty_msg: str):
         with col_info:
             st.markdown(f"↳ {label_fn(item)}")
         with col_del:
-            if st.button("🗑️", key=f"del_{key}_{i}", help="Xoá khỏi danh sách"):
+            if st.button("🗑️", key=f"del_{key}_{i}"):
                 st.session_state[key].pop(i)
                 st.rerun()
     return True
@@ -135,7 +135,6 @@ def page_nhap_lieu():
                 "Số CCCD *",
                 placeholder="Nhập 12 số CCCD",
                 max_chars=12,
-                help="Số căn cước công dân 12 số",
                 key="nl_cccd"
             )
 
@@ -204,7 +203,6 @@ def page_nhap_lieu():
             ho_ten = st.text_input(
                 "Họ và tên *",
                 placeholder="Nguyễn Văn A",
-                help="Họ tên đầy đủ theo giấy tờ",
                 key="nl_ho_ten"
             )
 
@@ -221,14 +219,12 @@ def page_nhap_lieu():
                 min_value=date(1900, 1, 1),
                 max_value=datetime.now().date(),
                 format="DD/MM/YYYY",
-                help="Chọn ngày sinh",
                 key="main_ngay_sinh"
             )
 
             gioi_tinh = st.selectbox(
                 "Giới tính",
                 GIOI_TINH_OPTIONS,
-                help="Giới tính theo CCCD",
                 key="main_gioi_tinh"
             )
 
@@ -236,7 +232,6 @@ def page_nhap_lieu():
             dia_chi_tinh = st.selectbox(
                 "Tỉnh/TP",
                 TINH_OPTIONS,
-                help="Tỉnh/Thành phố thường trú",
                 key="main_dia_chi_tinh"
             )
 
@@ -244,8 +239,7 @@ def page_nhap_lieu():
                 dia_chi_xa = st.selectbox(
                     "Xã/Phường",
                     ["-- Chọn xã/phường --"] + DANH_SACH_XA_PHU_THO,
-                    key="xa_phuong_select",
-                    help="Chọn xã/phường từ danh sách"
+                    key="xa_phuong_select"
                 )
                 if dia_chi_xa == "-- Chọn xã/phường --":
                     dia_chi_xa = ""
@@ -259,14 +253,12 @@ def page_nhap_lieu():
             phan_loai = st.selectbox(
                 "Phân loại nghề nghiệp",
                 PHAN_LOAI_NGHE_NGHIEP_OPTIONS,
-                help="Phân loại công việc hiện tại",
                 key="main_phan_loai_nghe"
             )
 
             chi_tiet_nghe = st.text_input(
                 "Chi tiết nơi làm việc",
                 placeholder="Ví dụ: Công an tỉnh Phú Thọ",
-                help="Tên cơ quan, tổ chức đang làm việc",
                 key="main_chi_tiet_nghe"
             )
 
@@ -275,7 +267,6 @@ def page_nhap_lieu():
             "Ghi chú chung",
             placeholder="Các thông tin ghi chú khác...",
             height=100,
-            help="Ghi chú thêm về đối tượng",
             key="main_ghi_chu"
         )
 
@@ -302,7 +293,7 @@ def page_nhap_lieu():
                                 f"💼 {row['nghe_nghiep'] or 'N/A'}"
                             )
                         with col_del:
-                            with st.popover("🗑️", help=f"Xóa {row['ho_ten']}"):
+                            with st.popover("🗑️"):
                                 st.markdown(f"Bạn có chắc muốn xóa **{row['ho_ten']}**?")
                                 if st.button("Xác nhận xóa", key=f"del_nt_db_{row['id']}", type="primary"):
                                     delete_nhan_than(row['id'])
@@ -431,7 +422,7 @@ def page_nhap_lieu():
                         with col_info:
                             st.markdown(f"**{item['thoi_gian']}**: {item['noi_dung']}")
                         with col_del:
-                            with st.popover("🗑️", help="Xóa quá trình này"):
+                            with st.popover("🗑️"):
                                 st.markdown(f"Xóa hoạt động: **{item['thoi_gian']}**?")
                                 if st.button("Xác nhận", key=f"del_qt_db_{item['id']}", type="primary"):
                                     delete_qua_trinh_hoat_dong(item['id'])

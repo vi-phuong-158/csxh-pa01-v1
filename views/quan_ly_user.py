@@ -104,7 +104,7 @@ def show_user_list():
 
             with col4:
                 # Reset password button
-                if st.button("🔐", key=f"reset_{user['id']}", help="Reset mật khẩu"):
+                if st.button("🔐", key=f"reset_{user['id']}"):
                     st.session_state.reset_user_id = user['id']
                     st.session_state.reset_username = user['username']
 
@@ -112,7 +112,7 @@ def show_user_list():
                 # Don't allow deleting self
                 current_user = st.session_state.get('user', {})
                 if user['id'] != current_user.get('id'):
-                    if st.button("🗑️", key=f"del_{user['id']}", help="Xóa tài khoản"):
+                    if st.button("🗑️", key=f"del_{user['id']}"):
                         st.session_state.delete_user_id = user['id']
                         st.session_state.delete_username = user['username']
 

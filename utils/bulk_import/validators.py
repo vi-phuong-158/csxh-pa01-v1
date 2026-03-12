@@ -19,6 +19,37 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+VALIDATOR_CONFIG = {
+    "doi_tuong": {
+        "index": 0,
+        "required_cols": ["CCCD (*)"]
+    },
+    "lien_he": {
+        "index": 1,
+        "required_cols": ["CCCD (*)"]
+    },
+    "tai_chinh": {
+        "index": 2,
+        "required_cols": ["CCCD (*)"]
+    },
+    "phuong_tien": {
+        "index": 3,
+        "required_cols": ["CCCD (*)"]
+    },
+    "ho_so_dac_thu": {
+        "index": 4,
+        "required_cols": ["CCCD (*)"]
+    },
+    "than_nhan": {
+        "index": 5,
+        "required_cols": ["CCCD (*)"]
+    },
+    "qua_trinh_hoat_dong": {
+        "index": 6,
+        "required_cols": ["CCCD (*)"]
+    }
+}
+
 def normalize_cccd(value) -> str:
     """
     Chuẩn hóa CCCD: xử lý trường hợp Excel đọc như số (mất leading zeros).
@@ -65,15 +96,16 @@ def validate_excel_data(excel_file, import_type='all'):
         conn.close()
 
         # Hàm helper để check xem nên đọc sheet nào
-        def should_read(sheet_key, index):
+        def should_read(sheet_key):
             if import_type == 'all':
-                return len(sheet_names) > index
-            return import_type == sheet_key and len(sheet_names) > 0
+                return sheet_key in VALIDATOR_CONFIG and VALIDATOR_CONFIG[sheet_key]['index'] < len(sheet_names)
+            return import_type == sheet_key and sheet_key in VALIDATOR_CONFIG and VALIDATOR_CONFIG[sheet_key]['index'] < len(sheet_names)
 
         # ===== SHEET: ĐỐI TƯỢNG =====
-        if should_read('doi_tuong', 0):
-            target_sheet = 0 if import_type != 'all' else 0
-            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
+        if should_read('doi_tuong'):
+            config = VALIDATOR_CONFIG['doi_tuong']
+            target_sheet_index = config['index'] if import_type == 'all' else 0 # If single import, it's always the first sheet
+            df = pd.read_excel(xls, sheet_name=target_sheet_index, skiprows=0)
             df = df.iloc[1:]  # Bỏ dòng mẫu
             df = df.dropna(how='all')  # Bỏ dòng trống
 
@@ -192,11 +224,12 @@ def validate_excel_data(excel_file, import_type='all'):
                         logger.warning(f"Dedup detection failed: {e}")
 
         # ===== SHEET: LIÊN HỆ =====
-        if should_read('lien_he', 1):
+        if should_read('lien_he'):
             valid_cccds = existing_cccds.union(
                 results['doi_tuong'].get('new_cccds', set()))
-            target_sheet = 0 if import_type != 'all' else 1
-            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
+            config = VALIDATOR_CONFIG['lien_he']
+            target_sheet_index = config['index'] if import_type == 'all' else 0
+            df = pd.read_excel(xls, sheet_name=target_sheet_index, skiprows=0)
             df = df.iloc[1:]
             df = df.dropna(how='all')
 
@@ -238,9 +271,10 @@ def validate_excel_data(excel_file, import_type='all'):
                 results['lien_he']['valid_count'] = len(valid_rows)
 
         # ===== SHEET: THÂN NHÂN (New) =====
-        if should_read('than_nhan', 99):  
-            target_sheet = 0
-            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
+        if 'than_nhan' in VALIDATOR_CONFIG and should_read('than_nhan'):
+            config = VALIDATOR_CONFIG['than_nhan']
+            target_sheet_index = config['index'] if import_type == 'all' else 0
+            df = pd.read_excel(xls, sheet_name=target_sheet_index, skiprows=0)
             df = df.iloc[1:]
             df = df.dropna(how='all')
 
@@ -277,9 +311,10 @@ def validate_excel_data(excel_file, import_type='all'):
                 results['than_nhan']['valid_count'] = len(valid_rows)
 
         # ===== SHEET: TÀI CHÍNH =====
-        if should_read('tai_chinh', 2):
-            target_sheet = 0 if import_type != 'all' else 2
-            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
+        if 'tai_chinh' in VALIDATOR_CONFIG and should_read('tai_chinh'):
+            config = VALIDATOR_CONFIG['tai_chinh']
+            target_sheet_index = config['index'] if import_type == 'all' else 0
+            df = pd.read_excel(xls, sheet_name=target_sheet_index, skiprows=0)
             df = df.iloc[1:]
             df = df.dropna(how='all')
 
@@ -321,9 +356,10 @@ def validate_excel_data(excel_file, import_type='all'):
                 results['tai_chinh']['valid_count'] = len(valid_rows)
 
         # ===== SHEET: PHƯƠNG TIỆN =====
-        if should_read('phuong_tien', 3):
-            target_sheet = 0 if import_type != 'all' else 3
-            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
+        if 'phuong_tien' in VALIDATOR_CONFIG and should_read('phuong_tien'):
+            config = VALIDATOR_CONFIG['phuong_tien']
+            target_sheet_index = config['index'] if import_type == 'all' else 0
+            df = pd.read_excel(xls, sheet_name=target_sheet_index, skiprows=0)
             df = df.iloc[1:]
             df = df.dropna(how='all')
 
@@ -365,9 +401,11 @@ def validate_excel_data(excel_file, import_type='all'):
                 results['phuong_tien']['errors'] = errors
                 results['phuong_tien']['valid_count'] = len(valid_rows)
 
-        if should_read('ho_so_dac_thu', 4):
-            target_sheet = 0 if import_type != 'all' else 4
-            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
+        # ===== SHEET: HỒ SƠ ĐẶC THÙ =====
+        if 'ho_so_dac_thu' in VALIDATOR_CONFIG and should_read('ho_so_dac_thu'):
+            config = VALIDATOR_CONFIG['ho_so_dac_thu']
+            target_sheet_index = config['index'] if import_type == 'all' else 0
+            df = pd.read_excel(xls, sheet_name=target_sheet_index, skiprows=0)
             df = df.iloc[1:]
             df = df.dropna(how='all')
 
@@ -415,9 +453,10 @@ def validate_excel_data(excel_file, import_type='all'):
                 results['ho_so_dac_thu']['valid_count'] = len(valid_rows)
 
         # ===== SHEET: QUÁ TRÌNH HOẠT ĐỘNG (New) =====
-        if should_read('qua_trinh_hoat_dong', 99):
-            target_sheet = 0
-            df = pd.read_excel(xls, sheet_name=target_sheet, skiprows=0)
+        if 'qua_trinh_hoat_dong' in VALIDATOR_CONFIG and should_read('qua_trinh_hoat_dong'):
+            config = VALIDATOR_CONFIG['qua_trinh_hoat_dong']
+            target_sheet_index = config['index'] if import_type == 'all' else 0
+            df = pd.read_excel(xls, sheet_name=target_sheet_index, skiprows=0)
             df = df.iloc[1:]
             df = df.dropna(how='all')
 

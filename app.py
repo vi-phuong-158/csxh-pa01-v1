@@ -15,7 +15,6 @@ from pathlib import Path
 from database import create_tables
 
 # Import authentication
-# Import authentication
 from app.services.auth_service import init_super_admin, is_super_admin
 
 # Import login views
@@ -61,7 +60,7 @@ st.set_page_config(
 # ============================================
 
 
-@st.cache_data
+# @st.cache_data # Tắt cache để CSS mới được cập nhật ngay lập tức
 def load_css():
     """Load custom CSS file (cached for performance)"""
     css_file = Path(__file__).parent / "style.css"
@@ -78,21 +77,11 @@ if css_content:
 # ============================================
 # KHỞI TẠO DATABASE & SUPER ADMIN
 # ============================================
-# Import new DB init
-from app.init_db import init_db
 
 @st.cache_resource
 def init_database():
     """Khởi tạo database và Super Admin nếu chưa tồn tại"""
-    # Use new SQLAlchemy init
-    init_db()
-    
-    # Run legacy create_tables for migrations (ALTER TABLE statements)
     create_tables()
-    
-    # Legacy init for backward compatibility if needed, or just use new auth service later
-    # For now, we still need init_super_admin from auth.py which uses legacy DB access
-    # ideally we refactor auth.py next.
     init_super_admin()
     return True
 

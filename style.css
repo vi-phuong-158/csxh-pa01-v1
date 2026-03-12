@@ -1223,3 +1223,31 @@ div[data-testid="stExpander"]>details[open]>summary {
     background: rgba(255, 107, 107, 0.2) !important;
     border: 1px solid rgba(255, 107, 107, 0.5) !important;
 }
+
+/* Ẩn hoàn toàn dấu ? (tooltip icon) trên UI vì chữ màu trắng trên nền tooltip mặc định khó nhìn */
+div[data-testid="stTooltipIcon"],
+.stTooltipIcon,
+[data-testid="stTooltipIcon"],
+.st-emotion-cache-1wbqy5l,
+div[data-testid="stTooltipIcon"] svg,
+.stTooltipIcon svg,
+label .stTooltipIcon,
+label [data-testid="stTooltipIcon"],
+div.stTooltipIcon,
+.element-container .stTooltipIcon {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Ẩn tooltip popup khi hover */
+div[data-testid="stTooltipContent"],
+.stTooltipContent,
+[role="tooltip"] {
+    display: none !important;
+    visibility: hidden !important;
+}

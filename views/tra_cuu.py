@@ -149,9 +149,7 @@ def page_tra_cuu():
         search_query = st.text_input(
             "Tìm kiếm",
             placeholder="Nhập CCCD, họ tên (có thể viết tắt, vd: viphuong)...",
-            label_visibility="collapsed",
-            help="Hỗ trợ tìm kiếm theo CCCD hoặc Họ tên "
-                 "(bao gồm tìm kiếm không dấu và viết tắt)"
+            label_visibility="collapsed"
         )
 
     with col2:
@@ -175,22 +173,17 @@ def page_tra_cuu():
         with col1:
             filter_tinh = st.selectbox(
                 "Tỉnh/TP",
-                ["Tất cả"] + TINH_OPTIONS,
-                help="Lọc danh sách theo Tỉnh/Thành phố thường trú"
+                ["Tất cả"] + TINH_OPTIONS
             )
         with col2:
             filter_gioi_tinh = st.selectbox(
                 "Giới tính",
-                ["Tất cả"] + GIOI_TINH_OPTIONS,
-                help="Lọc danh sách theo Giới tính"
+                ["Tất cả"] + GIOI_TINH_OPTIONS
             )
         with col3:
-            # Assign to _ to avoid flake8 F841
             _ = st.selectbox(
                 "Yếu tố đặc thù",
-                ["Tất cả"] + list(LOAI_HINH_DAC_THU.values()),
-                help="Lọc theo các loại hồ sơ chính sách xã hội "
-                     "(kết hôn nước ngoài, xuất cảnh, v.v.)"
+                ["Tất cả"] + list(LOAI_HINH_DAC_THU.values())
             )
 
     st.markdown("---")

@@ -40,8 +40,7 @@ def page_nhap_excel():
         selected_mode_key = st.radio(
             "Chọn loại dữ liệu muốn nhập:",
             list(IMPORT_OPTIONS.keys()),
-            format_func=lambda x: IMPORT_OPTIONS[x],
-            help="Chọn 'Trọn bộ' để nhập file 5 sheet cũ, hoặc chọn từng mục để nhập file lẻ."
+            format_func=lambda x: IMPORT_OPTIONS[x]
         )
 
     with col_info:

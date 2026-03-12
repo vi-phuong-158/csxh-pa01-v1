@@ -117,7 +117,20 @@ def create_full_template(wb, csxh_type):
     ws4.append(["001234567891", "Xe máy", "19B1-67890", "Honda Wave", ""])
     ws4.cell(row=5, column=1, value="Loại xe: Ô tô, Xe máy, Xe tải, Xe khách, Khác")
 
-    # ========== SHEET 5: HỒ SƠ CSXH ==========
+    # ========== SHEET 6: THÂN NHÂN ==========
+    ws6 = wb.create_sheet("6. Thân nhân")
+    headers_6 = TEMPLATE_DEFINITIONS['than_nhan']['headers']
+    style_header_row(ws6, headers_6)
+    ws6.append(["001234567890", "Nguyễn Văn B", "Bố đẻ", "1960",
+                "Hưu trí", "Việt Trì, Phú Thọ", ""])
+
+    # ========== SHEET 7: QUÁ TRÌNH HOẠT ĐỘNG ==========
+    ws7 = wb.create_sheet("7. Quá trình hoạt động")
+    headers_7 = TEMPLATE_DEFINITIONS['qua_trinh_hoat_dong']['headers']
+    style_header_row(ws7, headers_7)
+    ws7.append(["001234567890", "2010-2015", "Học sinh trường THPT Chuyên Hùng Vương", ""])
+
+    # ========== SHEET 5: HỒ SƠ CSXH (Luôn để cuối hoặc sau cùng) ==========
     if csxh_type and csxh_type in CSXH_TEMPLATES:
         # Tạo sheet theo loại cụ thể
         template = CSXH_TEMPLATES[csxh_type]

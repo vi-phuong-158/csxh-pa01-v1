@@ -205,11 +205,8 @@ def page_dashboard():
     st.markdown("# 🏠 Dashboard")
     st.markdown("### Tổng quan hệ thống quản lý hồ sơ an ninh")
 
-    # Check ECharts availability
-    if not ECHARTS_AVAILABLE:
-        st.warning(
-            "⚠️ Để có biểu đồ tương tác, hãy cài: `pip install streamlit-echarts`")
-        st.info("Đang sử dụng Plotly fallback...")
+    # Check ECharts availability (Đã ẩn cảnh báo ECharts theo yêu cầu)
+    # Plotly fallback sẽ tự động được sử dụng
 
     st.markdown("---")
 
