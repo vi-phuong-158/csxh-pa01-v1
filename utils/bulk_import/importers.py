@@ -37,7 +37,7 @@ def bulk_import_all(validated_data, update_existing=False):
             df = validated_data['doi_tuong']['data']
             data_list = []
 
-            for _, row in df.iterrows():
+            for row in df.to_dict('records'):
                 # Xử lý ngày sinh
                 ngay_sinh = None
                 raw_ns = row.get('ngay_sinh')
@@ -98,11 +98,11 @@ def bulk_import_all(validated_data, update_existing=False):
         if validated_data['lien_he']['data'] is not None:
             df = validated_data['lien_he']['data']
             data_list = []
-            for _, row in df.iterrows():
+            for row in df.to_dict('records'):
                 data_list.append((
                     str(row['cccd']).strip(),
                     get_val(row, 'loai_lien_he'),
-                    str(row['gia_tri']).strip(),
+                    str(row.get('gia_tri')).strip() if pd.notna(row.get('gia_tri')) else None,
                     get_val(row, 'ghi_chu')
                 ))
 
@@ -117,7 +117,7 @@ def bulk_import_all(validated_data, update_existing=False):
         if 'than_nhan' in validated_data and validated_data['than_nhan']['data'] is not None:
             df = validated_data['than_nhan']['data']
             data_list = []
-            for _, row in df.iterrows():
+            for row in df.to_dict('records'):
                 data_list.append((
                     str(row['cccd']).strip(),
                     str(row['ho_ten']).strip(),
@@ -150,11 +150,11 @@ def bulk_import_all(validated_data, update_existing=False):
         if validated_data['tai_chinh']['data'] is not None:
             df = validated_data['tai_chinh']['data']
             data_list = []
-            for _, row in df.iterrows():
+            for row in df.to_dict('records'):
                 data_list.append((
                     str(row['cccd']).strip(),
                     get_val(row, 'ngan_hang'),
-                    str(row['so_tai_khoan']).strip(),
+                    str(row.get('so_tai_khoan')).strip() if pd.notna(row.get('so_tai_khoan')) else None,
                     get_val(row, 'chu_tai_khoan'),
                     get_val(row, 'ghi_chu')
                 ))
@@ -170,11 +170,11 @@ def bulk_import_all(validated_data, update_existing=False):
         if validated_data['phuong_tien']['data'] is not None:
             df = validated_data['phuong_tien']['data']
             data_list = []
-            for _, row in df.iterrows():
+            for row in df.to_dict('records'):
                 data_list.append((
                     str(row['cccd']).strip(),
                     get_val(row, 'loai_xe'),
-                    str(row['bien_kiem_soat']).strip(),
+                    str(row.get('bien_kiem_soat')).strip() if pd.notna(row.get('bien_kiem_soat')) else None,
                     get_val(row, 'ten_phuong_tien'),
                     get_val(row, 'ghi_chu')
                 ))
@@ -190,7 +190,7 @@ def bulk_import_all(validated_data, update_existing=False):
         if validated_data['ho_so_dac_thu']['data'] is not None:
             df = validated_data['ho_so_dac_thu']['data']
             data_list = []
-            for _, row in df.iterrows():
+            for row in df.to_dict('records'):
                 noi_dung_dict = {
                     'quoc_tich': get_val(row, 'quoc_tich') or '',
                     'ten_to_chuc': get_val(row, 'ten_to_chuc') or '',
@@ -219,11 +219,11 @@ def bulk_import_all(validated_data, update_existing=False):
         if 'qua_trinh_hoat_dong' in validated_data and validated_data['qua_trinh_hoat_dong']['data'] is not None:
             df = validated_data['qua_trinh_hoat_dong']['data']
             data_list = []
-            for _, row in df.iterrows():
+            for row in df.to_dict('records'):
                 data_list.append((
                     str(row['cccd']).strip(),
                     get_val(row, 'thoi_gian'),
-                    str(row['noi_dung']).strip(),
+                    str(row.get('noi_dung')).strip() if pd.notna(row.get('noi_dung')) else None,
                     get_val(row, 'ghi_chu')
                 ))
 

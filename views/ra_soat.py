@@ -89,25 +89,39 @@ def process_batch_screening_v2(df_input):
         col_name = df_input.columns[0]
         search_by = 'auto'
 
-    # Pre-process database for fast lookup
+    # Pre-process database cho tra cứu nhanh
     db_names = df_db['ho_ten'].tolist()
-    # Create Name -> CCCD mapping for O(1) lookup
-    # Note: If duplicate names exist, this takes the last one. 
-    # To match original logic (finding *a* match), this is acceptable or we use first.
-    # Original logic: match.iloc[0] -> first match.
-    # So we should build dict in reverse order or drop duplicates keeping first.
+
+    # Tạo Name -> CCCD mapping (O(1) lookup)
     df_unique = df_db.drop_duplicates(subset=['ho_ten'], keep='first')
     name_to_cccd = dict(zip(df_unique['ho_ten'], df_unique['cccd']))
-    
-    # CCCD set for O(1) exact check
+
+    # CCCD set cho tra cứu chính xác và map CCCD -> Họ tên
     db_cccd_set = set(df_db['cccd'].astype(str))
-    # Map cccd -> ho_ten
     cccd_to_name = dict(zip(df_db['cccd'].astype(str), df_db['ho_ten']))
 
-    for idx, row in df_input.iterrows():
-        input_value = str(row[col_name]).strip()
+    records = df_input.to_dict('records')
+    n = len(records)
+    results = [None] * n
+
+    # Danh sách các query cần fuzzy name matching để xử lý batch bằng cdist
+    fuzzy_queries = []
+    fuzzy_indexes = []
+
+    # Pass 1: xử lý CCCD + thu thập các query fuzzy
+    for idx, row in enumerate(records):
+        raw_val = row.get(col_name)
+        input_value = str(raw_val).strip() if raw_val is not None else ""
 
         if not input_value:
+            results[idx] = {
+                'input': '',
+                'matched': '',
+                'cccd': '',
+                'status': '❌ Không có dữ liệu',
+                'score': 0,
+                'alternatives': []
+            }
             continue
 
         # Xác định loại search
@@ -119,96 +133,128 @@ def process_batch_screening_v2(df_input):
         else:
             current_search = search_by
 
-        # Tìm kiếm
         if current_search == 'cccd':
             # Tìm chính xác CCCD - O(1) lookup
             if input_value in db_cccd_set:
-                results.append({
+                results[idx] = {
                     'input': input_value,
                     'matched': cccd_to_name.get(input_value, ''),
                     'cccd': input_value,
                     'status': '✅ Khớp chính xác',
                     'score': 100,
                     'alternatives': []
-                })
+                }
             else:
-                results.append({
+                results[idx] = {
                     'input': input_value,
                     'matched': '',
                     'cccd': '',
                     'status': '❌ Không tìm thấy',
                     'score': 0,
                     'alternatives': []
-                })
+                }
         else:
-            # Fuzzy matching họ tên - sử dụng module mới
-            if FUZZY_MODULE_AVAILABLE:
-                # Sử dụng batch_screen từ fuzzy_matching module
-                # Pass pre-converted list to avoid overhead
-                screen_results = batch_screen(
-                    [input_value],
-                    db_names,
-                    threshold=THRESHOLD_SUSPECT  # 80%
-                )
+            # Ghi nhận để fuzzy match theo batch
+            fuzzy_queries.append(input_value)
+            fuzzy_indexes.append(idx)
 
-                if screen_results and screen_results[0]['matched']:
-                    result = screen_results[0]
-                    # Tìm CCCD tương ứng - O(1) lookup
-                    cccd = name_to_cccd.get(result['matched'], '')
+    # Pass 2: xử lý fuzzy matching theo batch
+    if fuzzy_queries:
+        if FUZZY_MODULE_AVAILABLE:
+            # Sử dụng batch_screen từ fuzzy_matching module (đã tối ưu bên trong)
+            screen_results = batch_screen(
+                fuzzy_queries,
+                db_names,
+                threshold=THRESHOLD_SUSPECT  # 80%
+            )
 
-                    results.append({
+            for local_idx, result in enumerate(screen_results):
+                global_idx = fuzzy_indexes[local_idx]
+                input_value = fuzzy_queries[local_idx]
+
+                if result and result.get('matched'):
+                    matched_name = result['matched']
+                    cccd = name_to_cccd.get(matched_name, '')
+
+                    results[global_idx] = {
                         'input': input_value,
-                        'matched': result['matched'],
+                        'matched': matched_name,
                         'cccd': cccd,
                         'status': result['status'],
                         'score': result['score'],
                         'alternatives': result.get('alternatives', [])
-                    })
+                    }
                 else:
-                    results.append({
+                    results[global_idx] = {
                         'input': input_value,
                         'matched': '',
                         'cccd': '',
                         'status': '❌ Không tìm thấy',
                         'score': 0,
                         'alternatives': []
-                    })
-            else:
-                # Fallback to rapidfuzz directly
-                match_result = fuzz_process.extractOne(
-                    input_value,
-                    db_names,
-                    scorer=fuzz.token_set_ratio
-                )
+                    }
+        elif RAPIDFUZZ_AVAILABLE:
+            # Fallback: dùng rapidfuzz.process.cdist cho batch, có score_cutoff
+            try:
+                import numpy as np  # type: ignore
+            except ImportError:
+                np = None
 
-                if match_result and match_result[1] >= 80:  # 80% threshold
-                    matched_name = match_result[0]
+            # cdist trả về ma trận điểm (len(fuzzy_queries) x len(db_names))
+            score_matrix = fuzz_process.cdist(
+                fuzzy_queries,
+                db_names,
+                scorer=fuzz.token_set_ratio,
+                score_cutoff=80,  # lọc trước các match <80
+            )
+
+            for qi, global_idx in enumerate(fuzzy_indexes):
+                input_value = fuzzy_queries[qi]
+                row_scores = score_matrix[qi]
+
+                if hasattr(row_scores, "max"):
+                    max_score = row_scores.max()
+                else:
+                    max_score = max(row_scores) if row_scores else 0
+
+                if max_score >= 80:
+                    # Lấy index của match tốt nhất
+                    if hasattr(row_scores, "argmax"):
+                        best_j = int(row_scores.argmax())
+                    else:
+                        best_j = int(row_scores.index(max_score))
+
+                    matched_name = db_names[best_j]
                     cccd = name_to_cccd.get(matched_name, '')
 
-                    if match_result[1] >= 95:
+                    if max_score >= 95:
                         status = '✅ Khớp chính xác'
                     else:
                         status = '⚠️ Nghi vấn - cần kiểm tra'
 
-                    results.append({
+                    results[global_idx] = {
                         'input': input_value,
                         'matched': matched_name,
                         'cccd': cccd,
                         'status': status,
-                        'score': match_result[1],
+                        'score': int(max_score),
                         'alternatives': []
-                    })
+                    }
                 else:
-                    results.append({
+                    results[global_idx] = {
                         'input': input_value,
-                        'matched': match_result[0] if match_result else '',
+                        'matched': '',
                         'cccd': '',
                         'status': '❌ Không tìm thấy',
-                        'score': match_result[1] if match_result else 0,
+                        'score': int(max_score) if max_score else 0,
                         'alternatives': []
-                    })
+                    }
+        else:
+            # Không có module fuzzy nào khả dụng (đã xử lý ở đầu hàm)
+            pass
 
-    return results
+    # Loại bỏ None (nếu có) và trả về list kết quả
+    return [r for r in results if r is not None]
 
 
 def display_screening_results(results):

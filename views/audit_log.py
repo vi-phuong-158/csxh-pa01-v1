@@ -75,15 +75,38 @@ def get_action_list():
     return ["Tất cả", "INSERT", "UPDATE", "DELETE", "VIEW"]
 
 
-def add_audit_log(bang, hanh_dong, khoa_chinh, du_lieu_cu=None, du_lieu_moi=None, nguoi_thuc_hien=None):
+def get_client_ip(request_headers: dict | None = None) -> str:
+    """
+    Lấy IP thực của client.
+    Ưu tiên header X-Forwarded-For (khi chạy sau reverse proxy), fallback về REMOTE_ADDR.
+    """
+    headers = request_headers or {}
+    xff = headers.get("X-Forwarded-For") or headers.get("x-forwarded-for")
+    if xff:
+        # Có thể chứa danh sách IP, lấy IP đầu tiên
+        return xff.split(",")[0].strip()
+
+    # Streamlit không expose REMOTE_ADDR trực tiếp; có thể bổ sung qua context khác nếu cần
+    return headers.get("REMOTE_ADDR", "unknown")
+
+
+def add_audit_log(bang, hanh_dong, khoa_chinh, du_lieu_cu=None, du_lieu_moi=None, nguoi_thuc_hien=None, ip_address: str | None = None):
     """Thêm một entry vào audit log."""
     conn = get_connection()
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO audit_log (bang, hanh_dong, khoa_chinh, du_lieu_cu, du_lieu_moi, nguoi_thuc_hien)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (bang, hanh_dong, khoa_chinh, du_lieu_cu, du_lieu_moi, nguoi_thuc_hien))
+            INSERT INTO audit_log (bang, hanh_dong, khoa_chinh, du_lieu_cu, du_lieu_moi, nguoi_thuc_hien, ip_address)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            bang,
+            hanh_dong,
+            khoa_chinh,
+            du_lieu_cu,
+            du_lieu_moi,
+            nguoi_thuc_hien,
+            ip_address or "unknown",
+        ))
         conn.commit()
         return True
     except Exception as e:

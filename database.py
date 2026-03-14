@@ -23,9 +23,9 @@ def get_connection():
     """Tạo kết nối đến database"""
     conn = sqlite3.connect(get_db_path())
     conn.row_factory = sqlite3.Row  # Cho phép truy cập cột theo tên
-    # Bật foreign key constraints
+    # Bật foreign key constraints và cấu hình WAL cho SQLite
     conn.execute("PRAGMA foreign_keys = ON")
-    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode=WAL")
     return conn
 
 
@@ -35,6 +35,7 @@ def get_cached_connection():
     conn = sqlite3.connect(get_db_path(), check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode=WAL")
     return conn
 
 

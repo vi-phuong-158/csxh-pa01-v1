@@ -5,11 +5,14 @@ Hệ thống Quản trị An ninh PA01
 Phiên bản: 1.0 (với Authentication)
 """
 
-from views.audit_log import page_audit_log
+from views.audit_log import page_audit_log, add_audit_log, get_client_ip
 from views.nguon_du_lieu import page_nguon_du_lieu
 import streamlit as st
 import logging
 from pathlib import Path
+import time
+
+from database import get_connection
 
 # Import database module
 from database import create_tables
@@ -116,7 +119,6 @@ if st.session_state.form_submitted:
 # SESSION TIMEOUT CHECK (30 minutes)
 # ============================================
 SESSION_TIMEOUT = 1800  # 30 minutes
-import time
 
 if 'last_active' not in st.session_state:
     st.session_state.last_active = time.time()
@@ -197,20 +199,42 @@ if st.session_state.get('show_change_password'):
 
 # Xử lý điều hướng đặc biệt (Xem chi tiết hồ sơ)
 elif st.session_state.view_profile_cccd:
-    # AUDIT LOGGING: Log view action if new CCCD is viewed
-    if st.session_state.get('last_viewed_cccd') != st.session_state.view_profile_cccd:
-        from views.audit_log import add_audit_log
+    # AUDIT LOGGING: Chỉ ghi log VIEW lần đầu trong ngày cho mỗi (user, hồ sơ)
+    try:
         user = get_current_user()
         username = user.get('username') if user else 'Unknown'
-        add_audit_log(
-            bang='doi_tuong',
-            hanh_dong='VIEW',
-            khoa_chinh=st.session_state.view_profile_cccd,
-            du_lieu_cu='',
-            du_lieu_moi='Xem chi tiết hồ sơ',
-            nguoi_thuc_hien=username
+        cccd = st.session_state.view_profile_cccd
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT COUNT(*) 
+            FROM audit_log 
+            WHERE bang = ? 
+              AND hanh_dong = 'VIEW' 
+              AND khoa_chinh = ? 
+              AND nguoi_thuc_hien = ? 
+              AND DATE(created_at) = DATE('now','localtime')
+            """,
+            ('doi_tuong', cccd, username),
         )
-        st.session_state.last_viewed_cccd = st.session_state.view_profile_cccd
+        already_logged = cursor.fetchone()[0] > 0
+        conn.close()
+
+        if not already_logged:
+            add_audit_log(
+                bang='doi_tuong',
+                hanh_dong='VIEW',
+                khoa_chinh=cccd,
+                du_lieu_cu='',
+                du_lieu_moi='Xem chi tiết hồ sơ',
+                nguoi_thuc_hien=username,
+                ip_address=get_client_ip(),
+            )
+    except Exception:
+        # Không chặn luồng xem hồ sơ nếu log lỗi
+        pass
         
     page_profile_view(st.session_state.view_profile_cccd)
 

@@ -13,8 +13,14 @@ import re
 import uuid
 from pathlib import Path
 from datetime import datetime
+
 from database import get_connection
 from constants import ALLOWED_EXTENSIONS, MAX_FILE_SIZE_MB
+
+try:
+    import magic  # type: ignore
+except ImportError:  # Fallback nếu python-magic chưa được cài
+    magic = None
 
 logger = logging.getLogger(__name__)
 
@@ -194,13 +200,48 @@ def save_tai_lieu(cccd, uploaded_file, loai_tai_lieu, mo_ta=""):
     if not uploaded_file:
         return False, "Không có file"
 
-    file_size = len(uploaded_file.getvalue())
+    file_bytes = uploaded_file.getvalue()
+    file_size = len(file_bytes)
     if file_size > MAX_FILE_SIZE_MB * 1024 * 1024:
         return False, f"File quá lớn! Giới hạn {MAX_FILE_SIZE_MB}MB"
 
+    # Kiểm tra extension bề mặt
     file_ext = uploaded_file.name.split('.')[-1].lower()
     if file_ext not in ALLOWED_EXTENSIONS:
         return False, f"Định dạng không hỗ trợ! Chỉ chấp nhận: {', '.join(ALLOWED_EXTENSIONS)}"
+
+    # Xác thực MIME type thực tế (ưu tiên python-magic)
+    detected_mime = None
+    if magic is not None:
+        try:
+            m = magic.Magic(mime=True)
+            detected_mime = m.from_buffer(file_bytes[:2048])
+        except Exception as e:
+            logger.warning(f"Lỗi detect MIME bằng python-magic: {e}")
+    else:
+        # Fallback: kiểm tra vài header bytes cơ bản
+        header = file_bytes[:4]
+        if header.startswith(b"\xFF\xD8"):
+            detected_mime = "image/jpeg"
+        elif header.startswith(b"\x89PNG"):
+            detected_mime = "image/png"
+        elif header.startswith(b"%PDF"):
+            detected_mime = "application/pdf"
+
+    if detected_mime:
+        # Ánh xạ ext -> mime hợp lệ
+        allowed_mime_by_ext = {
+            "jpg": ["image/jpeg"],
+            "jpeg": ["image/jpeg"],
+            "png": ["image/png"],
+            "pdf": ["application/pdf"],
+        }
+        allowed_mimes = allowed_mime_by_ext.get(file_ext, [])
+        if allowed_mimes and detected_mime not in allowed_mimes:
+            logger.error(
+                f"Security: MIME type mismatch for upload. Ext={file_ext}, mime={detected_mime}"
+            )
+            return False, "Định dạng file không khớp nội dung thực tế. Vui lòng kiểm tra lại."
 
     safe_filename = sanitize_filename(uploaded_file.name)
     unique_name = f"{uuid.uuid4().hex[:8]}_{safe_filename}"
@@ -210,7 +251,7 @@ def save_tai_lieu(cccd, uploaded_file, loai_tai_lieu, mo_ta=""):
 
     try:
         with open(file_path, "wb") as f:
-            f.write(uploaded_file.getvalue())
+            f.write(file_bytes)
     except Exception as e:
         logger.exception(f"Lỗi lưu file: {e}")
         return False, "Đã xảy ra lỗi khi lưu file. Vui lòng thử lại."
