@@ -19,7 +19,7 @@ from constants import (
 from services import (
     save_nhan_than, save_lien_he, save_tai_chinh,
     save_phuong_tien, save_ho_so_dac_thu, save_tai_lieu,
-    get_upload_folder
+    get_upload_folder, save_doi_tuong, check_cccd_exists
 )
 from .getters import (
     get_doi_tuong_detail, get_nhan_than_by_cccd, get_lien_he_by_cccd,
@@ -471,6 +471,23 @@ def page_profile_view(cccd):
                 if st.form_submit_button("💾 Lưu thân nhân", type="primary"):
                     if nt_ho_ten:
                         nghe_nghiep_full = f"{nt_phan_loai_nghe}: {nt_nghe_nghiep}" if nt_nghe_nghiep else nt_phan_loai_nghe
+                        
+                        # --- Tự động tạo hồ sơ đối tượng nếu có CCCD mới ---
+                        if nt_cccd_nt and len(nt_cccd_nt) == 12 and nt_cccd_nt.isdigit():
+                            if not check_cccd_exists(nt_cccd_nt):
+                                save_doi_tuong({
+                                    'cccd': nt_cccd_nt,
+                                    'ho_ten': nt_ho_ten,
+                                    'ngay_sinh': nt_ngay_sinh.strftime('%Y-%m-%d') if nt_ngay_sinh else None,
+                                    'gioi_tinh': nt_gioi_tinh,
+                                    'dia_chi_tinh': nt_dia_chi_tinh,
+                                    'dia_chi_xa': nt_dia_chi_xa,
+                                    'dia_chi_chi_tiet': nt_dia_chi_chi_tiet,
+                                    'phan_loai_nghe_nghiep': nt_phan_loai_nghe,
+                                    'chi_tiet_nghe_nghiep': nt_nghe_nghiep,
+                                    'ghi_chu_chung': f"Hồ sơ tạo tự động từ thân nhân của {cccd}"
+                                })
+
                         save_nhan_than(
                             cccd=cccd,
                             loai_quan_he=nt_loai_quan_he,

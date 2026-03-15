@@ -331,7 +331,7 @@ def page_dashboard():
             
         # Đổi tên cột cho dễ đọc
         recent_df.columns = ["CCCD", "Họ tên", "Ngày sinh",
-                             "Giới tính", "Xã/Phường", "Phân loại"]
+                             "Giới tính", "Số nhà/Đường", "Xã/Phường", "Phân loại"]
         st.dataframe(recent_df, use_container_width=True, hide_index=True)
     else:
         st.info("💡 Chưa có hồ sơ nào. Bấm vào **📝 Nhập liệu** để thêm mới.")
