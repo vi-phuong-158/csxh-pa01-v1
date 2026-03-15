@@ -29,6 +29,7 @@ from views.profile import (
     delete_tai_lieu, update_doi_tuong
 )
 from utils.text_utils import format_date_vn
+from utils.ui_components import render_address_fields
 from .utils import validate_cccd_for_action
 
 logger = logging.getLogger(__name__)
@@ -231,31 +232,11 @@ def page_nhap_lieu():
             )
 
         with col2:
-            dia_chi_tinh = st.selectbox(
-                "Tỉnh/TP",
-                TINH_OPTIONS,
-                key="main_dia_chi_tinh"
-            )
-
-            if dia_chi_tinh == "Phú Thọ":
-                dia_chi_xa = st.selectbox(
-                    "Xã/Phường",
-                    ["-- Chọn xã/phường --"] + DANH_SACH_XA_PHU_THO,
-                    key="xa_phuong_select"
-                )
-                if dia_chi_xa == "-- Chọn xã/phường --":
-                    dia_chi_xa = ""
-            else:
-                dia_chi_xa = st.text_input(
-                    "Quận/Huyện, Xã/Phường",
-                    placeholder="Ví dụ: Quận Đống Đa, Phường Ô Chợ Dừa",
-                    key="main_dia_chi_xa_text"
-                )
-            
-            dia_chi_chi_tiet = st.text_input(
-                "Địa chỉ cụ thể (Số nhà, đường...)",
-                placeholder="Số nhà, ngõ, đường, khu đô thị...",
-                key="main_dia_chi_chi_tiet"
+            dia_chi_tinh, dia_chi_xa, dia_chi_chi_tiet = render_address_fields(
+                prefix="main",
+                default_tinh="Phú Thọ",
+                default_xa="",
+                default_chi_tiet=""
             )
 
             phan_loai = st.selectbox(
@@ -373,26 +354,11 @@ def page_nhap_lieu():
             nt_gioi_tinh = st.selectbox("Giới tính", GIOI_TINH_OPTIONS, key="nt_gioi_tinh")
 
         with col2:
-            nt_dia_chi_tinh = st.selectbox("Tỉnh/TP", TINH_OPTIONS, key="nt_dia_chi_tinh")
-            if nt_dia_chi_tinh == "Phú Thọ":
-                nt_dia_chi_xa = st.selectbox(
-                    "Xã/Phường",
-                    ["-- Chọn xã/phường --"] + DANH_SACH_XA_PHU_THO,
-                    key="nt_xa_phuong_select"
-                )
-                if nt_dia_chi_xa == "-- Chọn xã/phường --":
-                    nt_dia_chi_xa = ""
-            else:
-                nt_dia_chi_xa = st.text_input(
-                    "Quận/Huyện, Xã/Phường",
-                    placeholder="Ví dụ: Quận Cầu Giấy, Phường Dịch Vọng",
-                    key="nt_dia_chi_xa_text"
-                )
-            
-            nt_dia_chi_chi_tiet = st.text_input(
-                "Địa chỉ cụ thể (Số nhà, đường...)",
-                placeholder="Số nhà, ngõ, đường...",
-                key="nt_dia_chi_chi_tiet"
+            nt_dia_chi_tinh, nt_dia_chi_xa, nt_dia_chi_chi_tiet = render_address_fields(
+                prefix="nt",
+                default_tinh="Phú Thọ",
+                default_xa="",
+                default_chi_tiet=""
             )
             
             nt_phan_loai_nghe = st.selectbox("Phân loại nghề nghiệp", PHAN_LOAI_NGHE_NGHIEP_OPTIONS, key="nt_phan_loai_nghe")

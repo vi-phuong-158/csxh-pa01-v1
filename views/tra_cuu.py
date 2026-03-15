@@ -12,6 +12,7 @@ from constants import (
 )
 from utils.text_utils import normalize_string, format_date_vn
 from utils.security_utils import sanitize_dataframe_for_csv
+from utils.ui_components import render_address_fields
 
 
 # ============================================
@@ -156,7 +157,7 @@ def search_satellite_tables(conn, search_query, search_type):
 # ============================================
 
 def get_search_candidates(conn, search_query, search_type,
-                          filter_tinh, filter_gioi_tinh):
+                          filter_tinh, filter_xa, filter_gioi_tinh):
     """
     Thực hiện tìm kiếm đối tượng và trả về danh sách CCCD phù hợp.
     Nâng cấp: Tìm trong cả bảng vệ tinh (lien_he, tai_chinh, phuong_tien, nhan_than).
@@ -176,6 +177,10 @@ def get_search_candidates(conn, search_query, search_type,
         if filter_tinh != "Tất cả":
             sql_index += " AND dia_chi_tinh = ?"
             params.append(filter_tinh)
+        
+        if filter_xa != "Tất cả":
+            sql_index += " AND dia_chi_xa = ?"
+            params.append(filter_xa)
 
         if filter_gioi_tinh != "Tất cả":
             sql_index += " AND gioi_tinh = ?"
@@ -229,7 +234,7 @@ def get_search_candidates(conn, search_query, search_type,
     # Áp dụng bộ lọc tỉnh/giới tính cho kết quả satellite
     satellite_cccds_filtered = list(satellite_sources.keys())
     
-    if satellite_cccds_filtered and (filter_tinh != "Tất cả" or filter_gioi_tinh != "Tất cả"):
+    if satellite_cccds_filtered and (filter_tinh != "Tất cả" or filter_xa != "Tất cả" or filter_gioi_tinh != "Tất cả"):
         # Lọc satellite CCCDs theo filter
         placeholders = ','.join(['?'] * len(satellite_cccds_filtered))
         filter_sql = f"SELECT cccd FROM doi_tuong WHERE cccd IN ({placeholders})"
@@ -238,6 +243,9 @@ def get_search_candidates(conn, search_query, search_type,
         if filter_tinh != "Tất cả":
             filter_sql += " AND dia_chi_tinh = ?"
             filter_params.append(filter_tinh)
+        if filter_xa != "Tất cả":
+            filter_sql += " AND dia_chi_xa = ?"
+            filter_params.append(filter_xa)
         if filter_gioi_tinh != "Tất cả":
             filter_sql += " AND gioi_tinh = ?"
             filter_params.append(filter_gioi_tinh)
@@ -314,14 +322,17 @@ def page_tra_cuu():
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            filter_tinh = st.selectbox(
-                "Tỉnh/TP",
-                ["Tất cả"] + TINH_OPTIONS
+            filter_tinh, filter_xa, _ = render_address_fields(
+                prefix="filter_search",
+                default_tinh="Tất cả",
+                default_xa="Tất cả",
+                include_all=True
             )
         with col2:
             filter_gioi_tinh = st.selectbox(
                 "Giới tính",
-                ["Tất cả"] + GIOI_TINH_OPTIONS
+                ["Tất cả"] + GIOI_TINH_OPTIONS,
+                key="filter_gioi_tinh_search"
             )
         with col3:
             _ = st.selectbox(
@@ -342,7 +353,7 @@ def page_tra_cuu():
         if search_query:
             # SEARCH MODE with Multi-table Search
             candidates, satellite_sources = get_search_candidates(
-                conn, search_query, search_type, filter_tinh, filter_gioi_tinh)
+                conn, search_query, search_type, filter_tinh, filter_xa, filter_gioi_tinh)
             
             total_count = len(candidates)
             
@@ -396,6 +407,10 @@ def page_tra_cuu():
                 count_query += " AND dia_chi_tinh = ?"
                 count_params.append(filter_tinh)
             
+            if filter_xa != "Tất cả":
+                count_query += " AND dia_chi_xa = ?"
+                count_params.append(filter_xa)
+            
             if filter_gioi_tinh != "Tất cả":
                 count_query += " AND gioi_tinh = ?"
                 count_params.append(filter_gioi_tinh)
@@ -430,6 +445,10 @@ def page_tra_cuu():
             if filter_tinh != "Tất cả":
                 query += " AND dia_chi_tinh = ?"
                 params.append(filter_tinh)
+            
+            if filter_xa != "Tất cả":
+                query += " AND dia_chi_xa = ?"
+                params.append(filter_xa)
             
             if filter_gioi_tinh != "Tất cả":
                 query += " AND gioi_tinh = ?"
