@@ -30,6 +30,7 @@ def get_nhan_than_by_cccd(cccd):
                 COALESCE(dt.gioi_tinh, nt.gioi_tinh) AS gioi_tinh,
                 COALESCE(dt.dia_chi_tinh, nt.dia_chi_tinh) AS dia_chi_tinh,
                 COALESCE(dt.dia_chi_xa, nt.dia_chi_xa) AS dia_chi_xa,
+                COALESCE(dt.dia_chi_chi_tiet, nt.dia_chi_chi_tiet) AS dia_chi_chi_tiet,
                 COALESCE(dt.phan_loai_nghe_nghiep, nt.nghe_nghiep) AS nghe_nghiep,
                 COALESCE(dt.dia_chi_xa, nt.noi_o) AS noi_o,
                 nt.ghi_chu,

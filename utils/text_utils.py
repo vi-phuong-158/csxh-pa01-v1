@@ -30,3 +30,18 @@ def normalize_string(s):
         return ""
     s = remove_accents(s).lower()
     return re.sub(r'[^a-z0-9]', '', s)
+
+
+def format_date_vn(date_str):
+    """
+    Format date string from yyyy-mm-dd to dd/mm/yyyy
+    """
+    if not date_str or str(date_str).strip() in ('', 'None', 'N/A'):
+        return str(date_str) if date_str is not None else ""
+        
+    val = str(date_str).strip()
+    match = re.match(r'^(\d{4})-(\d{2})-(\d{2})(.*)$', val)
+    if match:
+        y, m, d, rest = match.groups()
+        return f"{d}/{m}/{y}{rest}"
+    return val

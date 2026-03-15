@@ -28,6 +28,7 @@ from views.profile import (
     delete_tai_chinh, delete_phuong_tien, delete_ho_so_dac_thu,
     delete_tai_lieu, update_doi_tuong
 )
+from utils.text_utils import format_date_vn
 from .utils import validate_cccd_for_action
 
 logger = logging.getLogger(__name__)
@@ -176,6 +177,7 @@ def page_nhap_lieu():
                                             st.session_state["xa_phuong_select"] = xa
                                     else:
                                         st.session_state["main_dia_chi_xa_text"] = xa
+                                        st.session_state["main_dia_chi_chi_tiet"] = existing_data.get("dia_chi_chi_tiet", "")
                                     # Nghề nghiệp
                                     pl = existing_data.get("phan_loai_nghe_nghiep", "")
                                     if pl in PHAN_LOAI_NGHE_NGHIEP_OPTIONS:
@@ -245,10 +247,16 @@ def page_nhap_lieu():
                     dia_chi_xa = ""
             else:
                 dia_chi_xa = st.text_input(
-                    "Địa chỉ chi tiết",
-                    placeholder="Số nhà, đường, xã/phường, quận/huyện, tỉnh/TP",
+                    "Quận/Huyện, Xã/Phường",
+                    placeholder="Ví dụ: Quận Đống Đa, Phường Ô Chợ Dừa",
                     key="main_dia_chi_xa_text"
                 )
+            
+            dia_chi_chi_tiet = st.text_input(
+                "Địa chỉ cụ thể (Số nhà, đường...)",
+                placeholder="Số nhà, ngõ, đường, khu đô thị...",
+                key="main_dia_chi_chi_tiet"
+            )
 
             phan_loai = st.selectbox(
                 "Phân loại nghề nghiệp",
@@ -289,7 +297,7 @@ def page_nhap_lieu():
                         with col_info:
                             st.markdown(
                                 f"**{row['loai_quan_he']}**: {row['ho_ten']} | "
-                                f"📅 {row['ngay_sinh'] or 'N/A'} | "
+                                f"📅 {format_date_vn(row['ngay_sinh']) if row.get('ngay_sinh') else 'N/A'} | "
                                 f"💼 {row['nghe_nghiep'] or 'N/A'}"
                             )
                         with col_del:
@@ -349,6 +357,7 @@ def page_nhap_lieu():
                                 st.session_state["nt_xa_phuong_select"] = xa
                         else:
                             st.session_state["nt_dia_chi_xa_text"] = xa
+                        st.session_state["nt_dia_chi_chi_tiet"] = nt_existing.get("dia_chi_chi_tiet", "")
                         pl = nt_existing.get("phan_loai_nghe_nghiep", "")
                         if pl in PHAN_LOAI_NGHE_NGHIEP_OPTIONS:
                             st.session_state["nt_phan_loai_nghe"] = pl
@@ -375,10 +384,17 @@ def page_nhap_lieu():
                     nt_dia_chi_xa = ""
             else:
                 nt_dia_chi_xa = st.text_input(
-                    "Địa chỉ chi tiết",
-                    placeholder="Số nhà, đường, xã/phường, quận/huyện, tỉnh/TP",
+                    "Quận/Huyện, Xã/Phường",
+                    placeholder="Ví dụ: Quận Cầu Giấy, Phường Dịch Vọng",
                     key="nt_dia_chi_xa_text"
                 )
+            
+            nt_dia_chi_chi_tiet = st.text_input(
+                "Địa chỉ cụ thể (Số nhà, đường...)",
+                placeholder="Số nhà, ngõ, đường...",
+                key="nt_dia_chi_chi_tiet"
+            )
+            
             nt_phan_loai_nghe = st.selectbox("Phân loại nghề nghiệp", PHAN_LOAI_NGHE_NGHIEP_OPTIONS, key="nt_phan_loai_nghe")
             nt_nghe_nghiep = st.text_input("Chi tiết nghề nghiệp", placeholder="Giáo viên THPT...", key="nt_nghe_nghiep")
             nt_noi_o = st.text_input("Nơi ở hiện nay", placeholder="Địa chỉ hiện tại", key="nt_noi_o")
@@ -396,6 +412,7 @@ def page_nhap_lieu():
                     "gioi_tinh": nt_gioi_tinh,
                     "dia_chi_tinh": nt_dia_chi_tinh,
                     "dia_chi_xa": nt_dia_chi_xa,
+                    "dia_chi_chi_tiet": nt_dia_chi_chi_tiet,
                     "nghe_nghiep": nghe_nghiep_full,
                     "noi_o": nt_noi_o,
                     "ghi_chu": nt_ghi_chu,
@@ -420,7 +437,7 @@ def page_nhap_lieu():
                     for item in qt_list_db:
                         col_info, col_del = st.columns([5, 1])
                         with col_info:
-                            st.markdown(f"**{item['thoi_gian']}**: {item['noi_dung']}")
+                            st.markdown(f"**{format_date_vn(item['thoi_gian'])}**: {item['noi_dung']}")
                         with col_del:
                             with st.popover("🗑️"):
                                 st.markdown(f"Xóa hoạt động: **{item['thoi_gian']}**?")
@@ -433,7 +450,7 @@ def page_nhap_lieu():
         # Preview staging
         _render_staging_list(
             "nl_staging_qt",
-            lambda x: f"**{x['thoi_gian']}**: {x['noi_dung']}",
+            lambda x: f"**{format_date_vn(x['thoi_gian'])}**: {x['noi_dung']}",
             ""
         )
 
@@ -866,6 +883,7 @@ def page_nhap_lieu():
                 gioi_tinh if "gioi_tinh" in dir() else None,
                 dia_chi_tinh if "dia_chi_tinh" in dir() else "Phú Thọ",
                 dia_chi_xa if "dia_chi_xa" in dir() else "",
+                dia_chi_chi_tiet if "dia_chi_chi_tiet" in dir() else "",
                 phan_loai if "phan_loai" in dir() else "",
                 chi_tiet_nghe if "chi_tiet_nghe" in dir() else "",
                 ghi_chu if "ghi_chu" in dir() else "",
@@ -882,7 +900,7 @@ def page_nhap_lieu():
 # Batch save logic (tách ra để dễ test)
 # ===================================================================
 def _do_save_all(cccd, ho_ten, them_bo_sung,
-                 ngay_sinh, gioi_tinh, dia_chi_tinh, dia_chi_xa,
+                 ngay_sinh, gioi_tinh, dia_chi_tinh, dia_chi_xa, dia_chi_chi_tiet,
                  phan_loai, chi_tiet_nghe, ghi_chu, avatar_file):
     """Thực hiện lưu toàn bộ hồ sơ. Gọi từ nút Lưu toàn bộ."""
 
@@ -911,6 +929,7 @@ def _do_save_all(cccd, ho_ten, them_bo_sung,
             'gioi_tinh': gioi_tinh or '',
             'dia_chi_tinh': dia_chi_tinh or 'Phú Thọ',
             'dia_chi_xa': dia_chi_xa or '',
+            'dia_chi_chi_tiet': dia_chi_chi_tiet or '',
             'phan_loai_nghe_nghiep': phan_loai or '',
             'chi_tiet_nghe_nghiep': chi_tiet_nghe or '',
             'ghi_chu_chung': ghi_chu or '',
@@ -932,6 +951,7 @@ def _do_save_all(cccd, ho_ten, them_bo_sung,
             'gioi_tinh': gioi_tinh or '',
             'dia_chi_tinh': dia_chi_tinh or 'Phú Thọ',
             'dia_chi_xa': dia_chi_xa or '',
+            'dia_chi_chi_tiet': dia_chi_chi_tiet or '',
             'phan_loai_nghe_nghiep': phan_loai or '',
             'chi_tiet_nghe_nghiep': chi_tiet_nghe or '',
             'ghi_chu_chung': ghi_chu or '',
@@ -957,6 +977,7 @@ def _do_save_all(cccd, ho_ten, them_bo_sung,
                     'gioi_tinh': item.get("gioi_tinh", ""),
                     'dia_chi_tinh': item.get("dia_chi_tinh", "Phú Thọ"),
                     'dia_chi_xa': item.get("dia_chi_xa", ""),
+                    'dia_chi_chi_tiet': item.get("dia_chi_chi_tiet", ""),
                     'phan_loai_nghe_nghiep': item.get("nghe_nghiep", ""),
                     'ghi_chu_chung': f"Hồ sơ tạo tự động từ thân nhân của {cccd}"
                 })
@@ -970,6 +991,7 @@ def _do_save_all(cccd, ho_ten, them_bo_sung,
             gioi_tinh=item.get("gioi_tinh", ""),
             dia_chi_tinh=item.get("dia_chi_tinh", ""),
             dia_chi_xa=item.get("dia_chi_xa", ""),
+            dia_chi_chi_tiet=item.get("dia_chi_chi_tiet", ""),
             nghe_nghiep=item.get("nghe_nghiep", ""),
             noi_o=item.get("noi_o", ""),
             ghi_chu=item.get("ghi_chu", ""),

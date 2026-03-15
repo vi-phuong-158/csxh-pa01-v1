@@ -31,6 +31,7 @@ from .actions import (
     delete_phuong_tien, delete_ho_so_dac_thu, delete_tai_lieu,
     delete_doi_tuong, update_doi_tuong
 )
+from utils.text_utils import format_date_vn
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +154,7 @@ def page_profile_view(cccd):
                     f"**Ngày sinh:** {ngay_sinh.strftime('%d/%m/%Y')} ({tuoi} tuổi)")
             except (ValueError, TypeError):
                 st.markdown(
-                    f"**Ngày sinh:** {doi_tuong.get('ngay_sinh', 'N/A')}")
+                    f"**Ngày sinh:** {format_date_vn(doi_tuong.get('ngay_sinh', 'N/A'))}")
 
         st.markdown(f"**Giới tính:** {doi_tuong.get('gioi_tinh', 'N/A')}")
 
@@ -163,6 +164,38 @@ def page_profile_view(cccd):
             st.session_state.view_profile_cccd = None
             st.session_state.edit_mode = False
             st.rerun()
+
+        # Generate PDF Button
+        from utils.pdf_export import generate_profile_pdf
+        
+        pdf_bytes = generate_profile_pdf(cccd)
+        if pdf_bytes:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_name = f"HoSo_{cccd}_{timestamp}.pdf"
+            
+            st.download_button(
+                label="📄 Xuất PDF",
+                data=pdf_bytes,
+                file_name=file_name,
+                mime="application/pdf",
+                use_container_width=True
+            )
+
+        # Generate DOCX Button
+        from utils.docx_export import generate_profile_docx
+        
+        docx_bytes = generate_profile_docx(cccd)
+        if docx_bytes:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_name = f"HoSo_{cccd}_{timestamp}.docx"
+            
+            st.download_button(
+                label="📝 Xuất Word",
+                data=docx_bytes,
+                file_name=file_name,
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True
+            )
 
         if st.button("✏️ Sửa hồ sơ", type="primary", use_container_width=True):
             st.session_state.edit_mode = True
@@ -262,9 +295,15 @@ def page_profile_view(cccd):
                     )
 
                     edit_dia_chi_xa = st.text_input(
-                        "Xã/Phường",
+                        "Quận/Huyện, Xã Phường",
                         value=doi_tuong.get('dia_chi_xa', ''),
                         key="edit_dia_chi_xa"
+                    )
+
+                    edit_dia_chi_chi_tiet = st.text_input(
+                        "Địa chỉ cụ thể (Số nhà, đường...)",
+                        value=doi_tuong.get('dia_chi_chi_tiet', ''),
+                        key="edit_dia_chi_chi_tiet"
                     )
 
                     edit_phan_loai = st.selectbox(
@@ -334,6 +373,7 @@ def page_profile_view(cccd):
                             'gioi_tinh': edit_gioi_tinh,
                             'dia_chi_tinh': edit_dia_chi_tinh,
                             'dia_chi_xa': edit_dia_chi_xa,
+                            'dia_chi_chi_tiet': edit_dia_chi_chi_tiet,
                             'phan_loai_nghe_nghiep': edit_phan_loai,
                             'chi_tiet_nghe_nghiep': edit_chi_tiet_nghe,
                             'ghi_chu_chung': edit_ghi_chu,
@@ -357,7 +397,7 @@ def page_profile_view(cccd):
 
             with col1:
                 st.markdown(
-                    f"**Địa chỉ:** {doi_tuong.get('dia_chi_xa', '')} - {doi_tuong.get('dia_chi_tinh', '')}")
+                    f"**Địa chỉ:** {' - '.join([x for x in [doi_tuong.get('dia_chi_chi_tiet', ''), doi_tuong.get('dia_chi_xa', ''), doi_tuong.get('dia_chi_tinh', '')] if x])}")
                 st.markdown(
                     f"**Phân loại nghề nghiệp:** {doi_tuong.get('phan_loai_nghe_nghiep', 'N/A')}")
 
@@ -365,7 +405,7 @@ def page_profile_view(cccd):
                 st.markdown(
                     f"**Chi tiết nơi làm việc:** {doi_tuong.get('chi_tiet_nghe_nghiep', 'N/A')}")
                 st.markdown(
-                    f"**Ngày tạo:** {doi_tuong.get('created_at', 'N/A')}")
+                    f"**Ngày tạo:** {format_date_vn(doi_tuong.get('created_at', 'N/A'))}")
 
             if doi_tuong.get('ghi_chu_chung'):
                 st.markdown("**Ghi chú:**")
@@ -385,11 +425,12 @@ def page_profile_view(cccd):
                 with col_info:
                     gioi_tinh_txt = f" | 🚻 {row['gioi_tinh']}" if row.get('gioi_tinh') else ""
                     dia_chi_txt = ""
-                    if row.get('dia_chi_xa') or row.get('dia_chi_tinh'):
-                        dia_chi_txt = f" | 🏠 {row.get('dia_chi_xa', '')} - {row.get('dia_chi_tinh', '')}"
+                    if row.get('dia_chi_xa') or row.get('dia_chi_tinh') or row.get('dia_chi_chi_tiet'):
+                        dc_parts = [p for p in [row.get('dia_chi_chi_tiet'), row.get('dia_chi_xa'), row.get('dia_chi_tinh')] if p]
+                        dia_chi_txt = f" | 🏠 {' - '.join(dc_parts)}"
                     st.markdown(f"""
                     **{row['loai_quan_he']}**: {row['ho_ten']}{gioi_tinh_txt} | 
-                    📅 {row['ngay_sinh'] if row['ngay_sinh'] else 'N/A'} | 
+                    📅 {format_date_vn(row['ngay_sinh']) if row['ngay_sinh'] else 'N/A'} | 
                     💼 {row['nghe_nghiep'] if row['nghe_nghiep'] else 'N/A'}{dia_chi_txt}
                     """)
                 with col_del:
@@ -425,7 +466,8 @@ def page_profile_view(cccd):
                     nt_gioi_tinh = st.selectbox("Giới tính", GIOI_TINH_OPTIONS, key="pv_nt_gioi_tinh")
                 with col2:
                     nt_dia_chi_tinh = st.selectbox("Tỉnh/TP", TINH_OPTIONS, key="pv_nt_dia_chi_tinh")
-                    nt_dia_chi_xa = st.text_input("Địa chỉ chi tiết", key="pv_nt_dia_chi_xa")
+                    nt_dia_chi_xa = st.text_input("Quận/Huyện, Xã/Phường", key="pv_nt_dia_chi_xa")
+                    nt_dia_chi_chi_tiet = st.text_input("Địa chỉ cụ thể (Số nhà...)", key="pv_nt_dia_chi_chi_tiet")
                     nt_phan_loai_nghe = st.selectbox(
                         "Phân loại nghề nghiệp", PHAN_LOAI_NGHE_NGHIEP_OPTIONS, key="pv_nt_phan_loai")
                     nt_nghe_nghiep = st.text_input(
@@ -448,6 +490,7 @@ def page_profile_view(cccd):
                             gioi_tinh=nt_gioi_tinh,
                             dia_chi_tinh=nt_dia_chi_tinh,
                             dia_chi_xa=nt_dia_chi_xa,
+                            dia_chi_chi_tiet=nt_dia_chi_chi_tiet,
                             nghe_nghiep=nghe_nghiep_full,
                             noi_o=nt_noi_o,
                             ghi_chu=nt_ghi_chu
@@ -469,7 +512,7 @@ def page_profile_view(cccd):
                 with st.container():
                     col_time, col_content, col_del = st.columns([1.5, 4, 0.5])
                     with col_time:
-                        st.markdown(f"**{item['thoi_gian']}**")
+                        st.markdown(f"**{format_date_vn(item['thoi_gian'])}**")
                     with col_content:
                         st.markdown(item['noi_dung'])
                         if item['ghi_chu']:

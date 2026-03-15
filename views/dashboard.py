@@ -5,6 +5,7 @@ from database import get_connection
 from constants import (
     LOAI_HINH_DAC_THU,
 )
+from utils.text_utils import format_date_vn
 
 # ECharts (primary) - với fallback Plotly
 try:
@@ -66,7 +67,7 @@ def get_recent_records(limit=10):
     conn = get_connection()
     try:
         query = """
-            SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa, phan_loai_nghe_nghiep
+            SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_chi_tiet, dia_chi_xa, phan_loai_nghe_nghiep
             FROM doi_tuong
             ORDER BY created_at DESC
             LIMIT ?
@@ -324,6 +325,10 @@ def page_dashboard():
         recent_df = get_recent_records(10)
         
     if not recent_df.empty:
+        # Format date column
+        if 'ngay_sinh' in recent_df.columns:
+            recent_df['ngay_sinh'] = recent_df['ngay_sinh'].apply(format_date_vn)
+            
         # Đổi tên cột cho dễ đọc
         recent_df.columns = ["CCCD", "Họ tên", "Ngày sinh",
                              "Giới tính", "Xã/Phường", "Phân loại"]

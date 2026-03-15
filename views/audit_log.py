@@ -8,7 +8,6 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 from database import get_connection
-from app.services.auth_service import is_super_admin
 from utils.security_utils import sanitize_dataframe_for_csv
 
 logger = logging.getLogger(__name__)
@@ -122,6 +121,7 @@ def page_audit_log():
     user = st.session_state.get('user', {})
 
     # Chỉ Super Admin
+    from app.services.auth_service import is_super_admin
     if not is_super_admin(user):
         st.error("⛔ Bạn không có quyền truy cập trang này!")
         return

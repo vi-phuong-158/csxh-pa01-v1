@@ -276,6 +276,18 @@ def create_tables():
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_doi_tuong_created_at ON doi_tuong(created_at)")
 
+    # Index cho tìm kiếm toàn diện (Multi-table Search)
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_lien_he_gia_tri ON lien_he(gia_tri)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_tai_chinh_so_tk ON tai_chinh(so_tai_khoan)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_phuong_tien_bien_ks ON phuong_tien(bien_kiem_soat)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_nhan_than_ho_ten ON nhan_than(ho_ten)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_nhan_than_cccd_nt ON nhan_than(cccd_nhan_than)")
+
     # Index cho các bảng mới
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_quan_he_cccd1 ON quan_he_doi_tuong(cccd_1)")

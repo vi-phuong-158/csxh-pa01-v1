@@ -119,7 +119,7 @@ def update_doi_tuong(cccd, data):
         cursor.execute("""
             UPDATE doi_tuong 
             SET ho_ten = ?, ngay_sinh = ?, gioi_tinh = ?, dia_chi_tinh = ?,
-                dia_chi_xa = ?, phan_loai_nghe_nghiep = ?, chi_tiet_nghe_nghiep = ?,
+                dia_chi_xa = ?, dia_chi_chi_tiet = ?, phan_loai_nghe_nghiep = ?, chi_tiet_nghe_nghiep = ?,
                 ghi_chu_chung = ?, anh_chan_dung = ?, updated_at = CURRENT_TIMESTAMP
             WHERE cccd = ?
         """, (
@@ -128,6 +128,7 @@ def update_doi_tuong(cccd, data):
             data['gioi_tinh'],
             data['dia_chi_tinh'],
             data['dia_chi_xa'],
+            data.get('dia_chi_chi_tiet', ''),
             data['phan_loai_nghe_nghiep'],
             data['chi_tiet_nghe_nghiep'],
             data['ghi_chu_chung'],

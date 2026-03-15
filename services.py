@@ -150,7 +150,7 @@ def save_phuong_tien(cccd, loai_xe, bien_so, ten_xe, ghi_chu=""):
 
 
 def save_nhan_than(cccd, loai_quan_he, ho_ten, cccd_nhan_than="", ngay_sinh=None,
-                   gioi_tinh="", dia_chi_tinh="", dia_chi_xa="",
+                   gioi_tinh="", dia_chi_tinh="", dia_chi_xa="", dia_chi_chi_tiet="",
                    nghe_nghiep="", noi_o="", ghi_chu=""):
     """Lưu thông tin nhân thân"""
     if not ho_ten:
@@ -160,11 +160,11 @@ def save_nhan_than(cccd, loai_quan_he, ho_ten, cccd_nhan_than="", ngay_sinh=None
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO nhan_than (cccd, loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh,
-                                   gioi_tinh, dia_chi_tinh, dia_chi_xa,
+                                   gioi_tinh, dia_chi_tinh, dia_chi_xa, dia_chi_chi_tiet,
                                    nghe_nghiep, noi_o, ghi_chu)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (cccd, loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh,
-              gioi_tinh, dia_chi_tinh, dia_chi_xa,
+              gioi_tinh, dia_chi_tinh, dia_chi_xa, dia_chi_chi_tiet,
               nghe_nghiep, noi_o, ghi_chu))
         conn.commit()
         return True
@@ -282,15 +282,16 @@ def save_doi_tuong(data):
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO doi_tuong (cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_tinh, 
-                                   dia_chi_xa, anh_chan_dung, phan_loai_nghe_nghiep, 
+                                   dia_chi_xa, dia_chi_chi_tiet, anh_chan_dung, phan_loai_nghe_nghiep, 
                                    chi_tiet_nghe_nghiep, ghi_chu_chung)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(cccd) DO UPDATE SET
                 ho_ten = excluded.ho_ten,
                 ngay_sinh = excluded.ngay_sinh,
                 gioi_tinh = excluded.gioi_tinh,
                 dia_chi_tinh = excluded.dia_chi_tinh,
                 dia_chi_xa = excluded.dia_chi_xa,
+                dia_chi_chi_tiet = excluded.dia_chi_chi_tiet,
                 phan_loai_nghe_nghiep = excluded.phan_loai_nghe_nghiep,
                 chi_tiet_nghe_nghiep = excluded.chi_tiet_nghe_nghiep,
                 ghi_chu_chung = excluded.ghi_chu_chung,
@@ -302,6 +303,7 @@ def save_doi_tuong(data):
             data['gioi_tinh'],
             data['dia_chi_tinh'],
             data['dia_chi_xa'],
+            data.get('dia_chi_chi_tiet', ''),
             data.get('anh_chan_dung', ''),
             data['phan_loai_nghe_nghiep'],
             data['chi_tiet_nghe_nghiep'],

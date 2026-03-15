@@ -8,7 +8,6 @@ from typing import Optional, Dict, List, Tuple
 from sqlalchemy import select, func
 from app.db.session import SessionLocal
 from app.models.models import User
-from views.audit_log import add_audit_log
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +85,7 @@ def authenticate(username: str, password: str) -> Optional[Dict]:
                 and user.last_failed_login_at
                 and (now - user.last_failed_login_at).total_seconds() < 5 * 60
             ):
+                from views.audit_log import add_audit_log
                 add_audit_log(
                     bang="users",
                     hanh_dong="LOGIN_LOCK",
@@ -104,6 +104,7 @@ def authenticate(username: str, password: str) -> Optional[Dict]:
 
             # If this failure reaches threshold, add audit log
             if user.failed_login_attempts >= 5:
+                from views.audit_log import add_audit_log
                 add_audit_log(
                     bang="users",
                     hanh_dong="LOGIN_LOCK",
