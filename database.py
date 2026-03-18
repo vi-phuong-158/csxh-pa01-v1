@@ -55,6 +55,7 @@ def create_tables():
             gioi_tinh TEXT,
             dia_chi_tinh TEXT DEFAULT 'Phú Thọ',
             dia_chi_xa TEXT,
+            dia_chi_chi_tiet TEXT DEFAULT '',
             anh_chan_dung TEXT,
             phan_loai_nghe_nghiep TEXT,
             chi_tiet_nghe_nghiep TEXT,
@@ -135,6 +136,12 @@ def create_tables():
             cursor.execute(f"ALTER TABLE nhan_than ADD COLUMN {col} TEXT DEFAULT ''")
         except Exception:
             pass  # Cột đã tồn tại
+
+    # Migration: thêm phân đoạn địa chỉ chi tiết cho bảng doi_tuong
+    try:
+        cursor.execute("ALTER TABLE doi_tuong ADD COLUMN dia_chi_chi_tiet TEXT DEFAULT ''")
+    except Exception:
+        pass
 
     # ========================================
     # BẢNG ĐẶC THÙ - TẦNG 2 (Yếu tố nước ngoài & Nghiệp vụ)

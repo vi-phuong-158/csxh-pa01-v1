@@ -236,7 +236,7 @@ $startVbsLines = @(
     "WshShell.Run `"python\pythonw.exe launcher.py`", 1, False"
 )
 $startVbsPath = Join-Path $BUILD_DIR "1. Khoi_Dong.vbs"
-$startVbsLines -join "`r`n" | Set-Content -Path $startVbsPath -Encoding UTF8
+$startVbsLines -join "`r`n" | Set-Content -Path $startVbsPath -Encoding ASCII
 Write-Host "  + 1. Khoi_Dong.vbs" -ForegroundColor Green
 
 # Create 2. Tat_Ung_Dung.vbs
@@ -251,7 +251,7 @@ $stopVbsLines = @(
     "MsgBox `"Da tat ung dung thanh cong!`", 64, `"He Thong`""
 )
 $stopVbsPath = Join-Path $BUILD_DIR "2. Tat_Ung_Dung.vbs"
-$stopVbsLines -join "`r`n" | Set-Content -Path $stopVbsPath -Encoding UTF8
+$stopVbsLines -join "`r`n" | Set-Content -Path $stopVbsPath -Encoding ASCII
 Write-Host "  + 2. Tat_Ung_Dung.vbs" -ForegroundColor Green
 
 # Create HUONG_DAN.txt
