@@ -1,24 +1,31 @@
 # -*- coding: utf-8 -*-
+import streamlit as st
 import pandas as pd
 from pathlib import Path
+from contextlib import closing
 from database import get_connection
 
+
+@st.cache_data(ttl=30, show_spinner=False)
 def get_doi_tuong_detail(cccd):
-    conn = get_connection()
-    try:
+    """Lấy chi tiết đối tượng (cached 30s)"""
+    if not cccd or not str(cccd).isalnum():
+        return None
+    with closing(get_connection()) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM doi_tuong WHERE cccd = ?", (cccd,))
         row = cursor.fetchone()
         if row:
             return dict(row)
         return None
-    finally:
-        conn.close()
 
 
+@st.cache_data(ttl=30, show_spinner=False)
 def get_nhan_than_by_cccd(cccd):
-    conn = get_connection()
-    try:
+    """Lấy danh sách nhân thân (cached 30s)"""
+    if not cccd or not str(cccd).isalnum():
+        return pd.DataFrame()
+    with closing(get_connection()) as conn:
         query = """
             SELECT 
                 nt.id,
@@ -41,63 +48,68 @@ def get_nhan_than_by_cccd(cccd):
         """
         df = pd.read_sql_query(query, conn, params=(cccd,))
         return df
-    finally:
-        conn.close()
 
 
+@st.cache_data(ttl=30, show_spinner=False)
 def get_lien_he_by_cccd(cccd):
-    conn = get_connection()
-    try:
+    """Lấy danh sách liên hệ (cached 30s)"""
+    if not cccd or not str(cccd).isalnum():
+        return pd.DataFrame()
+    with closing(get_connection()) as conn:
         query = "SELECT * FROM lien_he WHERE cccd = ? ORDER BY created_at DESC"
         df = pd.read_sql_query(query, conn, params=(cccd,))
         return df
-    finally:
-        conn.close()
 
 
+@st.cache_data(ttl=30, show_spinner=False)
 def get_tai_chinh_by_cccd(cccd):
-    conn = get_connection()
-    try:
+    """Lấy danh sách tài chính (cached 30s)"""
+    if not cccd or not str(cccd).isalnum():
+        return pd.DataFrame()
+    with closing(get_connection()) as conn:
         query = "SELECT * FROM tai_chinh WHERE cccd = ? ORDER BY created_at DESC"
         df = pd.read_sql_query(query, conn, params=(cccd,))
         return df
-    finally:
-        conn.close()
 
 
+@st.cache_data(ttl=30, show_spinner=False)
 def get_phuong_tien_by_cccd(cccd):
-    conn = get_connection()
-    try:
+    """Lấy danh sách phương tiện (cached 30s)"""
+    if not cccd or not str(cccd).isalnum():
+        return pd.DataFrame()
+    with closing(get_connection()) as conn:
         query = "SELECT * FROM phuong_tien WHERE cccd = ? ORDER BY created_at DESC"
         df = pd.read_sql_query(query, conn, params=(cccd,))
         return df
-    finally:
-        conn.close()
 
 
+@st.cache_data(ttl=30, show_spinner=False)
 def get_ho_so_dac_thu_by_cccd(cccd):
-    conn = get_connection()
-    try:
+    """Lấy danh sách hồ sơ đặc thù (cached 30s)"""
+    if not cccd or not str(cccd).isalnum():
+        return pd.DataFrame()
+    with closing(get_connection()) as conn:
         query = "SELECT * FROM ho_so_dac_thu WHERE cccd = ? ORDER BY created_at DESC"
         df = pd.read_sql_query(query, conn, params=(cccd,))
         return df
-    finally:
-        conn.close()
 
 
+@st.cache_data(ttl=30, show_spinner=False)
 def get_tai_lieu_by_cccd(cccd):
-    conn = get_connection()
-    try:
+    """Lấy danh sách tài liệu (cached 30s)"""
+    if not cccd or not str(cccd).isalnum():
+        return pd.DataFrame()
+    with closing(get_connection()) as conn:
         df = pd.read_sql_query(
             "SELECT * FROM tai_lieu WHERE cccd = ? ORDER BY created_at DESC", conn, params=(cccd,))
         return df
-    finally:
-        conn.close()
 
 
 def get_file_path(tai_lieu_id):
-    conn = get_connection()
-    try:
+    """Lấy đường dẫn file - không cache vì trả về Path object"""
+    if not tai_lieu_id or not str(tai_lieu_id).isdigit():
+        return None, None
+    with closing(get_connection()) as conn:
         cursor = conn.cursor()
         cursor.execute(
             "SELECT duong_dan, ten_file_goc FROM tai_lieu WHERE id = ?", (tai_lieu_id,))
@@ -108,5 +120,3 @@ def get_file_path(tai_lieu_id):
             file_path = Path.cwd() / result[0]
             return file_path, result[1]
         return None, None
-    finally:
-        conn.close()

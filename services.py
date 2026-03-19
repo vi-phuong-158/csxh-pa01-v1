@@ -102,8 +102,8 @@ def save_lien_he(cccd, loai, gia_tri, ghi_chu=""):
         """, (cccd, loai, gia_tri, ghi_chu))
         conn.commit()
         return True
-    except Exception as e:
-        logger.exception(f"Lỗi lưu liên hệ: {e}")
+    except Exception:
+        logger.exception("Lỗi lưu liên hệ")
         return False
     finally:
         conn.close()
@@ -122,8 +122,8 @@ def save_tai_chinh(cccd, ngan_hang, so_tai_khoan, chu_tai_khoan="", ghi_chu=""):
         """, (cccd, ngan_hang, so_tai_khoan, chu_tai_khoan, ghi_chu))
         conn.commit()
         return True
-    except Exception as e:
-        logger.exception(f"Lỗi lưu tài chính: {e}")
+    except Exception:
+        logger.exception("Lỗi lưu tài chính")
         return False
     finally:
         conn.close()
@@ -142,8 +142,8 @@ def save_phuong_tien(cccd, loai_xe, bien_so, ten_xe, ghi_chu=""):
         """, (cccd, loai_xe, bien_so, ten_xe, ghi_chu))
         conn.commit()
         return True
-    except Exception as e:
-        logger.exception(f"Lỗi lưu phương tiện: {e}")
+    except Exception:
+        logger.exception("Lỗi lưu phương tiện")
         return False
     finally:
         conn.close()
@@ -168,8 +168,8 @@ def save_nhan_than(cccd, loai_quan_he, ho_ten, cccd_nhan_than="", ngay_sinh=None
               nghe_nghiep, noi_o, ghi_chu))
         conn.commit()
         return True
-    except Exception as e:
-        logger.exception(f"Lỗi lưu nhân thân: {e}")
+    except Exception:
+        logger.exception("Lỗi lưu nhân thân")
         return False
     finally:
         conn.close()
@@ -188,8 +188,8 @@ def save_ho_so_dac_thu(cccd, loai_hinh, noi_dung_dict, ghi_chu=""):
         """, (cccd, loai_hinh, json.dumps(noi_dung_dict, ensure_ascii=False), ghi_chu))
         conn.commit()
         return True
-    except Exception as e:
-        logger.exception(f"Lỗi lưu hồ sơ đặc thù: {e}")
+    except Exception:
+        logger.exception("Lỗi lưu hồ sơ đặc thù")
         return False
     finally:
         conn.close()
@@ -216,8 +216,8 @@ def save_tai_lieu(cccd, uploaded_file, loai_tai_lieu, mo_ta=""):
         try:
             m = magic.Magic(mime=True)
             detected_mime = m.from_buffer(file_bytes[:2048])
-        except Exception as e:
-            logger.warning(f"Lỗi detect MIME bằng python-magic: {e}")
+        except Exception:
+            logger.warning("Lỗi detect MIME bằng python-magic")
     else:
         # Fallback: kiểm tra vài header bytes cơ bản
         header = file_bytes[:4]
@@ -239,7 +239,7 @@ def save_tai_lieu(cccd, uploaded_file, loai_tai_lieu, mo_ta=""):
         allowed_mimes = allowed_mime_by_ext.get(file_ext, [])
         if allowed_mimes and detected_mime not in allowed_mimes:
             logger.error(
-                f"Security: MIME type mismatch for upload. Ext={file_ext}, mime={detected_mime}"
+                "Security: MIME type mismatch for upload. Extension và nội dung không khớp."
             )
             return False, "Định dạng file không khớp nội dung thực tế. Vui lòng kiểm tra lại."
 
@@ -252,8 +252,8 @@ def save_tai_lieu(cccd, uploaded_file, loai_tai_lieu, mo_ta=""):
     try:
         with open(file_path, "wb") as f:
             f.write(file_bytes)
-    except Exception as e:
-        logger.exception(f"Lỗi lưu file: {e}")
+    except Exception:
+        logger.exception("Lỗi lưu file")
         return False, "Đã xảy ra lỗi khi lưu file. Vui lòng thử lại."
 
     duong_dan = f"uploads/{cccd}/{unique_name}"
@@ -266,8 +266,8 @@ def save_tai_lieu(cccd, uploaded_file, loai_tai_lieu, mo_ta=""):
         """, (cccd, safe_filename, unique_name, duong_dan, loai_tai_lieu, mo_ta, file_size, file_ext))
         conn.commit()
         return True, "Đã upload thành công!"
-    except Exception as e:
-        logger.exception(f"Lỗi lưu metadata: {e}")
+    except Exception:
+        logger.exception("Lỗi lưu metadata")
         if file_path.exists():
             file_path.unlink()
         return False, "Đã xảy ra lỗi hệ thống. Vui lòng thử lại."
@@ -322,7 +322,7 @@ def save_doi_tuong(data):
                     file_ext = ""
 
                 if file_ext not in ALLOWED_EXTENSIONS:
-                    logger.error(f"Security: Attempted to upload invalid extension '{file_ext}' for CCCD {data['cccd']}")
+                    logger.error("Security: Attempted to upload invalid extension for avatar")
                     conn.rollback()
                     return False, f"Định dạng ảnh không hợp lệ! Chỉ chấp nhận: {', '.join(ALLOWED_EXTENSIONS)}"
 
@@ -345,13 +345,13 @@ def save_doi_tuong(data):
                 relative_path = f"uploads/{data['cccd']}/{safe_name}"
                 cursor.execute("UPDATE doi_tuong SET anh_chan_dung = ? WHERE cccd = ?",
                                (relative_path, data['cccd']))
-            except Exception as e:
-                logger.error(f"Error saving avatar on create: {e}")
+            except Exception:
+                logger.error("Error saving avatar on create")
 
         conn.commit()
         return True, "Lưu thành công!"
-    except Exception as e:
-        logger.exception(f"Lỗi lưu đối tượng: {e}")
+    except Exception:
+        logger.exception("Lỗi lưu đối tượng")
         return False, "Đã xảy ra lỗi hệ thống. Vui lòng thử lại."
     finally:
         conn.close()

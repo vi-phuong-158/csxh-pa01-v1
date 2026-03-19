@@ -662,7 +662,7 @@ $startVbsLines = @(
     "WshShell.Run `"python\pythonw.exe launcher.py`", 1, False"
 )
 $startVbsPath = Join-Path $BUILD_DIR "1. Khoi_Dong.vbs"
-$startVbsLines -join "`r`n" | Set-Content -Path $startVbsPath -Encoding UTF8
+$startVbsLines -join "`r`n" | Set-Content -Path $startVbsPath -Encoding ASCII
 Write-Host "  + 1. Khoi_Dong.vbs" -ForegroundColor Green
 
 # Create 2. Tat_Ung_Dung.vbs
@@ -677,7 +677,7 @@ $stopVbsLines = @(
     "MsgBox `"Da tat ung dung thanh cong!`", 64, `"He Thong`""
 )
 $stopVbsPath = Join-Path $BUILD_DIR "2. Tat_Ung_Dung.vbs"
-$stopVbsLines -join "`r`n" | Set-Content -Path $stopVbsPath -Encoding UTF8
+$stopVbsLines -join "`r`n" | Set-Content -Path $stopVbsPath -Encoding ASCII
 Write-Host "  + 2. Tat_Ung_Dung.vbs" -ForegroundColor Green
 
 # Create HUONG_DAN.txt
@@ -1305,6 +1305,7 @@ def create_tables():
             gioi_tinh TEXT,
             dia_chi_tinh TEXT DEFAULT 'Phú Thọ',
             dia_chi_xa TEXT,
+            dia_chi_chi_tiet TEXT DEFAULT '',
             anh_chan_dung TEXT,
             phan_loai_nghe_nghiep TEXT,
             chi_tiet_nghe_nghiep TEXT,
@@ -1385,6 +1386,12 @@ def create_tables():
             cursor.execute(f"ALTER TABLE nhan_than ADD COLUMN {col} TEXT DEFAULT ''")
         except Exception:
             pass  # Cột đã tồn tại
+
+    # Migration: thêm phân đoạn địa chỉ chi tiết cho bảng doi_tuong
+    try:
+        cursor.execute("ALTER TABLE doi_tuong ADD COLUMN dia_chi_chi_tiet TEXT DEFAULT ''")
+    except Exception:
+        pass
 
     # ========================================
     # BẢNG ĐẶC THÙ - TẦNG 2 (Yếu tố nước ngoài & Nghiệp vụ)
@@ -1525,6 +1532,18 @@ def create_tables():
         "CREATE INDEX IF NOT EXISTS idx_doi_tuong_ho_ten ON doi_tuong(ho_ten)")
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_doi_tuong_created_at ON doi_tuong(created_at)")
+
+    # Index cho tìm kiếm toàn diện (Multi-table Search)
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_lien_he_gia_tri ON lien_he(gia_tri)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_tai_chinh_so_tk ON tai_chinh(so_tai_khoan)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_phuong_tien_bien_ks ON phuong_tien(bien_kiem_soat)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_nhan_than_ho_ten ON nhan_than(ho_ten)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_nhan_than_cccd_nt ON nhan_than(cccd_nhan_than)")
 
     # Index cho các bảng mới
     cursor.execute(
@@ -1834,7 +1853,7 @@ def save_phuong_tien(cccd, loai_xe, bien_so, ten_xe, ghi_chu=""):
 
 
 def save_nhan_than(cccd, loai_quan_he, ho_ten, cccd_nhan_than="", ngay_sinh=None,
-                   gioi_tinh="", dia_chi_tinh="", dia_chi_xa="",
+                   gioi_tinh="", dia_chi_tinh="", dia_chi_xa="", dia_chi_chi_tiet="",
                    nghe_nghiep="", noi_o="", ghi_chu=""):
     """Lưu thông tin nhân thân"""
     if not ho_ten:
@@ -1844,11 +1863,11 @@ def save_nhan_than(cccd, loai_quan_he, ho_ten, cccd_nhan_than="", ngay_sinh=None
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO nhan_than (cccd, loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh,
-                                   gioi_tinh, dia_chi_tinh, dia_chi_xa,
+                                   gioi_tinh, dia_chi_tinh, dia_chi_xa, dia_chi_chi_tiet,
                                    nghe_nghiep, noi_o, ghi_chu)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (cccd, loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh,
-              gioi_tinh, dia_chi_tinh, dia_chi_xa,
+              gioi_tinh, dia_chi_tinh, dia_chi_xa, dia_chi_chi_tiet,
               nghe_nghiep, noi_o, ghi_chu))
         conn.commit()
         return True
@@ -1966,15 +1985,16 @@ def save_doi_tuong(data):
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO doi_tuong (cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_tinh, 
-                                   dia_chi_xa, anh_chan_dung, phan_loai_nghe_nghiep, 
+                                   dia_chi_xa, dia_chi_chi_tiet, anh_chan_dung, phan_loai_nghe_nghiep, 
                                    chi_tiet_nghe_nghiep, ghi_chu_chung)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(cccd) DO UPDATE SET
                 ho_ten = excluded.ho_ten,
                 ngay_sinh = excluded.ngay_sinh,
                 gioi_tinh = excluded.gioi_tinh,
                 dia_chi_tinh = excluded.dia_chi_tinh,
                 dia_chi_xa = excluded.dia_chi_xa,
+                dia_chi_chi_tiet = excluded.dia_chi_chi_tiet,
                 phan_loai_nghe_nghiep = excluded.phan_loai_nghe_nghiep,
                 chi_tiet_nghe_nghiep = excluded.chi_tiet_nghe_nghiep,
                 ghi_chu_chung = excluded.ghi_chu_chung,
@@ -1986,6 +2006,7 @@ def save_doi_tuong(data):
             data['gioi_tinh'],
             data['dia_chi_tinh'],
             data['dia_chi_xa'],
+            data.get('dia_chi_chi_tiet', ''),
             data.get('anh_chan_dung', ''),
             data['phan_loai_nghe_nghiep'],
             data['chi_tiet_nghe_nghiep'],
@@ -3325,6 +3346,28 @@ which provides the `--lf` and `--ff` options, as well as the `cache` fixture.
 See [the docs](https://docs.pytest.org/en/stable/how-to/cache.html) for more information.
 
 
+## app/init_db.py
+```py
+
+import logging
+from app.db.session import engine
+from app.db.base import Base
+# Import models to register them with metadata
+from app.models.models import User, DoiTuong, LienHe, TaiChinh, PhuongTien, NhanThan, HoSoDacThu, TaiLieu, QuaTrinhHoatDong, NguonDuLieu, QuanHeDoiTuong, AuditLog
+
+logger = logging.getLogger(__name__)
+
+def init_db():
+    try:
+        logger.info("Creating database tables...")
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database initialized successfully.")
+    except Exception as e:
+        logger.error(f"Error initializing database: {e}")
+        raise e
+
+```
+
 ## app/__init__.py
 ```py
 # App package
@@ -3368,6 +3411,22 @@ settings = Settings()
 
 ```
 
+## app/core/__init__.py
+```py
+# App Core Package
+
+```
+
+## app/db/base.py
+```py
+
+from sqlalchemy.orm import DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
+
+```
+
 ## app/db/session.py
 ```py
 
@@ -3404,6 +3463,201 @@ def get_db():
 
 ```
 
+## app/db/__init__.py
+```py
+# App Database Package
+
+```
+
+## app/models/models.py
+```py
+
+from datetime import datetime
+from typing import Optional, List
+from sqlalchemy import String, Integer, Date, DateTime, ForeignKey, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
+from app.db.base import Base
+
+# ============================================
+# Core Person Model
+# ============================================
+class DoiTuong(Base):
+    __tablename__ = "doi_tuong"
+
+    cccd: Mapped[str] = mapped_column(String, primary_key=True)
+    ho_ten: Mapped[Optional[str]] = mapped_column(String)
+    ngay_sinh: Mapped[Optional[datetime]] = mapped_column(Date)
+    gioi_tinh: Mapped[Optional[str]] = mapped_column(String)
+    dia_chi_tinh: Mapped[Optional[str]] = mapped_column(String, default="Phú Thọ")
+    dia_chi_xa: Mapped[Optional[str]] = mapped_column(String)
+    anh_chan_dung: Mapped[Optional[str]] = mapped_column(String)
+    phan_loai_nghe_nghiep: Mapped[Optional[str]] = mapped_column(String)
+    chi_tiet_nghe_nghiep: Mapped[Optional[str]] = mapped_column(String)
+    ghi_chu_chung: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    lien_he: Mapped[List["LienHe"]] = relationship(back_populates="doi_tuong", cascade="all, delete-orphan")
+    tai_chinh: Mapped[List["TaiChinh"]] = relationship(back_populates="doi_tuong", cascade="all, delete-orphan")
+    phuong_tien: Mapped[List["PhuongTien"]] = relationship(back_populates="doi_tuong", cascade="all, delete-orphan")
+    nhan_than: Mapped[List["NhanThan"]] = relationship(back_populates="doi_tuong", cascade="all, delete-orphan")
+    ho_so_dac_thu: Mapped[List["HoSoDacThu"]] = relationship(back_populates="doi_tuong", cascade="all, delete-orphan")
+    tai_lieu: Mapped[List["TaiLieu"]] = relationship(back_populates="doi_tuong", cascade="all, delete-orphan")
+    qua_trinh: Mapped[List["QuaTrinhHoatDong"]] = relationship(back_populates="doi_tuong", cascade="all, delete-orphan")
+
+
+# ============================================
+# Satellite Models
+# ============================================
+class LienHe(Base):
+    __tablename__ = "lien_he"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    cccd: Mapped[str] = mapped_column(ForeignKey("doi_tuong.cccd", ondelete="CASCADE"))
+    loai_lien_he: Mapped[Optional[str]] = mapped_column(String) # SDT, Email, Facebook...
+    gia_tri: Mapped[Optional[str]] = mapped_column(String)
+    ghi_chu: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    
+    doi_tuong: Mapped["DoiTuong"] = relationship(back_populates="lien_he")
+
+class TaiChinh(Base):
+    __tablename__ = "tai_chinh"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    cccd: Mapped[str] = mapped_column(ForeignKey("doi_tuong.cccd", ondelete="CASCADE"))
+    ngan_hang: Mapped[Optional[str]] = mapped_column(String)
+    so_tai_khoan: Mapped[Optional[str]] = mapped_column(String)
+    chu_tai_khoan: Mapped[Optional[str]] = mapped_column(String)
+    ghi_chu: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    
+    doi_tuong: Mapped["DoiTuong"] = relationship(back_populates="tai_chinh")
+
+class PhuongTien(Base):
+    __tablename__ = "phuong_tien"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    cccd: Mapped[str] = mapped_column(ForeignKey("doi_tuong.cccd", ondelete="CASCADE"))
+    loai_xe: Mapped[Optional[str]] = mapped_column(String)
+    bien_kiem_soat: Mapped[Optional[str]] = mapped_column(String)
+    ten_phuong_tien: Mapped[Optional[str]] = mapped_column(String)
+    ghi_chu: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    
+    doi_tuong: Mapped["DoiTuong"] = relationship(back_populates="phuong_tien")
+
+class NhanThan(Base):
+    __tablename__ = "nhan_than"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    cccd: Mapped[str] = mapped_column(ForeignKey("doi_tuong.cccd", ondelete="CASCADE"))
+    loai_quan_he: Mapped[str] = mapped_column(String) # Bo, Me, Vo, Chong
+    ho_ten: Mapped[Optional[str]] = mapped_column(String)
+    cccd_nhan_than: Mapped[Optional[str]] = mapped_column(String)
+    ngay_sinh: Mapped[Optional[datetime]] = mapped_column(Date)
+    gioi_tinh: Mapped[Optional[str]] = mapped_column(String, default='')
+    dia_chi_tinh: Mapped[Optional[str]] = mapped_column(String, default='')
+    dia_chi_xa: Mapped[Optional[str]] = mapped_column(String, default='')
+    nghe_nghiep: Mapped[Optional[str]] = mapped_column(String)
+    noi_o: Mapped[Optional[str]] = mapped_column(Text)
+    ghi_chu: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    
+    doi_tuong: Mapped["DoiTuong"] = relationship(back_populates="nhan_than")
+
+class HoSoDacThu(Base):
+    __tablename__ = "ho_so_dac_thu"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    cccd: Mapped[str] = mapped_column(ForeignKey("doi_tuong.cccd", ondelete="CASCADE"))
+    loai_hinh: Mapped[str] = mapped_column(String)
+    noi_dung_chi_tiet: Mapped[Optional[str]] = mapped_column(Text)
+    ghi_chu: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    
+    doi_tuong: Mapped["DoiTuong"] = relationship(back_populates="ho_so_dac_thu")
+
+class TaiLieu(Base):
+    __tablename__ = "tai_lieu"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    cccd: Mapped[str] = mapped_column(ForeignKey("doi_tuong.cccd", ondelete="CASCADE"))
+    ten_file_goc: Mapped[Optional[str]] = mapped_column(String)
+    ten_file_luu: Mapped[Optional[str]] = mapped_column(String)
+    duong_dan: Mapped[Optional[str]] = mapped_column(String)
+    loai_tai_lieu: Mapped[Optional[str]] = mapped_column(String)
+    mo_ta: Mapped[Optional[str]] = mapped_column(Text)
+    dung_luong: Mapped[Optional[int]] = mapped_column(Integer)
+    dinh_dang: Mapped[Optional[str]] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    
+    doi_tuong: Mapped["DoiTuong"] = relationship(back_populates="tai_lieu")
+
+class QuaTrinhHoatDong(Base):
+    __tablename__ = "qua_trinh_hoat_dong"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    cccd: Mapped[str] = mapped_column(ForeignKey("doi_tuong.cccd", ondelete="CASCADE"))
+    thoi_gian: Mapped[Optional[str]] = mapped_column(String)
+    noi_dung: Mapped[Optional[str]] = mapped_column(Text)
+    ghi_chu: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    
+    doi_tuong: Mapped["DoiTuong"] = relationship(back_populates="qua_trinh")
+
+# ============================================
+# System Models
+# ============================================
+class NguonDuLieu(Base):
+    __tablename__ = "nguon_du_lieu"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ten_nguon: Mapped[str] = mapped_column(String)
+    loai_nguon: Mapped[Optional[str]] = mapped_column(String)
+    thoi_gian_import: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    nguoi_import: Mapped[Optional[str]] = mapped_column(String)
+    file_goc: Mapped[Optional[str]] = mapped_column(String)
+    ghi_chu: Mapped[Optional[str]] = mapped_column(Text)
+
+class QuanHeDoiTuong(Base):
+    __tablename__ = "quan_he_doi_tuong"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    cccd_1: Mapped[str] = mapped_column(ForeignKey("doi_tuong.cccd", ondelete="CASCADE"))
+    cccd_2: Mapped[str] = mapped_column(ForeignKey("doi_tuong.cccd", ondelete="CASCADE"))
+    loai_quan_he: Mapped[Optional[str]] = mapped_column(String)
+    mo_ta: Mapped[Optional[str]] = mapped_column(Text)
+    nguon_id: Mapped[Optional[int]] = mapped_column(ForeignKey("nguon_du_lieu.id"))
+    do_tin_cay: Mapped[Optional[int]] = mapped_column(Integer, default=50)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+class AuditLog(Base):
+    __tablename__ = "audit_log"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    bang: Mapped[str] = mapped_column(String)
+    hanh_dong: Mapped[str] = mapped_column(String)
+    khoa_chinh: Mapped[Optional[str]] = mapped_column(String)
+    du_lieu_cu: Mapped[Optional[str]] = mapped_column(Text)
+    du_lieu_moi: Mapped[Optional[str]] = mapped_column(Text)
+    nguoi_thuc_hien: Mapped[Optional[str]] = mapped_column(String)
+    ip_address: Mapped[Optional[str]] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String, unique=True)
+    password_hash: Mapped[str] = mapped_column(String)
+    ho_ten: Mapped[Optional[str]] = mapped_column(String)
+    role: Mapped[Optional[str]] = mapped_column(String, default='user')
+    is_active: Mapped[int] = mapped_column(Integer, default=1)
+    must_change_password: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime)
+
+```
+
+## app/models/__init__.py
+```py
+# App Models Package
+
+```
+
 ## app/services/auth_service.py
 ```py
 
@@ -3416,7 +3670,6 @@ from typing import Optional, Dict, List, Tuple
 from sqlalchemy import select, func
 from app.db.session import SessionLocal
 from app.models.models import User
-from views.audit_log import add_audit_log
 
 logger = logging.getLogger(__name__)
 
@@ -3494,6 +3747,7 @@ def authenticate(username: str, password: str) -> Optional[Dict]:
                 and user.last_failed_login_at
                 and (now - user.last_failed_login_at).total_seconds() < 5 * 60
             ):
+                from views.audit_log import add_audit_log
                 add_audit_log(
                     bang="users",
                     hanh_dong="LOGIN_LOCK",
@@ -3512,6 +3766,7 @@ def authenticate(username: str, password: str) -> Optional[Dict]:
 
             # If this failure reaches threshold, add audit log
             if user.failed_login_attempts >= 5:
+                from views.audit_log import add_audit_log
                 add_audit_log(
                     bang="users",
                     hanh_dong="LOGIN_LOCK",
@@ -6066,6 +6321,294 @@ def generate_duplicate_report(duplicate_report: List[dict]) -> str:
 
 ```
 
+## utils/docx_export.py
+```py
+import io
+import json
+from datetime import datetime
+from pathlib import Path
+
+from docx import Document
+from docx.shared import Pt, Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+
+from database import get_connection, get_qua_trinh_hoat_dong
+from views.profile.getters import (
+    get_doi_tuong_detail, get_nhan_than_by_cccd, get_lien_he_by_cccd,
+    get_tai_chinh_by_cccd, get_phuong_tien_by_cccd,
+    get_ho_so_dac_thu_by_cccd
+)
+from constants import LOAI_HINH_DAC_THU
+
+def apply_bullet_point(paragraph):
+    """Helper to apply bullet point style"""
+    paragraph.style = 'List Bullet'
+
+def apply_heading_style(heading, font_size=14, bold=True):
+    """Helper to style headings uniformly"""
+    for run in heading.runs:
+        run.font.name = 'Times New Roman'
+        # Ensures that "Complex Script" fonts use TNR as well (often needed for non-latin)
+        run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+        run.font.size = Pt(font_size)
+        run.font.bold = bold
+
+from utils.text_utils import format_date_vn
+
+def safe_str(val):
+    if val is None or str(val).strip() == "" or str(val).strip() == "N/A":
+        return ""
+    return str(val).strip()
+
+def safe_date_str(val):
+    return format_date_vn(safe_str(val))
+
+def generate_profile_docx(cccd: str) -> bytes:
+    """
+    Generates a DOCX report for a given CCCD and returns the byte array of the Document.
+    """
+    doi_tuong = get_doi_tuong_detail(cccd)
+    if not doi_tuong:
+        return None
+
+    # Create new Document
+    document = Document()
+    
+    # Set default font for document
+    style = document.styles['Normal']
+    font = style.font
+    font.name = 'Times New Roman'
+    font.size = Pt(12)
+
+    # Header section
+    p_header1 = document.add_paragraph()
+    p_header1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run1 = p_header1.add_run("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\n")
+    run1.bold = True
+    run1.font.size = Pt(13)
+    
+    run2 = p_header1.add_run("Độc lập - Tự do - Hạnh phúc")
+    run2.bold = True
+    run2.font.size = Pt(12)
+
+    # Title
+    p_title = document.add_paragraph()
+    p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run_title = p_title.add_run("\nHỒ SƠ ĐỐI TƯỢNG CHI TIẾT\n")
+    run_title.bold = True
+    run_title.font.size = Pt(16)
+
+    # 1. Personal Information Section
+    h1 = document.add_heading('1. THÔNG TIN CÁ NHÂN', level=2)
+    apply_heading_style(h1)
+
+    # Check if avatar exists
+    avatar_path = doi_tuong.get('anh_chan_dung')
+    full_avatar_path = None
+    if avatar_path:
+        path_candidate = Path.cwd() / avatar_path
+        if path_candidate.exists():
+            full_avatar_path = str(path_candidate)
+
+    # Create a table for layout: left for info, right for image
+    table = document.add_table(rows=1, cols=2)
+    # Adjust column widths roughly (docx widths are tricky, but this provides a hint)
+    table.columns[0].width = Inches(4.5)
+    table.columns[1].width = Inches(1.5)
+
+    cell_info = table.rows[0].cells[0]
+    cell_img = table.rows[0].cells[1]
+
+    def add_kv_to_cell(cell, key, value):
+        val_str = safe_str(value)
+        if val_str:
+            p = cell.add_paragraph()
+            p.paragraph_format.space_after = Pt(2)
+            k_run = p.add_run(f"{key}: ")
+            k_run.bold = True
+            v_run = p.add_run(val_str)
+
+    add_kv_to_cell(cell_info, "Họ và tên", doi_tuong.get('ho_ten'))
+    add_kv_to_cell(cell_info, "Số CCCD", cccd)
+    
+    # Formatted DoB
+    ngay_sinh = safe_date_str(doi_tuong.get('ngay_sinh'))
+    add_kv_to_cell(cell_info, "Ngày sinh", ngay_sinh)
+    
+    add_kv_to_cell(cell_info, "Giới tính", doi_tuong.get('gioi_tinh'))
+    
+    dia_chi_chi_tiet = safe_str(doi_tuong.get('dia_chi_chi_tiet'))
+    dia_chi_xa = safe_str(doi_tuong.get('dia_chi_xa'))
+    dia_chi_tinh = safe_str(doi_tuong.get('dia_chi_tinh'))
+    dia_chi = []
+    if dia_chi_chi_tiet: dia_chi.append(dia_chi_chi_tiet)
+    if dia_chi_xa: dia_chi.append(dia_chi_xa)
+    if dia_chi_tinh: dia_chi.append(dia_chi_tinh)
+    add_kv_to_cell(cell_info, "Thường trú/Tạm trú", " - ".join(dia_chi))
+    
+    add_kv_to_cell(cell_info, "Phân loại nghề nghiệp", doi_tuong.get('phan_loai_nghe_nghiep'))
+    add_kv_to_cell(cell_info, "Chi tiết nơi làm việc", doi_tuong.get('chi_tiet_nghe_nghiep'))
+    add_kv_to_cell(cell_info, "Ghi chú chung", doi_tuong.get('ghi_chu_chung'))
+
+    if full_avatar_path:
+        p_img = cell_img.add_paragraph()
+        p_img.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        try:
+            # 1.38 inches ~ 35mm
+            p_img.add_run().add_picture(full_avatar_path, width=Inches(1.38))
+        except Exception:
+            pass
+            
+    document.add_paragraph() # Spacing
+
+    # 2. Family Members
+    df_nhan_than = get_nhan_than_by_cccd(cccd)
+    if not df_nhan_than.empty:
+        h2 = document.add_heading('2. THÔNG TIN THÂN NHÂN', level=2)
+        apply_heading_style(h2)
+        
+        for idx, row in df_nhan_than.iterrows():
+            p = document.add_paragraph()
+            apply_bullet_point(p)
+            
+            run_title = p.add_run(f"{row['loai_quan_he']}: {row['ho_ten']}")
+            run_title.bold = True
+            
+            details = []
+            if safe_str(row.get('ngay_sinh')): details.append(f"Sinh: {safe_date_str(row['ngay_sinh'])}")
+            if safe_str(row.get('gioi_tinh')): details.append(f"Giới tính: {row['gioi_tinh']}")
+            if safe_str(row.get('nghe_nghiep')): details.append(f"Nghề nghiệp: {row['nghe_nghiep']}")
+            
+            dia_chi_r = []
+            if safe_str(row.get('dia_chi_chi_tiet')): dia_chi_r.append(row['dia_chi_chi_tiet'])
+            if safe_str(row.get('dia_chi_xa')): dia_chi_r.append(row['dia_chi_xa'])
+            if safe_str(row.get('dia_chi_tinh')): dia_chi_r.append(row['dia_chi_tinh'])
+            if dia_chi_r: details.append(f"Địa chỉ: {' - '.join(dia_chi_r)}")
+            
+            if details:
+                p.add_run("\n   " + " | ".join(details))
+            
+            if safe_str(row.get('ghi_chu')):
+                run_note = p.add_run(f"\n   Ghi chú: {row['ghi_chu']}")
+                run_note.italic = True
+
+    # 3. Contacts
+    df_lien_he = get_lien_he_by_cccd(cccd)
+    if not df_lien_he.empty:
+        h3 = document.add_heading('3. LIÊN HỆ', level=2)
+        apply_heading_style(h3)
+        for idx, row in df_lien_he.iterrows():
+            p = document.add_paragraph()
+            apply_bullet_point(p)
+            r1 = p.add_run(f"{row['loai_lien_he']}: ")
+            r1.bold = True
+            p.add_run(safe_str(row['gia_tri']))
+            if safe_str(row['ghi_chu']):
+                r_note = p.add_run(f" (Ghi chú: {row['ghi_chu']})")
+                r_note.italic = True
+
+    # 4. Financial (Bank accounts)
+    df_tai_chinh = get_tai_chinh_by_cccd(cccd)
+    if not df_tai_chinh.empty:
+        h4 = document.add_heading('4. TÀI KHOẢN NGÂN HÀNG', level=2)
+        apply_heading_style(h4)
+        for idx, row in df_tai_chinh.iterrows():
+            p = document.add_paragraph()
+            apply_bullet_point(p)
+            r1 = p.add_run(f"{row['ngan_hang']}: ")
+            r1.bold = True
+            val = safe_str(row['so_tai_khoan'])
+            if safe_str(row['chu_tai_khoan']):
+                val += f" (Chủ TK: {row['chu_tai_khoan']})"
+            p.add_run(val)
+            if safe_str(row['ghi_chu']):
+                r_note = p.add_run(f" - Ghi chú: {row['ghi_chu']}")
+                r_note.italic = True
+
+    # 5. Vehicles
+    df_phuong_tien = get_phuong_tien_by_cccd(cccd)
+    if not df_phuong_tien.empty:
+        h5 = document.add_heading('5. PHƯƠNG TIỆN', level=2)
+        apply_heading_style(h5)
+        for idx, row in df_phuong_tien.iterrows():
+            p = document.add_paragraph()
+            apply_bullet_point(p)
+            r1 = p.add_run(f"{row['loai_xe']}: ")
+            r1.bold = True
+            val = safe_str(row['bien_kiem_soat'])
+            if safe_str(row['ten_phuong_tien']):
+                val += f" (Tên: {row['ten_phuong_tien']})"
+            p.add_run(val)
+            if safe_str(row['ghi_chu']):
+                r_note = p.add_run(f" - Ghi chú: {row['ghi_chu']}")
+                r_note.italic = True
+
+    # 6. Activities
+    qt_list = get_qua_trinh_hoat_dong(cccd)
+    if qt_list:
+        h6 = document.add_heading('6. QUÁ TRÌNH HOẠT ĐỘNG', level=2)
+        apply_heading_style(h6)
+        for item in qt_list:
+            p = document.add_paragraph()
+            apply_bullet_point(p)
+            r1 = p.add_run(f"{safe_date_str(item['thoi_gian'])}\n")
+            r1.bold = True
+            p.add_run(f"   {item['noi_dung']}")
+            if safe_str(item.get('ghi_chu')):
+                r_note = p.add_run(f"\n   Ghi chú: {item['ghi_chu']}")
+                r_note.italic = True
+
+    # 7. Special Profiles (CSXH)
+    df_dac_thu = get_ho_so_dac_thu_by_cccd(cccd)
+    if not df_dac_thu.empty:
+        h7 = document.add_heading('7. TÀI LIỆU/HỒ SƠ YẾU TỐ CSXH', level=2)
+        apply_heading_style(h7)
+        
+        CSXH_FIELD_LABELS = {
+            'ten_doi_tac': 'Tên đối tác', 'quoc_tich': 'Quốc tịch',
+            'so_ho_chieu': 'Số hộ chiếu', 'tinh_trang': 'Tình trạng',
+            'ten_to_chuc': 'Tên tổ chức', 'chuc_vu': 'Chức vụ',
+            'thoi_gian': 'Thời gian', 'dia_diem': 'Địa điểm',
+            'dien_di': 'Diện đi', 'quoc_gia': 'Quốc gia',
+            'thoi_gian_di': 'Thời gian đi', 'thoi_gian_ve': 'Thời gian về',
+            'nghe_sau_ve': 'Nghề sau khi về', 'co_quan_bat': 'Cơ quan bắt giữ',
+            'hinh_thuc_xu_ly': 'Hình thức xử lý', 'noi_dung_vp': 'Nội dung vi phạm',
+            'co_quan_xm': 'Cơ quan xác minh', 'ket_qua': 'Kết quả',
+            'noi_dung_xm': 'Nội dung xác minh',
+        }
+        
+        for idx, row in df_dac_thu.iterrows():
+            loai_hinh = row['loai_hinh']
+            loai_hinh_text = LOAI_HINH_DAC_THU.get(loai_hinh, loai_hinh)
+            
+            p = document.add_paragraph()
+            apply_bullet_point(p)
+            r1 = p.add_run(loai_hinh_text)
+            r1.bold = True
+            
+            try:
+                noi_dung = json.loads(row['noi_dung_chi_tiet']) if row['noi_dung_chi_tiet'] else {}
+                for key, val in noi_dung.items():
+                    val_str = safe_date_str(val)
+                    if val_str:
+                        label = CSXH_FIELD_LABELS.get(key, key.replace('_', ' ').title())
+                        p.add_run(f"\n   {label}: {val_str}")
+            except:
+                pass
+                
+            if safe_str(row.get('ghi_chu')):
+                r_note = p.add_run(f"\n   Ghi chú: {row['ghi_chu']}")
+                r_note.italic = True
+
+    # Save to BytesIO
+    doc_io = io.BytesIO()
+    document.save(doc_io)
+    doc_io.seek(0)
+    return doc_io.getvalue()
+
+```
+
 ## utils/fuzzy_matching.py
 ```py
 # -*- coding: utf-8 -*-
@@ -6312,6 +6855,293 @@ def is_likely_same_person(name1: str, name2: str, threshold: int = THRESHOLD_SUS
 
 ```
 
+## utils/pdf_export.py
+```py
+import os
+import json
+from datetime import datetime
+from pathlib import Path
+from fpdf import FPDF
+
+from database import get_connection, get_qua_trinh_hoat_dong
+from constants import (
+    LOAI_HINH_DAC_THU,
+)
+from utils.text_utils import format_date_vn
+from views.profile.getters import (
+    get_doi_tuong_detail, get_nhan_than_by_cccd, get_lien_he_by_cccd,
+    get_tai_chinh_by_cccd, get_phuong_tien_by_cccd,
+    get_ho_so_dac_thu_by_cccd
+)
+from constants import LOAI_HINH_DAC_THU
+
+class ProfilePDF(FPDF):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Register fonts
+        font_dir = Path.cwd() / "assets" / "fonts"
+        self.add_font("Roboto", "", str(font_dir / "Roboto-Regular.ttf"))
+        self.add_font("Roboto", "B", str(font_dir / "Roboto-Bold.ttf"))
+        self.set_auto_page_break(auto=True, margin=15)
+
+    def header(self):
+        # Logo or Agency Name
+        self.set_font("Roboto", "B", 12)
+        self.cell(0, 5, "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", ln=True, align="C")
+        self.set_font("Roboto", "B", 11)
+        self.cell(0, 5, "Độc lập - Tự do - Hạnh phúc", ln=True, align="C")
+        self.ln(5)
+        
+        # Title
+        self.set_font("Roboto", "B", 16)
+        self.cell(0, 10, "HỒ SƠ ĐỐI TƯỢNG CHI TIẾT", ln=True, align="C")
+        self.ln(5)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font("Roboto", "", 8)
+        self.cell(0, 10, f"Trang {self.page_no()}", align="C")
+
+    def chapter_title(self, title):
+        self.set_font("Roboto", "B", 12)
+        self.set_fill_color(220, 230, 241) # Light blue background
+        self.cell(0, 8, title, ln=True, fill=True)
+        self.ln(4)
+
+    def chapter_body(self, text):
+        self.set_font("Roboto", "", 10)
+        self.multi_cell(0, 6, text)
+        self.ln(2)
+
+    def print_key_value(self, key, value):
+        if value:
+            self.set_font("Roboto", "B", 10)
+            self.cell(40, 6, f"{key}:")
+            self.set_font("Roboto", "", 10)
+            self.multi_cell(0, 6, str(value))
+
+def generate_profile_pdf(cccd: str) -> bytes:
+    """
+    Generates a PDF report for a given CCCD and returns the byte array of the PDF.
+    """
+    doi_tuong = get_doi_tuong_detail(cccd)
+    if not doi_tuong:
+        return None
+
+    pdf = ProfilePDF()
+    pdf.add_page()
+    
+    # 1. Personal Information Section
+    pdf.chapter_title("1. THÔNG TIN CÁ NHÂN")
+    
+    # Check if avatar exists
+    avatar_path = doi_tuong.get('anh_chan_dung')
+    has_avatar = False
+    
+    # Coordinates for portrait
+    x_offset = 150
+    y_offset = pdf.get_y()
+    
+    if avatar_path:
+        full_avatar_path = Path.cwd() / avatar_path
+        if full_avatar_path.exists():
+            try:
+                # Add image (35x45 mm approx passport size)
+                pdf.image(str(full_avatar_path), x=x_offset, y=y_offset, w=35, h=45)
+                has_avatar = True
+            except Exception as e:
+                # FPDF might fail on some image formats, ignore and continue
+                pass
+    
+    # Print fields with limits on width so they don't overlap with image (avatar is at x=150)
+    # Available width before avatar: 150 - (left_margin + 50 for key) = 150 - 65 = 85
+    max_w = 80 if has_avatar else 0
+    
+    def safe_print_kv(key, value):
+        if value:
+            # Prevent empty strings from causing issues
+            val_str = str(value).strip()
+            if not val_str:
+                return
+            
+            # Ensure we start from the left margin
+            pdf.set_x(15)    
+            pdf.set_font("Roboto", "B", 10)
+            pdf.cell(50, 6, f"{key}:")
+            pdf.set_font("Roboto", "", 10)
+            
+            w = max_w if max_w else 0
+            # FPDF2 will use the remaining line space if w=0
+            pdf.multi_cell(w, 6, val_str)
+            # Ensure next item starts on a new line correctly
+            if max_w == 0:
+                # multi_cell with w=0 extends to right margin and already breaks line
+                pdf.set_x(15)
+            
+    safe_print_kv("Họ và tên", doi_tuong.get('ho_ten', 'N/A'))
+    safe_print_kv("Số CCCD", cccd)
+    
+    # formatted Dob
+    ngay_sinh = format_date_vn(doi_tuong.get('ngay_sinh', 'N/A'))
+    safe_print_kv("Ngày sinh", ngay_sinh)
+    safe_print_kv("Giới tính", doi_tuong.get('gioi_tinh', 'N/A'))
+    safe_print_kv("Thường trú/Tạm trú", " - ".join([x for x in [doi_tuong.get('dia_chi_chi_tiet', ''), doi_tuong.get('dia_chi_xa', ''), doi_tuong.get('dia_chi_tinh', '')] if x]))
+    safe_print_kv("Phân loại nghề nghiệp", doi_tuong.get('phan_loai_nghe_nghiep', 'N/A'))
+    safe_print_kv("Chi tiết nơi làm việc", doi_tuong.get('chi_tiet_nghe_nghiep', ''))
+    safe_print_kv("Ghi chú chung", doi_tuong.get('ghi_chu_chung', ''))
+    
+    # Adjust Y if avatar went lower than text
+    if has_avatar:
+        current_y = pdf.get_y()
+        if (y_offset + 50) > current_y:
+            pdf.set_y(y_offset + 50)
+            
+    pdf.ln(5)
+
+    # 2. Family Members
+    df_nhan_than = get_nhan_than_by_cccd(cccd)
+    if not df_nhan_than.empty:
+        pdf.chapter_title("2. THÔNG TIN THÂN NHÂN")
+        for idx, row in df_nhan_than.iterrows():
+            pdf.set_font("Roboto", "B", 10)
+            pdf.cell(0, 6, f"- {row['loai_quan_he']}: {row['ho_ten']}", ln=True)
+            pdf.set_font("Roboto", "", 10)
+            
+            details = []
+            if row.get('ngay_sinh'): details.append(f"Sinh: {format_date_vn(row['ngay_sinh'])}")
+            if row.get('gioi_tinh'): details.append(f"Giới tính: {row['gioi_tinh']}")
+            if row.get('nghe_nghiep'): details.append(f"Nghề nghiệp: {row['nghe_nghiep']}")
+            
+            dia_chi = []
+            if row.get('dia_chi_chi_tiet'): dia_chi.append(row['dia_chi_chi_tiet'])
+            if row.get('dia_chi_xa'): dia_chi.append(row['dia_chi_xa'])
+            if row.get('dia_chi_tinh'): dia_chi.append(row['dia_chi_tinh'])
+            if dia_chi: details.append(f"Địa chỉ: {' - '.join(dia_chi)}")
+            
+            if details:
+                pdf.multi_cell(0, 6, "  " + " | ".join(details))
+                pdf.set_x(15)
+            
+            if row.get('ghi_chu'):
+                pdf.multi_cell(0, 6, f"  Ghi chú: {row['ghi_chu']}")
+                pdf.set_x(15)
+            pdf.ln(2)
+
+    # 3. Contacts
+    df_lien_he = get_lien_he_by_cccd(cccd)
+    if not df_lien_he.empty:
+        pdf.chapter_title("3. LIÊN HỆ")
+        for idx, row in df_lien_he.iterrows():
+            pdf.set_font("Roboto", "B", 10)
+            pdf.cell(40, 6, f"- {row['loai_lien_he']}:")
+            pdf.set_font("Roboto", "", 10)
+            val = str(row['gia_tri'])
+            if row['ghi_chu']:
+                val += f" (Ghi chú: {row['ghi_chu']})"
+            pdf.multi_cell(0, 6, val)
+            pdf.set_x(15)
+        pdf.ln(5)
+
+    # 4. Financial (Bank accounts)
+    df_tai_chinh = get_tai_chinh_by_cccd(cccd)
+    if not df_tai_chinh.empty:
+        pdf.chapter_title("4. TÀI KHOẢN NGÂN HÀNG")
+        for idx, row in df_tai_chinh.iterrows():
+            pdf.set_font("Roboto", "B", 10)
+            pdf.cell(40, 6, f"- {row['ngan_hang']}:")
+            pdf.set_font("Roboto", "", 10)
+            val = str(row['so_tai_khoan'])
+            if row['chu_tai_khoan']:
+                val += f" (Chủ TK: {row['chu_tai_khoan']})"
+            if row['ghi_chu']:
+                val += f" - Ghi chú: {row['ghi_chu']}"
+            pdf.multi_cell(0, 6, val)
+            pdf.set_x(15)
+        pdf.ln(5)
+
+    # 5. Vehicles
+    df_phuong_tien = get_phuong_tien_by_cccd(cccd)
+    if not df_phuong_tien.empty:
+        pdf.chapter_title("5. PHƯƠNG TIỆN")
+        for idx, row in df_phuong_tien.iterrows():
+            pdf.set_font("Roboto", "B", 10)
+            pdf.cell(40, 6, f"- {row['loai_xe']}:")
+            pdf.set_font("Roboto", "", 10)
+            val = str(row['bien_kiem_soat'])
+            if row['ten_phuong_tien']:
+                val += f" (Tên: {row['ten_phuong_tien']})"
+            if row['ghi_chu']:
+                val += f" - Ghi chú: {row['ghi_chu']}"
+            pdf.multi_cell(0, 6, val)
+            pdf.set_x(15)
+        pdf.ln(5)
+
+    # 6. Activities
+    qt_list = get_qua_trinh_hoat_dong(cccd)
+    if qt_list:
+        pdf.chapter_title("6. QUÁ TRÌNH HOẠT ĐỘNG")
+        for item in qt_list:
+            pdf.set_font("Roboto", "B", 10)
+            pdf.cell(40, 6, f"- {format_date_vn(item['thoi_gian'])}")
+            pdf.set_font("Roboto", "", 10)
+            pdf.multi_cell(0, 6, item['noi_dung'])
+            pdf.set_x(15)
+            if item['ghi_chu']:
+                pdf.set_text_color(100, 100, 100)
+                pdf.multi_cell(0, 6, f"  Ghi chú: {item['ghi_chu']}")
+                pdf.set_text_color(0, 0, 0)
+                pdf.set_x(15)
+            pdf.ln(2)
+
+    # 7. Special Profiles (CSXH)
+    df_dac_thu = get_ho_so_dac_thu_by_cccd(cccd)
+    if not df_dac_thu.empty:
+        pdf.chapter_title("7. TÀI LIỆU/HỒ SƠ YẾU TỐ CSXH")
+        
+        CSXH_FIELD_LABELS = {
+            'ten_doi_tac': 'Tên đối tác', 'quoc_tich': 'Quốc tịch',
+            'so_ho_chieu': 'Số hộ chiếu', 'tinh_trang': 'Tình trạng',
+            'ten_to_chuc': 'Tên tổ chức', 'chuc_vu': 'Chức vụ',
+            'thoi_gian': 'Thời gian', 'dia_diem': 'Địa điểm',
+            'dien_di': 'Diện đi', 'quoc_gia': 'Quốc gia',
+            'thoi_gian_di': 'Thời gian đi', 'thoi_gian_ve': 'Thời gian về',
+            'nghe_sau_ve': 'Nghề sau khi về', 'co_quan_bat': 'Cơ quan bắt giữ',
+            'hinh_thuc_xu_ly': 'Hình thức xử lý', 'noi_dung_vp': 'Nội dung vi phạm',
+            'co_quan_xm': 'Cơ quan xác minh', 'ket_qua': 'Kết quả',
+            'noi_dung_xm': 'Nội dung xác minh',
+        }
+        
+        for idx, row in df_dac_thu.iterrows():
+            loai_hinh = row['loai_hinh']
+            loai_hinh_text = LOAI_HINH_DAC_THU.get(loai_hinh, loai_hinh)
+            
+            pdf.set_font("Roboto", "B", 10)
+            pdf.cell(0, 6, f"▪ {loai_hinh_text}", ln=True)
+            pdf.set_font("Roboto", "", 10)
+            
+            try:
+                noi_dung = json.loads(row['noi_dung_chi_tiet']) if row['noi_dung_chi_tiet'] else {}
+                for key, val in noi_dung.items():
+                    if val:
+                        label = CSXH_FIELD_LABELS.get(key, key.replace('_', ' ').title())
+                        pdf.multi_cell(0, 6, f"   {label}: {format_date_vn(val)}")
+                        pdf.set_x(15)
+            except:
+                pass
+                
+            if row.get('ghi_chu'):
+                pdf.multi_cell(0, 6, f"   Ghi chú: {row['ghi_chu']}")
+                pdf.set_x(15)
+                
+            pdf.ln(2)
+
+    # Output to bytes
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    pdf_bytes = bytes(pdf.output())
+    return pdf_bytes
+
+```
+
 ## utils/security_utils.py
 ```py
 # -*- coding: utf-8 -*-
@@ -6382,6 +7212,95 @@ def normalize_string(s):
         return ""
     s = remove_accents(s).lower()
     return re.sub(r'[^a-z0-9]', '', s)
+
+
+def format_date_vn(date_str):
+    """
+    Format date string from yyyy-mm-dd to dd/mm/yyyy
+    """
+    if not date_str or str(date_str).strip() in ('', 'None', 'N/A'):
+        return str(date_str) if date_str is not None else ""
+        
+    val = str(date_str).strip()
+    match = re.match(r'^(\d{4})-(\d{2})-(\d{2})(.*)$', val)
+    if match:
+        y, m, d, rest = match.groups()
+        return f"{d}/{m}/{y}{rest}"
+    return val
+
+```
+
+## utils/ui_components.py
+```py
+# -*- coding: utf-8 -*-
+import streamlit as st
+from constants import TINH_OPTIONS, DANH_SACH_XA_PHU_THO
+
+def render_address_fields(prefix, default_tinh="Phú Thọ", default_xa="", default_chi_tiet="", suffix="", include_all=False):
+    """
+    Render a standardized set of address input fields.
+    
+    Args:
+        prefix (str): Prefix for session state keys and streamlit keys to avoid collisions.
+        default_tinh (str): Default value for province/city.
+        default_xa (str): Default value for district/commune.
+        default_chi_tiet (str): Default value for detailed address.
+        suffix (str): Label suffix like ' *' for required fields.
+        include_all (bool): If True, add "Tất cả" option to dropdowns (useful for search filters).
+    """
+    
+    tinh_options = TINH_OPTIONS
+    if include_all:
+        tinh_options = ["Tất cả"] + tinh_options
+    
+    # Province/City Selectbox
+    tinh_index = tinh_options.index(default_tinh) if default_tinh in tinh_options else 0
+    dia_chi_tinh = st.selectbox(
+        f"Tỉnh/TP{suffix}",
+        tinh_options,
+        index=tinh_index,
+        key=f"{prefix}_dia_chi_tinh"
+    )
+    
+    # District/Commune Logic
+    if dia_chi_tinh == "Phú Thọ" or (include_all and dia_chi_tinh == "Tất cả"):
+        if dia_chi_tinh == "Tất cả":
+             # If province is "All", Xa is also just "All" or similar. 
+             # But usually user asks for dropdown for Phú Thọ specifically.
+             dia_chi_xa = "Tất cả"
+        else:
+            xa_options = ["-- Chọn xã/phường --"] + DANH_SACH_XA_PHU_THO
+            if include_all:
+                xa_options = ["Tất cả"] + DANH_SACH_XA_PHU_THO
+            
+            xa_index = xa_options.index(default_xa) if default_xa in xa_options else 0
+            dia_chi_xa = st.selectbox(
+                f"Xã/Phường",
+                xa_options,
+                index=xa_index,
+                key=f"{prefix}_xa_phuong_select"
+            )
+            if not include_all and dia_chi_xa == "-- Chọn xã/phường --":
+                dia_chi_xa = ""
+    else:
+        dia_chi_xa = st.text_input(
+            f"Quận/Huyện, Xã Phường",
+            value=default_xa,
+            key=f"{prefix}_dia_chi_xa_text",
+            placeholder="Ví dụ: Quận Cầu Giấy, Phường Dịch Vọng"
+        )
+    
+    # Detailed Address (Only if not including "All" or if you want it)
+    dia_chi_chi_tiet = ""
+    if not include_all:
+        dia_chi_chi_tiet = st.text_input(
+            f"Địa chỉ cụ thể (Số nhà, đường...)",
+            value=default_chi_tiet,
+            key=f"{prefix}_dia_chi_chi_tiet",
+            placeholder="Số nhà, ngõ, ngách, tên đường..."
+        )
+    
+    return dia_chi_tinh, dia_chi_xa, dia_chi_chi_tiet
 
 ```
 
@@ -7530,7 +8449,6 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 from database import get_connection
-from app.services.auth_service import is_super_admin
 from utils.security_utils import sanitize_dataframe_for_csv
 
 logger = logging.getLogger(__name__)
@@ -7644,6 +8562,7 @@ def page_audit_log():
     user = st.session_state.get('user', {})
 
     # Chỉ Super Admin
+    from app.services.auth_service import is_super_admin
     if not is_super_admin(user):
         st.error("⛔ Bạn không có quyền truy cập trang này!")
         return
@@ -7791,6 +8710,7 @@ from database import get_connection
 from constants import (
     LOAI_HINH_DAC_THU,
 )
+from utils.text_utils import format_date_vn
 
 # ECharts (primary) - với fallback Plotly
 try:
@@ -7852,7 +8772,7 @@ def get_recent_records(limit=10):
     conn = get_connection()
     try:
         query = """
-            SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa, phan_loai_nghe_nghiep
+            SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_chi_tiet, dia_chi_xa, phan_loai_nghe_nghiep
             FROM doi_tuong
             ORDER BY created_at DESC
             LIMIT ?
@@ -8110,9 +9030,13 @@ def page_dashboard():
         recent_df = get_recent_records(10)
         
     if not recent_df.empty:
+        # Format date column
+        if 'ngay_sinh' in recent_df.columns:
+            recent_df['ngay_sinh'] = recent_df['ngay_sinh'].apply(format_date_vn)
+            
         # Đổi tên cột cho dễ đọc
         recent_df.columns = ["CCCD", "Họ tên", "Ngày sinh",
-                             "Giới tính", "Xã/Phường", "Phân loại"]
+                             "Giới tính", "Số nhà/Đường", "Xã/Phường", "Phân loại"]
         st.dataframe(recent_df, use_container_width=True, hide_index=True)
     else:
         st.info("💡 Chưa có hồ sơ nào. Bấm vào **📝 Nhập liệu** để thêm mới.")
@@ -9505,6 +10429,10 @@ def page_ra_soat():
 ## views/tra_cuu.py
 ```py
 # -*- coding: utf-8 -*-
+"""
+Tra cứu toàn diện - Multi-table Search
+Tìm kiếm xuyên suốt: CCCD, Họ tên, SĐT, Tài khoản NH, Biển số xe, Nhân thân
+"""
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -9512,8 +10440,24 @@ from database import get_connection
 from constants import (
     TINH_OPTIONS, GIOI_TINH_OPTIONS, LOAI_HINH_DAC_THU
 )
-from utils.text_utils import normalize_string
+from utils.text_utils import normalize_string, format_date_vn
 from utils.security_utils import sanitize_dataframe_for_csv
+from utils.ui_components import render_address_fields
+
+
+# ============================================
+# SEARCH TYPE DEFINITIONS
+# ============================================
+
+SEARCH_TYPES = [
+    "Tất cả",
+    "CCCD",
+    "Họ tên",
+    "📱 SĐT/Liên hệ",
+    "🏦 Tài khoản NH",
+    "🚗 Biển số xe",
+    "👤 Nhân thân",
+]
 
 
 def is_fuzzy_match(query, text):
@@ -9535,8 +10479,6 @@ def is_fuzzy_match(query, text):
         return True
 
     # 2. Subsequence match (cho trường hợp viết tắt hoặc bỏ qua tên đệm)
-    # Ví dụ: "viphuong" -> "Vi Ngoc Phuong" (v...i...p...h...u...o...n...g)
-    # Chỉ áp dụng nếu query đủ dài để tránh nhiễu
     if len(n_query) >= 3:
         it = iter(n_text)
         if all(char in it for char in n_query):
@@ -9545,79 +10487,217 @@ def is_fuzzy_match(query, text):
     return False
 
 
+# ============================================
+# SATELLITE TABLE SEARCH (Multi-table)
+# ============================================
+
+def search_satellite_tables(conn, search_query, search_type):
+    """
+    Tìm kiếm trong các bảng vệ tinh (lien_he, tai_chinh, phuong_tien, nhan_than).
+    
+    Returns:
+        dict: {cccd: [list of match source descriptions]}
+        Ví dụ: {'001234567890': ['📱 SĐT: 0987654321', '🏦 TK: 19001234567']}
+    """
+    results = {}  # {cccd: [source_descriptions]}
+    query_lower = search_query.strip().lower()
+    query_like = f"%{search_query.strip()}%"
+
+    # --- 1. Tìm trong bảng LIÊN HỆ (SĐT, Email, MXH) ---
+    if search_type in ["Tất cả", "📱 SĐT/Liên hệ"]:
+        try:
+            df_lienhe = pd.read_sql_query(
+                """SELECT cccd, loai_lien_he, gia_tri 
+                   FROM lien_he 
+                   WHERE gia_tri LIKE ? 
+                   LIMIT 200""",
+                conn, params=[query_like]
+            )
+            for _, row in df_lienhe.iterrows():
+                cccd = row['cccd']
+                loai = row['loai_lien_he'] or 'Liên hệ'
+                gia_tri = row['gia_tri'] or ''
+                source = f"📱 {loai}: {gia_tri}"
+                results.setdefault(cccd, []).append(source)
+        except Exception:
+            pass
+
+    # --- 2. Tìm trong bảng TÀI CHÍNH (Số tài khoản, Chủ TK) ---
+    if search_type in ["Tất cả", "🏦 Tài khoản NH"]:
+        try:
+            df_taichinh = pd.read_sql_query(
+                """SELECT cccd, ngan_hang, so_tai_khoan, chu_tai_khoan 
+                   FROM tai_chinh 
+                   WHERE so_tai_khoan LIKE ? OR chu_tai_khoan LIKE ?
+                   LIMIT 200""",
+                conn, params=[query_like, query_like]
+            )
+            for _, row in df_taichinh.iterrows():
+                cccd = row['cccd']
+                bank = row['ngan_hang'] or ''
+                stk = row['so_tai_khoan'] or ''
+                source = f"🏦 TK {bank}: {stk}"
+                results.setdefault(cccd, []).append(source)
+        except Exception:
+            pass
+
+    # --- 3. Tìm trong bảng PHƯƠNG TIỆN (Biển kiểm soát) ---
+    if search_type in ["Tất cả", "🚗 Biển số xe"]:
+        try:
+            df_phuongtien = pd.read_sql_query(
+                """SELECT cccd, loai_xe, bien_kiem_soat, ten_phuong_tien
+                   FROM phuong_tien 
+                   WHERE bien_kiem_soat LIKE ?
+                   LIMIT 200""",
+                conn, params=[query_like]
+            )
+            for _, row in df_phuongtien.iterrows():
+                cccd = row['cccd']
+                loai = row['loai_xe'] or ''
+                bks = row['bien_kiem_soat'] or ''
+                source = f"🚗 {loai}: {bks}"
+                results.setdefault(cccd, []).append(source)
+        except Exception:
+            pass
+
+    # --- 4. Tìm trong bảng NHÂN THÂN (Họ tên, CCCD nhân thân) ---
+    if search_type in ["Tất cả", "👤 Nhân thân"]:
+        try:
+            df_nhanthan = pd.read_sql_query(
+                """SELECT cccd, loai_quan_he, ho_ten, cccd_nhan_than
+                   FROM nhan_than 
+                   WHERE ho_ten LIKE ? OR cccd_nhan_than LIKE ?
+                   LIMIT 200""",
+                conn, params=[query_like, query_like]
+            )
+            for _, row in df_nhanthan.iterrows():
+                cccd = row['cccd']
+                quan_he = row['loai_quan_he'] or ''
+                ten_nt = row['ho_ten'] or ''
+                source = f"👤 {quan_he}: {ten_nt}"
+                results.setdefault(cccd, []).append(source)
+        except Exception:
+            pass
+
+    return results
+
+
+# ============================================
+# CORE SEARCH CANDIDATES (UPGRADED)
+# ============================================
+
 def get_search_candidates(conn, search_query, search_type,
-                          filter_tinh, filter_gioi_tinh):
+                          filter_tinh, filter_xa, filter_gioi_tinh):
     """
     Thực hiện tìm kiếm đối tượng và trả về danh sách CCCD phù hợp.
-    Chiến lược Column Pruning:
-    1. Lấy index (cccd, ho_ten)
-    2. Lọc bằng Python (fuzzy match)
-    3. Trả về danh sách CCCD
+    Nâng cấp: Tìm trong cả bảng vệ tinh (lien_he, tai_chinh, phuong_tien, nhan_than).
+    
+    Returns:
+        tuple: (matching_cccds: list, satellite_sources: dict)
+        - matching_cccds: danh sách CCCD tìm thấy (giữ thứ tự)
+        - satellite_sources: {cccd: [source_descriptions]} từ bảng vệ tinh
     """
-    # 1. Fetch lightweight index
-    sql_index = "SELECT cccd, ho_ten FROM doi_tuong WHERE 1=1"
-    params = []
+    # ========== PHẦN 1: Tìm trong bảng doi_tuong (Logic cũ) ==========
+    doi_tuong_cccds = []
+    
+    if search_type in ["Tất cả", "CCCD", "Họ tên"]:
+        sql_index = "SELECT cccd, ho_ten FROM doi_tuong WHERE 1=1"
+        params = []
 
-    # Apply filters to SQL index query to reduce initial load
-    if filter_tinh != "Tất cả":
-        sql_index += " AND dia_chi_tinh = ?"
-        params.append(filter_tinh)
+        if filter_tinh != "Tất cả":
+            sql_index += " AND dia_chi_tinh = ?"
+            params.append(filter_tinh)
+        
+        if filter_xa != "Tất cả":
+            sql_index += " AND dia_chi_xa = ?"
+            params.append(filter_xa)
 
-    if filter_gioi_tinh != "Tất cả":
-        sql_index += " AND gioi_tinh = ?"
-        params.append(filter_gioi_tinh)
+        if filter_gioi_tinh != "Tất cả":
+            sql_index += " AND gioi_tinh = ?"
+            params.append(filter_gioi_tinh)
 
-    df_index = pd.read_sql_query(sql_index, conn, params=params)
+        df_index = pd.read_sql_query(sql_index, conn, params=params)
 
-    if df_index.empty:
-        return []
+        if not df_index.empty:
+            query_norm = normalize_string(search_query)
+            query_lower = search_query.lower()
 
-    # Pre-compute normalization
-    query_norm = normalize_string(search_query)
-    query_lower = search_query.lower()
+            # CCCD Match (Vectorized)
+            mask_cccd = pd.Series(False, index=df_index.index)
+            if search_type in ["Tất cả", "CCCD"]:
+                mask_cccd = df_index['cccd'].astype(str).str.contains(
+                    query_lower, case=False, na=False)
 
-    # 2. Apply Text Filters (Vectorized + Subsequence)
+            # Ho ten Match (Vectorized + Subsequence)
+            mask_hoten = pd.Series(False, index=df_index.index)
+            if search_type in ["Tất cả", "Họ tên"]:
+                normalized_hoten = df_index['ho_ten'].apply(
+                    lambda x: normalize_string(x) if x else "")
 
-    # 2.1 CCCD Match (Vectorized)
-    mask_cccd = pd.Series(False, index=df_index.index)
-    if search_type in ["Tất cả", "CCCD"]:
-        mask_cccd = df_index['cccd'].astype(str).str.contains(
-            query_lower, case=False, na=False)
+                mask_hoten_contains = normalized_hoten.str.contains(
+                    query_norm, na=False, regex=False)
+                mask_hoten = mask_hoten_contains
 
-    # 2.2 Ho ten Match (Vectorized + Subsequence)
-    mask_hoten = pd.Series(False, index=df_index.index)
-    if search_type in ["Tất cả", "Họ tên"]:
-        # Normalize 'ho_ten' column
-        normalized_hoten = df_index['ho_ten'].apply(
-            lambda x: normalize_string(x) if x else "")
+                if len(query_norm) >= 3:
+                    def check_subsequence(text_norm):
+                        it = iter(text_norm)
+                        return all(char in it for char in query_norm)
 
-        # Check containment (Fast)
-        mask_hoten_contains = normalized_hoten.str.contains(
-            query_norm,
-            na=False,
-            regex=False
-        )
-        mask_hoten = mask_hoten_contains
+                    remaining_indices = ~mask_hoten_contains
+                    if remaining_indices.any():
+                        subsequence_matches = normalized_hoten[
+                            remaining_indices].apply(check_subsequence)
+                        mask_hoten = mask_hoten | subsequence_matches.reindex(
+                            df_index.index, fill_value=False)
 
-        # Check subsequence (Slower, only if query >= 3 chars)
-        if len(query_norm) >= 3:
-            def check_subsequence(text_norm):
-                it = iter(text_norm)
-                return all(char in it for char in query_norm)
+            final_mask = mask_cccd | mask_hoten
+            doi_tuong_cccds = df_index[final_mask]['cccd'].tolist()
 
-            # Only check rows that failed containment
-            remaining_indices = ~mask_hoten_contains
-            if remaining_indices.any():
-                subsequence_matches = normalized_hoten[
-                    remaining_indices].apply(check_subsequence)
-                mask_hoten = mask_hoten | subsequence_matches.reindex(
-                    df_index.index, fill_value=False)
+    # ========== PHẦN 2: Tìm trong bảng vệ tinh ==========
+    satellite_sources = {}
+    
+    if search_type in ["Tất cả", "📱 SĐT/Liên hệ", "🏦 Tài khoản NH", 
+                        "🚗 Biển số xe", "👤 Nhân thân"]:
+        satellite_sources = search_satellite_tables(conn, search_query, search_type)
 
-    # Combine masks
-    final_mask = mask_cccd | mask_hoten
-    matching_cccds = df_index[final_mask]['cccd'].tolist()
+    # ========== PHẦN 3: Merge kết quả (giữ thứ tự, loại bỏ trùng) ==========
+    # Áp dụng bộ lọc tỉnh/giới tính cho kết quả satellite
+    satellite_cccds_filtered = list(satellite_sources.keys())
+    
+    if satellite_cccds_filtered and (filter_tinh != "Tất cả" or filter_xa != "Tất cả" or filter_gioi_tinh != "Tất cả"):
+        # Lọc satellite CCCDs theo filter
+        placeholders = ','.join(['?'] * len(satellite_cccds_filtered))
+        filter_sql = f"SELECT cccd FROM doi_tuong WHERE cccd IN ({placeholders})"
+        filter_params = list(satellite_cccds_filtered)
+        
+        if filter_tinh != "Tất cả":
+            filter_sql += " AND dia_chi_tinh = ?"
+            filter_params.append(filter_tinh)
+        if filter_xa != "Tất cả":
+            filter_sql += " AND dia_chi_xa = ?"
+            filter_params.append(filter_xa)
+        if filter_gioi_tinh != "Tất cả":
+            filter_sql += " AND gioi_tinh = ?"
+            filter_params.append(filter_gioi_tinh)
+        
+        try:
+            df_filtered = pd.read_sql_query(filter_sql, conn, params=filter_params)
+            valid_cccds = set(df_filtered['cccd'].tolist())
+            satellite_cccds_filtered = [c for c in satellite_cccds_filtered if c in valid_cccds]
+            # Cũng lọc sources dict
+            satellite_sources = {k: v for k, v in satellite_sources.items() if k in valid_cccds}
+        except Exception:
+            pass
 
-    return matching_cccds
+    # Merge: doi_tuong trước, satellite sau (loại trùng)
+    seen = set(doi_tuong_cccds)
+    merged = list(doi_tuong_cccds)
+    for cccd in satellite_cccds_filtered:
+        if cccd not in seen:
+            merged.append(cccd)
+            seen.add(cccd)
+
+    return merged, satellite_sources
 
 
 def fetch_doi_tuong_details(conn, cccd_list):
@@ -9627,10 +10707,6 @@ def fetch_doi_tuong_details(conn, cccd_list):
         
     placeholders = ','.join(['?'] * len(cccd_list))
     sql_details = f"SELECT * FROM doi_tuong WHERE cccd IN ({placeholders})"
-    
-    # We want to preserve order of cccd_list if possible, but IN clause doesn't guarantee order.
-    # However, for display purposes, we might want to sort by created_at DESC or relevance.
-    # Let's sort by created_at DESC to match default view.
     sql_details += " ORDER BY created_at DESC"
     
     return pd.read_sql_query(sql_details, conn, params=cccd_list)
@@ -9642,7 +10718,7 @@ def fetch_doi_tuong_details(conn, cccd_list):
 
 
 def page_tra_cuu():
-    """Trang Tra cứu - Tìm kiếm đối tượng"""
+    """Trang Tra cứu - Tìm kiếm đối tượng toàn diện"""
     st.markdown("# 🔍 Tra cứu")
     st.markdown("### Tìm kiếm và tra cứu hồ sơ đối tượng")
 
@@ -9654,19 +10730,18 @@ def page_tra_cuu():
     with col1:
         search_query = st.text_input(
             "Tìm kiếm",
-            placeholder="Nhập CCCD, họ tên (có thể viết tắt, vd: viphuong)...",
+            placeholder="Nhập CCCD, họ tên, SĐT, số tài khoản, biển số xe, tên nhân thân...",
             label_visibility="collapsed"
         )
 
     with col2:
         search_type = st.selectbox(
             "Loại",
-            ["Tất cả", "CCCD", "Họ tên"],
+            SEARCH_TYPES,
             label_visibility="collapsed"
         )
 
     with col3:
-        # Assign to _ to avoid flake8 F841
         _ = st.button(
             "🔍 Tìm kiếm", type="primary", use_container_width=True)
 
@@ -9677,14 +10752,17 @@ def page_tra_cuu():
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            filter_tinh = st.selectbox(
-                "Tỉnh/TP",
-                ["Tất cả"] + TINH_OPTIONS
+            filter_tinh, filter_xa, _ = render_address_fields(
+                prefix="filter_search",
+                default_tinh="Tất cả",
+                default_xa="Tất cả",
+                include_all=True
             )
         with col2:
             filter_gioi_tinh = st.selectbox(
                 "Giới tính",
-                ["Tất cả"] + GIOI_TINH_OPTIONS
+                ["Tất cả"] + GIOI_TINH_OPTIONS,
+                key="filter_gioi_tinh_search"
             )
         with col3:
             _ = st.selectbox(
@@ -9703,17 +10781,24 @@ def page_tra_cuu():
     conn = get_connection()
     try:
         if search_query:
-            # SEARCH MODE with Pagination
-            # 1. Get candidates (List of CCCDs)
-            candidates = get_search_candidates(
-                conn, search_query, search_type, filter_tinh, filter_gioi_tinh)
+            # SEARCH MODE with Multi-table Search
+            candidates, satellite_sources = get_search_candidates(
+                conn, search_query, search_type, filter_tinh, filter_xa, filter_gioi_tinh)
             
             total_count = len(candidates)
-            st.info(
-                f"🔍 Tìm thấy **{total_count}** kết quả cho: '{search_query}'")
+            
+            # Hiển thị thông báo kết quả kèm nguồn
+            satellite_count = len(satellite_sources)
+            if satellite_count > 0:
+                st.info(
+                    f"🔍 Tìm thấy **{total_count}** kết quả cho: '{search_query}' "
+                    f"(trong đó **{satellite_count}** từ dữ liệu vệ tinh: liên hệ, tài chính, phương tiện, nhân thân)")
+            else:
+                st.info(
+                    f"🔍 Tìm thấy **{total_count}** kết quả cho: '{search_query}'")
             
             if total_count > 0:
-                # 2. Pagination UI
+                # Pagination UI
                 total_pages = max(
                     1, (total_count + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE)
 
@@ -9727,24 +10812,34 @@ def page_tra_cuu():
                         key="search_page_query"
                     )
                 
-                # 3. Slice candidates for current page
+                # Slice candidates for current page
                 offset = (current_page - 1) * ITEMS_PER_PAGE
                 page_cccds = candidates[offset : offset + ITEMS_PER_PAGE]
                 
-                # 4. Fetch details for current page
+                # Fetch details for current page
                 df = fetch_doi_tuong_details(conn, page_cccds)
+                
+                # === THÊM CỘT NGUỒN TRA CỨU ===
+                if not df.empty and satellite_sources:
+                    df['nguon_tra_cuu'] = df['cccd'].apply(
+                        lambda c: ' | '.join(satellite_sources.get(c, []))
+                    )
             else:
                 df = pd.DataFrame()
 
         else:
-            # NO SEARCH MODE (Default View)
-            # Đếm tổng số records với filter
+            # NO SEARCH MODE (Default View) - giữ nguyên logic cũ
+            satellite_sources = {}
             count_query = "SELECT COUNT(*) as total FROM doi_tuong WHERE 1=1"
             count_params = []
             
             if filter_tinh != "Tất cả":
                 count_query += " AND dia_chi_tinh = ?"
                 count_params.append(filter_tinh)
+            
+            if filter_xa != "Tất cả":
+                count_query += " AND dia_chi_xa = ?"
+                count_params.append(filter_xa)
             
             if filter_gioi_tinh != "Tất cả":
                 count_query += " AND gioi_tinh = ?"
@@ -9768,9 +10863,8 @@ def page_tra_cuu():
 
             offset = (current_page - 1) * ITEMS_PER_PAGE
 
-            # Hiển thị với pagination và filter SQL
             query = """
-                SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_xa,
+                SELECT cccd, ho_ten, ngay_sinh, gioi_tinh, dia_chi_chi_tiet, dia_chi_xa,
                        phan_loai_nghe_nghiep, dia_chi_tinh,
                        chi_tiet_nghe_nghiep, ghi_chu_chung, created_at
                 FROM doi_tuong
@@ -9781,6 +10875,10 @@ def page_tra_cuu():
             if filter_tinh != "Tất cả":
                 query += " AND dia_chi_tinh = ?"
                 params.append(filter_tinh)
+            
+            if filter_xa != "Tất cả":
+                query += " AND dia_chi_xa = ?"
+                params.append(filter_xa)
             
             if filter_gioi_tinh != "Tất cả":
                 query += " AND gioi_tinh = ?"
@@ -9799,23 +10897,36 @@ def page_tra_cuu():
     if not df.empty:
         # Đổi tên cột
         display_df = df.copy()
+        if 'ngay_sinh' in display_df.columns:
+            display_df['ngay_sinh'] = display_df['ngay_sinh'].apply(format_date_vn)
+            
         if 'cccd' in display_df.columns:
             col_map = {
                 'cccd': 'CCCD',
                 'ho_ten': 'Họ tên',
                 'ngay_sinh': 'Ngày sinh',
                 'gioi_tinh': 'Giới tính',
+                'dia_chi_chi_tiet': 'Số nhà/Đường',
                 'dia_chi_xa': 'Xã/Phường',
                 'phan_loai_nghe_nghiep': 'Phân loại',
                 'dia_chi_tinh': 'Tỉnh/TP',
                 'chi_tiet_nghe_nghiep': 'Nơi làm việc',
-                'ghi_chu_chung': 'Ghi chú'
+                'ghi_chu_chung': 'Ghi chú',
+                'nguon_tra_cuu': '🔗 Nguồn tra cứu',
             }
             display_df = display_df.rename(
                 columns={k: v for k, v in col_map.items()
                          if k in display_df.columns})
 
+        # Loại bỏ các cột không cần thiết cho hiển thị
+        hide_cols = ['created_at', 'updated_at', 'anh_chan_dung']
+        for col in hide_cols:
+            if col in display_df.columns:
+                display_df = display_df.drop(columns=[col])
+
         st.caption("💡 Chọn một dòng trong bảng để xem chi tiết hồ sơ.")
+        
+        # Highlight cột nguồn tra cứu nếu có
         event = st.dataframe(
             display_df,
             use_container_width=True,
@@ -9827,7 +10938,6 @@ def page_tra_cuu():
 
         if event.selection.rows:
             selected_index = event.selection.rows[0]
-            # Use original df to get CCCD safely (indices align with display_df)
             selected_cccd = str(df.iloc[selected_index]['cccd'])
             st.session_state.view_profile_cccd = selected_cccd
             st.rerun()
@@ -9835,9 +10945,13 @@ def page_tra_cuu():
         st.markdown("---")
 
         # Nút xuất Excel
+        export_df = df.copy()
+        if 'nguon_tra_cuu' not in export_df.columns:
+            export_df['nguon_tra_cuu'] = ''
+        
         st.download_button(
             label="📥 Xuất Excel",
-            data=sanitize_dataframe_for_csv(df).to_csv(
+            data=sanitize_dataframe_for_csv(export_df).to_csv(
                 index=False).encode('utf-8-sig'),
             file_name=f"danh_sach_doi_tuong_"
             f"{datetime.now().strftime('%Y%m%d')}.csv",
@@ -9848,7 +10962,6 @@ def page_tra_cuu():
         if search_query:
             if st.button(f"➕ Thêm mới hồ sơ: {search_query}",
                          type="secondary", use_container_width=True):
-                # Determine if numeric (CCCD) or text (Name)
                 if search_query.isdigit() and len(search_query) == 12:
                     st.session_state.nl_cccd = search_query
                     st.session_state.nl_ho_ten = ""
@@ -9856,7 +10969,6 @@ def page_tra_cuu():
                     st.session_state.nl_cccd = ""
                     st.session_state.nl_ho_ten = search_query
 
-                # Navigate to Nhap lieu
                 st.session_state.main_menu = "Nhập liệu"
                 st.rerun()
         else:
@@ -9916,6 +11028,8 @@ from views.profile import (
     delete_tai_chinh, delete_phuong_tien, delete_ho_so_dac_thu,
     delete_tai_lieu, update_doi_tuong
 )
+from utils.text_utils import format_date_vn
+from utils.ui_components import render_address_fields
 from .utils import validate_cccd_for_action
 
 logger = logging.getLogger(__name__)
@@ -10064,6 +11178,7 @@ def page_nhap_lieu():
                                             st.session_state["xa_phuong_select"] = xa
                                     else:
                                         st.session_state["main_dia_chi_xa_text"] = xa
+                                        st.session_state["main_dia_chi_chi_tiet"] = existing_data.get("dia_chi_chi_tiet", "")
                                     # Nghề nghiệp
                                     pl = existing_data.get("phan_loai_nghe_nghiep", "")
                                     if pl in PHAN_LOAI_NGHE_NGHIEP_OPTIONS:
@@ -10117,26 +11232,12 @@ def page_nhap_lieu():
             )
 
         with col2:
-            dia_chi_tinh = st.selectbox(
-                "Tỉnh/TP",
-                TINH_OPTIONS,
-                key="main_dia_chi_tinh"
+            dia_chi_tinh, dia_chi_xa, dia_chi_chi_tiet = render_address_fields(
+                prefix="main",
+                default_tinh="Phú Thọ",
+                default_xa="",
+                default_chi_tiet=""
             )
-
-            if dia_chi_tinh == "Phú Thọ":
-                dia_chi_xa = st.selectbox(
-                    "Xã/Phường",
-                    ["-- Chọn xã/phường --"] + DANH_SACH_XA_PHU_THO,
-                    key="xa_phuong_select"
-                )
-                if dia_chi_xa == "-- Chọn xã/phường --":
-                    dia_chi_xa = ""
-            else:
-                dia_chi_xa = st.text_input(
-                    "Địa chỉ chi tiết",
-                    placeholder="Số nhà, đường, xã/phường, quận/huyện, tỉnh/TP",
-                    key="main_dia_chi_xa_text"
-                )
 
             phan_loai = st.selectbox(
                 "Phân loại nghề nghiệp",
@@ -10177,7 +11278,7 @@ def page_nhap_lieu():
                         with col_info:
                             st.markdown(
                                 f"**{row['loai_quan_he']}**: {row['ho_ten']} | "
-                                f"📅 {row['ngay_sinh'] or 'N/A'} | "
+                                f"📅 {format_date_vn(row['ngay_sinh']) if row.get('ngay_sinh') else 'N/A'} | "
                                 f"💼 {row['nghe_nghiep'] or 'N/A'}"
                             )
                         with col_del:
@@ -10237,6 +11338,7 @@ def page_nhap_lieu():
                                 st.session_state["nt_xa_phuong_select"] = xa
                         else:
                             st.session_state["nt_dia_chi_xa_text"] = xa
+                        st.session_state["nt_dia_chi_chi_tiet"] = nt_existing.get("dia_chi_chi_tiet", "")
                         pl = nt_existing.get("phan_loai_nghe_nghiep", "")
                         if pl in PHAN_LOAI_NGHE_NGHIEP_OPTIONS:
                             st.session_state["nt_phan_loai_nghe"] = pl
@@ -10252,21 +11354,13 @@ def page_nhap_lieu():
             nt_gioi_tinh = st.selectbox("Giới tính", GIOI_TINH_OPTIONS, key="nt_gioi_tinh")
 
         with col2:
-            nt_dia_chi_tinh = st.selectbox("Tỉnh/TP", TINH_OPTIONS, key="nt_dia_chi_tinh")
-            if nt_dia_chi_tinh == "Phú Thọ":
-                nt_dia_chi_xa = st.selectbox(
-                    "Xã/Phường",
-                    ["-- Chọn xã/phường --"] + DANH_SACH_XA_PHU_THO,
-                    key="nt_xa_phuong_select"
-                )
-                if nt_dia_chi_xa == "-- Chọn xã/phường --":
-                    nt_dia_chi_xa = ""
-            else:
-                nt_dia_chi_xa = st.text_input(
-                    "Địa chỉ chi tiết",
-                    placeholder="Số nhà, đường, xã/phường, quận/huyện, tỉnh/TP",
-                    key="nt_dia_chi_xa_text"
-                )
+            nt_dia_chi_tinh, nt_dia_chi_xa, nt_dia_chi_chi_tiet = render_address_fields(
+                prefix="nt",
+                default_tinh="Phú Thọ",
+                default_xa="",
+                default_chi_tiet=""
+            )
+            
             nt_phan_loai_nghe = st.selectbox("Phân loại nghề nghiệp", PHAN_LOAI_NGHE_NGHIEP_OPTIONS, key="nt_phan_loai_nghe")
             nt_nghe_nghiep = st.text_input("Chi tiết nghề nghiệp", placeholder="Giáo viên THPT...", key="nt_nghe_nghiep")
             nt_noi_o = st.text_input("Nơi ở hiện nay", placeholder="Địa chỉ hiện tại", key="nt_noi_o")
@@ -10284,6 +11378,7 @@ def page_nhap_lieu():
                     "gioi_tinh": nt_gioi_tinh,
                     "dia_chi_tinh": nt_dia_chi_tinh,
                     "dia_chi_xa": nt_dia_chi_xa,
+                    "dia_chi_chi_tiet": nt_dia_chi_chi_tiet,
                     "nghe_nghiep": nghe_nghiep_full,
                     "noi_o": nt_noi_o,
                     "ghi_chu": nt_ghi_chu,
@@ -10308,7 +11403,7 @@ def page_nhap_lieu():
                     for item in qt_list_db:
                         col_info, col_del = st.columns([5, 1])
                         with col_info:
-                            st.markdown(f"**{item['thoi_gian']}**: {item['noi_dung']}")
+                            st.markdown(f"**{format_date_vn(item['thoi_gian'])}**: {item['noi_dung']}")
                         with col_del:
                             with st.popover("🗑️"):
                                 st.markdown(f"Xóa hoạt động: **{item['thoi_gian']}**?")
@@ -10321,7 +11416,7 @@ def page_nhap_lieu():
         # Preview staging
         _render_staging_list(
             "nl_staging_qt",
-            lambda x: f"**{x['thoi_gian']}**: {x['noi_dung']}",
+            lambda x: f"**{format_date_vn(x['thoi_gian'])}**: {x['noi_dung']}",
             ""
         )
 
@@ -10754,6 +11849,7 @@ def page_nhap_lieu():
                 gioi_tinh if "gioi_tinh" in dir() else None,
                 dia_chi_tinh if "dia_chi_tinh" in dir() else "Phú Thọ",
                 dia_chi_xa if "dia_chi_xa" in dir() else "",
+                dia_chi_chi_tiet if "dia_chi_chi_tiet" in dir() else "",
                 phan_loai if "phan_loai" in dir() else "",
                 chi_tiet_nghe if "chi_tiet_nghe" in dir() else "",
                 ghi_chu if "ghi_chu" in dir() else "",
@@ -10770,7 +11866,7 @@ def page_nhap_lieu():
 # Batch save logic (tách ra để dễ test)
 # ===================================================================
 def _do_save_all(cccd, ho_ten, them_bo_sung,
-                 ngay_sinh, gioi_tinh, dia_chi_tinh, dia_chi_xa,
+                 ngay_sinh, gioi_tinh, dia_chi_tinh, dia_chi_xa, dia_chi_chi_tiet,
                  phan_loai, chi_tiet_nghe, ghi_chu, avatar_file):
     """Thực hiện lưu toàn bộ hồ sơ. Gọi từ nút Lưu toàn bộ."""
 
@@ -10799,6 +11895,7 @@ def _do_save_all(cccd, ho_ten, them_bo_sung,
             'gioi_tinh': gioi_tinh or '',
             'dia_chi_tinh': dia_chi_tinh or 'Phú Thọ',
             'dia_chi_xa': dia_chi_xa or '',
+            'dia_chi_chi_tiet': dia_chi_chi_tiet or '',
             'phan_loai_nghe_nghiep': phan_loai or '',
             'chi_tiet_nghe_nghiep': chi_tiet_nghe or '',
             'ghi_chu_chung': ghi_chu or '',
@@ -10820,6 +11917,7 @@ def _do_save_all(cccd, ho_ten, them_bo_sung,
             'gioi_tinh': gioi_tinh or '',
             'dia_chi_tinh': dia_chi_tinh or 'Phú Thọ',
             'dia_chi_xa': dia_chi_xa or '',
+            'dia_chi_chi_tiet': dia_chi_chi_tiet or '',
             'phan_loai_nghe_nghiep': phan_loai or '',
             'chi_tiet_nghe_nghiep': chi_tiet_nghe or '',
             'ghi_chu_chung': ghi_chu or '',
@@ -10845,6 +11943,7 @@ def _do_save_all(cccd, ho_ten, them_bo_sung,
                     'gioi_tinh': item.get("gioi_tinh", ""),
                     'dia_chi_tinh': item.get("dia_chi_tinh", "Phú Thọ"),
                     'dia_chi_xa': item.get("dia_chi_xa", ""),
+                    'dia_chi_chi_tiet': item.get("dia_chi_chi_tiet", ""),
                     'phan_loai_nghe_nghiep': item.get("nghe_nghiep", ""),
                     'ghi_chu_chung': f"Hồ sơ tạo tự động từ thân nhân của {cccd}"
                 })
@@ -10858,6 +11957,7 @@ def _do_save_all(cccd, ho_ten, them_bo_sung,
             gioi_tinh=item.get("gioi_tinh", ""),
             dia_chi_tinh=item.get("dia_chi_tinh", ""),
             dia_chi_xa=item.get("dia_chi_xa", ""),
+            dia_chi_chi_tiet=item.get("dia_chi_chi_tiet", ""),
             nghe_nghiep=item.get("nghe_nghiep", ""),
             noi_o=item.get("noi_o", ""),
             ghi_chu=item.get("ghi_chu", ""),
@@ -11113,7 +12213,7 @@ def update_doi_tuong(cccd, data):
         cursor.execute("""
             UPDATE doi_tuong 
             SET ho_ten = ?, ngay_sinh = ?, gioi_tinh = ?, dia_chi_tinh = ?,
-                dia_chi_xa = ?, phan_loai_nghe_nghiep = ?, chi_tiet_nghe_nghiep = ?,
+                dia_chi_xa = ?, dia_chi_chi_tiet = ?, phan_loai_nghe_nghiep = ?, chi_tiet_nghe_nghiep = ?,
                 ghi_chu_chung = ?, anh_chan_dung = ?, updated_at = CURRENT_TIMESTAMP
             WHERE cccd = ?
         """, (
@@ -11122,6 +12222,7 @@ def update_doi_tuong(cccd, data):
             data['gioi_tinh'],
             data['dia_chi_tinh'],
             data['dia_chi_xa'],
+            data.get('dia_chi_chi_tiet', ''),
             data['phan_loai_nghe_nghiep'],
             data['chi_tiet_nghe_nghiep'],
             data['ghi_chu_chung'],
@@ -11172,6 +12273,7 @@ def get_nhan_than_by_cccd(cccd):
                 COALESCE(dt.gioi_tinh, nt.gioi_tinh) AS gioi_tinh,
                 COALESCE(dt.dia_chi_tinh, nt.dia_chi_tinh) AS dia_chi_tinh,
                 COALESCE(dt.dia_chi_xa, nt.dia_chi_xa) AS dia_chi_xa,
+                COALESCE(dt.dia_chi_chi_tiet, nt.dia_chi_chi_tiet) AS dia_chi_chi_tiet,
                 COALESCE(dt.phan_loai_nghe_nghiep, nt.nghe_nghiep) AS nghe_nghiep,
                 COALESCE(dt.dia_chi_xa, nt.noi_o) AS noi_o,
                 nt.ghi_chu,
@@ -11277,7 +12379,7 @@ from constants import (
 from services import (
     save_nhan_than, save_lien_he, save_tai_chinh,
     save_phuong_tien, save_ho_so_dac_thu, save_tai_lieu,
-    get_upload_folder
+    get_upload_folder, save_doi_tuong, check_cccd_exists
 )
 from .getters import (
     get_doi_tuong_detail, get_nhan_than_by_cccd, get_lien_he_by_cccd,
@@ -11289,6 +12391,8 @@ from .actions import (
     delete_phuong_tien, delete_ho_so_dac_thu, delete_tai_lieu,
     delete_doi_tuong, update_doi_tuong
 )
+from utils.text_utils import format_date_vn
+from utils.ui_components import render_address_fields
 
 logger = logging.getLogger(__name__)
 
@@ -11411,7 +12515,7 @@ def page_profile_view(cccd):
                     f"**Ngày sinh:** {ngay_sinh.strftime('%d/%m/%Y')} ({tuoi} tuổi)")
             except (ValueError, TypeError):
                 st.markdown(
-                    f"**Ngày sinh:** {doi_tuong.get('ngay_sinh', 'N/A')}")
+                    f"**Ngày sinh:** {format_date_vn(doi_tuong.get('ngay_sinh', 'N/A'))}")
 
         st.markdown(f"**Giới tính:** {doi_tuong.get('gioi_tinh', 'N/A')}")
 
@@ -11421,6 +12525,38 @@ def page_profile_view(cccd):
             st.session_state.view_profile_cccd = None
             st.session_state.edit_mode = False
             st.rerun()
+
+        # Generate PDF Button
+        from utils.pdf_export import generate_profile_pdf
+        
+        pdf_bytes = generate_profile_pdf(cccd)
+        if pdf_bytes:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_name = f"HoSo_{cccd}_{timestamp}.pdf"
+            
+            st.download_button(
+                label="📄 Xuất PDF",
+                data=pdf_bytes,
+                file_name=file_name,
+                mime="application/pdf",
+                use_container_width=True
+            )
+
+        # Generate DOCX Button
+        from utils.docx_export import generate_profile_docx
+        
+        docx_bytes = generate_profile_docx(cccd)
+        if docx_bytes:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_name = f"HoSo_{cccd}_{timestamp}.docx"
+            
+            st.download_button(
+                label="📝 Xuất Word",
+                data=docx_bytes,
+                file_name=file_name,
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True
+            )
 
         if st.button("✏️ Sửa hồ sơ", type="primary", use_container_width=True):
             st.session_state.edit_mode = True
@@ -11511,18 +12647,11 @@ def page_profile_view(cccd):
                     )
 
                 with col2:
-                    edit_dia_chi_tinh = st.selectbox(
-                        "Tỉnh/TP",
-                        TINH_OPTIONS,
-                        index=TINH_OPTIONS.index(doi_tuong.get('dia_chi_tinh', 'Phú Thọ')) if doi_tuong.get(
-                            'dia_chi_tinh') in TINH_OPTIONS else 0,
-                        key="edit_dia_chi_tinh"
-                    )
-
-                    edit_dia_chi_xa = st.text_input(
-                        "Xã/Phường",
-                        value=doi_tuong.get('dia_chi_xa', ''),
-                        key="edit_dia_chi_xa"
+                    edit_dia_chi_tinh, edit_dia_chi_xa, edit_dia_chi_chi_tiet = render_address_fields(
+                        prefix="edit_profile",
+                        default_tinh=doi_tuong.get('dia_chi_tinh', 'Phú Thọ'),
+                        default_xa=doi_tuong.get('dia_chi_xa', ''),
+                        default_chi_tiet=doi_tuong.get('dia_chi_chi_tiet', '')
                     )
 
                     edit_phan_loai = st.selectbox(
@@ -11592,6 +12721,7 @@ def page_profile_view(cccd):
                             'gioi_tinh': edit_gioi_tinh,
                             'dia_chi_tinh': edit_dia_chi_tinh,
                             'dia_chi_xa': edit_dia_chi_xa,
+                            'dia_chi_chi_tiet': edit_dia_chi_chi_tiet,
                             'phan_loai_nghe_nghiep': edit_phan_loai,
                             'chi_tiet_nghe_nghiep': edit_chi_tiet_nghe,
                             'ghi_chu_chung': edit_ghi_chu,
@@ -11615,7 +12745,7 @@ def page_profile_view(cccd):
 
             with col1:
                 st.markdown(
-                    f"**Địa chỉ:** {doi_tuong.get('dia_chi_xa', '')} - {doi_tuong.get('dia_chi_tinh', '')}")
+                    f"**Địa chỉ:** {' - '.join([x for x in [doi_tuong.get('dia_chi_chi_tiet', ''), doi_tuong.get('dia_chi_xa', ''), doi_tuong.get('dia_chi_tinh', '')] if x])}")
                 st.markdown(
                     f"**Phân loại nghề nghiệp:** {doi_tuong.get('phan_loai_nghe_nghiep', 'N/A')}")
 
@@ -11623,7 +12753,7 @@ def page_profile_view(cccd):
                 st.markdown(
                     f"**Chi tiết nơi làm việc:** {doi_tuong.get('chi_tiet_nghe_nghiep', 'N/A')}")
                 st.markdown(
-                    f"**Ngày tạo:** {doi_tuong.get('created_at', 'N/A')}")
+                    f"**Ngày tạo:** {format_date_vn(doi_tuong.get('created_at', 'N/A'))}")
 
             if doi_tuong.get('ghi_chu_chung'):
                 st.markdown("**Ghi chú:**")
@@ -11643,11 +12773,12 @@ def page_profile_view(cccd):
                 with col_info:
                     gioi_tinh_txt = f" | 🚻 {row['gioi_tinh']}" if row.get('gioi_tinh') else ""
                     dia_chi_txt = ""
-                    if row.get('dia_chi_xa') or row.get('dia_chi_tinh'):
-                        dia_chi_txt = f" | 🏠 {row.get('dia_chi_xa', '')} - {row.get('dia_chi_tinh', '')}"
+                    if row.get('dia_chi_xa') or row.get('dia_chi_tinh') or row.get('dia_chi_chi_tiet'):
+                        dc_parts = [p for p in [row.get('dia_chi_chi_tiet'), row.get('dia_chi_xa'), row.get('dia_chi_tinh')] if p]
+                        dia_chi_txt = f" | 🏠 {' - '.join(dc_parts)}"
                     st.markdown(f"""
                     **{row['loai_quan_he']}**: {row['ho_ten']}{gioi_tinh_txt} | 
-                    📅 {row['ngay_sinh'] if row['ngay_sinh'] else 'N/A'} | 
+                    📅 {format_date_vn(row['ngay_sinh']) if row['ngay_sinh'] else 'N/A'} | 
                     💼 {row['nghe_nghiep'] if row['nghe_nghiep'] else 'N/A'}{dia_chi_txt}
                     """)
                 with col_del:
@@ -11682,8 +12813,12 @@ def page_profile_view(cccd):
                                                  format="DD/MM/YYYY", min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
                     nt_gioi_tinh = st.selectbox("Giới tính", GIOI_TINH_OPTIONS, key="pv_nt_gioi_tinh")
                 with col2:
-                    nt_dia_chi_tinh = st.selectbox("Tỉnh/TP", TINH_OPTIONS, key="pv_nt_dia_chi_tinh")
-                    nt_dia_chi_xa = st.text_input("Địa chỉ chi tiết", key="pv_nt_dia_chi_xa")
+                    nt_dia_chi_tinh, nt_dia_chi_xa, nt_dia_chi_chi_tiet = render_address_fields(
+                        prefix="pv_nt",
+                        default_tinh="Phú Thọ",
+                        default_xa="",
+                        default_chi_tiet=""
+                    )
                     nt_phan_loai_nghe = st.selectbox(
                         "Phân loại nghề nghiệp", PHAN_LOAI_NGHE_NGHIEP_OPTIONS, key="pv_nt_phan_loai")
                     nt_nghe_nghiep = st.text_input(
@@ -11696,6 +12831,23 @@ def page_profile_view(cccd):
                 if st.form_submit_button("💾 Lưu thân nhân", type="primary"):
                     if nt_ho_ten:
                         nghe_nghiep_full = f"{nt_phan_loai_nghe}: {nt_nghe_nghiep}" if nt_nghe_nghiep else nt_phan_loai_nghe
+                        
+                        # --- Tự động tạo hồ sơ đối tượng nếu có CCCD mới ---
+                        if nt_cccd_nt and len(nt_cccd_nt) == 12 and nt_cccd_nt.isdigit():
+                            if not check_cccd_exists(nt_cccd_nt):
+                                save_doi_tuong({
+                                    'cccd': nt_cccd_nt,
+                                    'ho_ten': nt_ho_ten,
+                                    'ngay_sinh': nt_ngay_sinh.strftime('%Y-%m-%d') if nt_ngay_sinh else None,
+                                    'gioi_tinh': nt_gioi_tinh,
+                                    'dia_chi_tinh': nt_dia_chi_tinh,
+                                    'dia_chi_xa': nt_dia_chi_xa,
+                                    'dia_chi_chi_tiet': nt_dia_chi_chi_tiet,
+                                    'phan_loai_nghe_nghiep': nt_phan_loai_nghe,
+                                    'chi_tiet_nghe_nghiep': nt_nghe_nghiep,
+                                    'ghi_chu_chung': f"Hồ sơ tạo tự động từ thân nhân của {cccd}"
+                                })
+
                         save_nhan_than(
                             cccd=cccd,
                             loai_quan_he=nt_loai_quan_he,
@@ -11706,6 +12858,7 @@ def page_profile_view(cccd):
                             gioi_tinh=nt_gioi_tinh,
                             dia_chi_tinh=nt_dia_chi_tinh,
                             dia_chi_xa=nt_dia_chi_xa,
+                            dia_chi_chi_tiet=nt_dia_chi_chi_tiet,
                             nghe_nghiep=nghe_nghiep_full,
                             noi_o=nt_noi_o,
                             ghi_chu=nt_ghi_chu
@@ -11727,7 +12880,7 @@ def page_profile_view(cccd):
                 with st.container():
                     col_time, col_content, col_del = st.columns([1.5, 4, 0.5])
                     with col_time:
-                        st.markdown(f"**{item['thoi_gian']}**")
+                        st.markdown(f"**{format_date_vn(item['thoi_gian'])}**")
                     with col_content:
                         st.markdown(item['noi_dung'])
                         if item['ghi_chu']:

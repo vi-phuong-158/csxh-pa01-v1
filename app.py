@@ -44,7 +44,11 @@ from views.quan_ly_user import page_quan_ly_user
 # ============================================
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - [Bảo mật mức 1] - %(message)s",
+    handlers=[
+        logging.FileHandler("security_audit.log", encoding="utf-8"),
+        logging.StreamHandler()
+    ]
 )
 logger = logging.getLogger(__name__)
 

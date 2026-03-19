@@ -2,6 +2,7 @@
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
+import streamlit as st
 
 # Create engine with standard SQLAlchemy connection pooling
 engine = create_engine(
@@ -15,8 +16,9 @@ if settings.SQLALCHEMY_DATABASE_URI.startswith("sqlite"):
     def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
         # Ensure foreign keys are enforced and enable WAL for better concurrency
+        cursor.execute(f"PRAGMA key='{st.secrets['DB_PASSWORD']}';")
         cursor.execute("PRAGMA foreign_keys = ON")
-        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA journal_mode=WAL;")
         cursor.close()
 
 

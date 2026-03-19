@@ -64,7 +64,8 @@ def page_profile_view(cccd):
     doi_tuong = get_doi_tuong_detail(cccd)
 
     if not doi_tuong:
-        st.error(f"❌ Không tìm thấy đối tượng với CCCD: {cccd}")
+        masked_cccd = f"****{str(cccd)[-4:]}" if len(str(cccd)) > 4 else "****"
+        st.error(f"❌ Không tìm thấy đối tượng với CCCD: {masked_cccd}")
         if st.button("🔙 Quay lại Tra cứu"):
             st.session_state.view_profile_cccd = None
             st.rerun()
@@ -137,8 +138,8 @@ def page_profile_view(cccd):
                             st.rerun()
                         finally:
                             conn.close()
-                    except Exception as e:
-                        logger.error(f"Error saving quick avatar: {e}")
+                    except Exception:
+                        logger.error("Error saving quick avatar")
                         st.error("❌ Lỗi khi lưu ảnh!")
 
     with col_header2:
@@ -351,8 +352,8 @@ def page_profile_view(cccd):
 
                                 # Update path (relative)
                                 current_avatar_path = f"uploads/{cccd}/{safe_name}"
-                            except Exception as e:
-                                logger.error(f"Error saving avatar: {e}")
+                            except Exception:
+                                logger.error("Error saving avatar")
                                 st.error("❌ Lỗi khi lưu ảnh đại diện!")
 
                         update_data = {
