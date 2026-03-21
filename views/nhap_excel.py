@@ -209,7 +209,8 @@ def page_nhap_excel():
                                     st.metric(
                                         k.replace('_', ' ').title(), f"+{v}")
                                 idx += 1
-                        st.balloons()
+                        from utils.ui_components import show_success_dialog
+                        show_success_dialog("Import dữ liệu từ Excel thành công!")
                     else:
                         st.error(msg)
         else:

@@ -1251,3 +1251,79 @@ div[data-testid="stTooltipContent"],
     display: none !important;
     visibility: hidden !important;
 }
+
+/* ============================================
+   DIALOG, TOAST & ALERTS - FIX NỀN VÀ TƯƠNG PHẢN
+   ============================================ */
+
+/* 1. Modal / Dialog (Cửa sổ Pop-up) */
+div[data-testid="stModal"] > div[role="dialog"],
+div[role="dialog"] {
+    background: linear-gradient(135deg, rgba(20, 20, 45, 0.98), rgba(30, 30, 60, 0.98)) !important;
+    border: 1px solid rgba(102, 126, 234, 0.5) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(15px) !important;
+}
+
+/* Modal overlay (màn mờ) */
+div[data-testid="stModal"] > div:first-child {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(4px) !important;
+}
+
+div[role="dialog"] * {
+    color: #ffffff !important;
+}
+
+div[role="dialog"] button[aria-label="Close"] {
+    color: #ffffff !important;
+}
+
+/* 2. Toast Notifications (Góc màn hình) */
+div[data-testid="stToast"] {
+    background: linear-gradient(135deg, rgba(30, 30, 70, 0.95), rgba(40, 40, 90, 0.95)) !important;
+    border: 1px solid rgba(102, 126, 234, 0.4) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+div[data-testid="stToast"],
+div[data-testid="stToast"] * {
+    color: #ffffff !important;
+    font-weight: 500 !important;
+}
+
+div[data-testid="stToast"] svg {
+    fill: #ffffff !important;
+}
+
+/* Nút xóa toast (X) */
+div[data-testid="stToast"] button {
+    opacity: 0.8 !important;
+}
+
+div[data-testid="stToast"] button:hover {
+    opacity: 1 !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 3. Alerts (st.success, st.error, st.warning, st.info) */
+div[data-testid="stAlert"] {
+    border-radius: var(--radius-md) !important;
+    backdrop-filter: blur(5px) !important;
+}
+
+/* Success Alert (Xanh lá) */
+div[data-testid="stAlert"]:has(svg[data-baseweb="icon"]:first-child) {
+    background: rgba(0, 217, 165, 0.15) !important;
+    border: 1px solid rgba(0, 217, 165, 0.3) !important;
+}
+
+/* Cố định lại màu sắc cho các chữ bên trong Alert để luôn trắng nổi bật */
+div[data-testid="stAlert"] *,
+div[data-testid="stAlert"] [data-testid="stMarkdownContainer"] p {
+    color: #ffffff !important;
+    font-weight: 500 !important;
+}

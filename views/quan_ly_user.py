@@ -244,7 +244,7 @@ def show_create_user_form():
                 )
 
                 if success:
-                    st.success(f"✅ {msg}")
-                    st.balloons()
+                    from utils.ui_components import show_success_dialog
+                    show_success_dialog(f"✅ {msg}")
                 else:
                     st.error(f"❌ {msg}")

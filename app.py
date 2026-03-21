@@ -57,17 +57,15 @@ logger = logging.getLogger(__name__)
 # ============================================
 st.set_page_config(
     page_title="Security Profile 360",
-    page_icon="🛡️",
+    page_icon="logo.png",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 
 # ============================================
 # LOAD CSS
 # ============================================
 
-
-# @st.cache_data # Tắt cache để CSS mới được cập nhật ngay lập tức
 def load_css():
     """Load custom CSS file (cached for performance)"""
     css_file = Path(__file__).parent / "style.css"
@@ -76,10 +74,26 @@ def load_css():
             return f.read()
     return ""
 
-
 css_content = load_css()
 if css_content:
     st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+
+# THÊM CSS ĐỂ ẨN SIDEBAR KHI CHƯA ĐĂNG NHẬP VÀ GIẢM PADDING TRÊN
+if not st.session_state.get('logged_in', False):
+    st.markdown("""
+        <style>
+            [data-testid="stSidebar"] {
+                display: none;
+            }
+            [data-testid="stSidebarNav"] {
+                display: none;
+            }
+            /* Giảm padding phía trên ứng dụng khi đăng nhập */
+            [data-testid="stAppViewBlockContainer"] {
+                padding-top: 1rem !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
 
 # ============================================
 # KHỞI TẠO DATABASE & SUPER ADMIN
@@ -91,7 +105,6 @@ def init_database():
     create_tables()
     init_super_admin()
     return True
-
 
 init_database()
 
@@ -145,48 +158,35 @@ if not require_login():
     st.stop()
 
 # ============================================
-# SIDEBAR & NAVIGATION (Sau khi đăng nhập)
+# SIDEBAR & NAVIGATION (Chỉ sau khi đăng nhập thành công)
 # ============================================
 
-# Import thêm các trang admin
-
 with st.sidebar:
+    # 1. Branding
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         logo_path = Path(__file__).parent / "logo.png"
         if logo_path.exists():
             st.image(str(logo_path), use_container_width=True)
-        else:
-            st.error(f"Logo not found at {logo_path}")
     st.markdown("<h3 style='text-align: center; margin-bottom: 0px;'>Security Profile PA01</h3>",
                 unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #e0e0e0; font-weight: 600; font-size: 8px;'>HỆ THỐNG QUẢN LÝ HỒ SƠ CSXH</p>", unsafe_allow_html=True)
-
     st.markdown("---")
 
-    # Menu items based on role
+    # 2. Menu items based on role
     user = get_current_user()
-
     menu_items = ["Dashboard", "Nhập liệu", "Nhập Excel", "Tra cứu", "Rà soát"]
 
-    # Thêm menu Admin cho Super Admin
     if is_super_admin(user):
         menu_items.append("---")  # Separator
         menu_items.append("👥 Quản lý tài khoản")
         menu_items.append("📦 Nguồn dữ liệu")
         menu_items.append("📜 Lịch sử thay đổi")
 
-    # Filter out separator
     display_menu = [m for m in menu_items if m != "---"]
+    menu = st.radio("Menu chính", display_menu, index=0, key="main_menu")
 
-    menu = st.radio(
-        "Menu chính",
-        display_menu,
-        index=0,
-        key="main_menu"
-    )
-
-    # User menu (đổi mật khẩu, đăng xuất)
+    # 3. User menu (đổi mật khẩu, đăng xuất)
     show_user_menu()
 
     st.markdown("---")
@@ -197,53 +197,33 @@ with st.sidebar:
 # ROUTING LOGIC
 # ============================================
 
-# Nếu đang đổi mật khẩu (tự nguyện)
 if st.session_state.get('show_change_password'):
     show_self_change_password()
-
-# Xử lý điều hướng đặc biệt (Xem chi tiết hồ sơ)
 elif st.session_state.view_profile_cccd:
-    # AUDIT LOGGING: Chỉ ghi log VIEW lần đầu trong ngày cho mỗi (user, hồ sơ)
     try:
         user = get_current_user()
         username = user.get('username') if user else 'Unknown'
         cccd = st.session_state.view_profile_cccd
-
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT COUNT(*) 
-            FROM audit_log 
-            WHERE bang = ? 
-              AND hanh_dong = 'VIEW' 
-              AND khoa_chinh = ? 
-              AND nguoi_thuc_hien = ? 
-              AND DATE(created_at) = DATE('now','localtime')
+            SELECT COUNT(*) FROM audit_log 
+            WHERE bang = ? AND hanh_dong = 'VIEW' AND khoa_chinh = ? AND nguoi_thuc_hien = ? 
+            AND DATE(created_at) = DATE('now','localtime')
             """,
             ('doi_tuong', cccd, username),
         )
         already_logged = cursor.fetchone()[0] > 0
         conn.close()
-
         if not already_logged:
-            add_audit_log(
-                bang='doi_tuong',
-                hanh_dong='VIEW',
-                khoa_chinh=cccd,
-                du_lieu_cu='',
-                du_lieu_moi='Xem chi tiết hồ sơ',
-                nguoi_thuc_hien=username,
-                ip_address=get_client_ip(),
-            )
+            add_audit_log(bang='doi_tuong', hanh_dong='VIEW', khoa_chinh=cccd, 
+                         du_lieu_cu='', du_lieu_moi='Xem chi tiết hồ sơ', 
+                         nguoi_thuc_hien=username, ip_address=get_client_ip())
     except Exception:
-        # Không chặn luồng xem hồ sơ nếu log lỗi
         pass
-        
     page_profile_view(st.session_state.view_profile_cccd)
-
 else:
-    # Điều hướng theo menu sidebar
     if menu == "Dashboard":
         page_dashboard()
     elif menu == "Nhập liệu":

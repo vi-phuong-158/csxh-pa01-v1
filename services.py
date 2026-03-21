@@ -175,6 +175,33 @@ def save_nhan_than(cccd, loai_quan_he, ho_ten, cccd_nhan_than="", ngay_sinh=None
         conn.close()
 
 
+def update_nhan_than(nhan_than_id, loai_quan_he, ho_ten, cccd_nhan_than="", ngay_sinh=None,
+                   gioi_tinh="", dia_chi_tinh="", dia_chi_xa="", dia_chi_chi_tiet="",
+                   nghe_nghiep="", noi_o="", ghi_chu=""):
+    """Cập nhật thông tin nhân thân"""
+    if not ho_ten:
+        return False
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE nhan_than 
+            SET loai_quan_he = ?, ho_ten = ?, cccd_nhan_than = ?, ngay_sinh = ?,
+                gioi_tinh = ?, dia_chi_tinh = ?, dia_chi_xa = ?, dia_chi_chi_tiet = ?,
+                nghe_nghiep = ?, noi_o = ?, ghi_chu = ?
+            WHERE id = ?
+        """, (loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh,
+              gioi_tinh, dia_chi_tinh, dia_chi_xa, dia_chi_chi_tiet,
+              nghe_nghiep, noi_o, ghi_chu, nhan_than_id))
+        conn.commit()
+        return True
+    except Exception:
+        logger.exception("Lỗi cập nhật nhân thân")
+        return False
+    finally:
+        conn.close()
+
+
 def save_ho_so_dac_thu(cccd, loai_hinh, noi_dung_dict, ghi_chu=""):
     """Lưu hồ sơ đặc thù (CSXH)"""
     if not noi_dung_dict:

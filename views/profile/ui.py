@@ -14,10 +14,10 @@ from constants import (
     LOAI_HINH_DAC_THU, LOAI_LIEN_HE_OPTIONS, DANH_SACH_NGAN_HANG,
     LOAI_XE_OPTIONS, DANH_SACH_QUOC_GIA, ALLOWED_EXTENSIONS,
     MAX_FILE_SIZE_MB, LOAI_TAI_LIEU_OPTIONS, KET_QUA_XAC_MINH,
-    HINH_THUC_DU_HOC
+    HINH_THUC_DU_HOC, DANH_SACH_XA_PHU_THO
 )
 from services import (
-    save_nhan_than, save_lien_he, save_tai_chinh,
+    save_nhan_than, update_nhan_than, save_lien_he, save_tai_chinh,
     save_phuong_tien, save_ho_so_dac_thu, save_tai_lieu,
     get_upload_folder, save_doi_tuong, check_cccd_exists
 )
@@ -58,8 +58,105 @@ CSXH_FIELD_LABELS = {
     'noi_dung_xm': 'Nội dung xác minh',
 }
 
+@st.dialog("Chỉnh sửa thân nhân", width="large")
+def render_edit_nhan_than_dialog(row_dict, cccd):
+    with st.form(f"edit_nt_form"):
+        loai_quan_he_opts = ["Bố đẻ", "Mẹ đẻ", "Vợ/Chồng", "Anh/Chị em ruột", "Anh/Chị em họ", "Ông/Bà", "Con", "Bạn thân", "Đồng nghiệp", "Khác"]
+        nt_loai_quan_he = st.selectbox(
+            "Loại quan hệ",
+            loai_quan_he_opts,
+            index=loai_quan_he_opts.index(row_dict.get('loai_quan_he')) if row_dict.get('loai_quan_he') in loai_quan_he_opts else 9
+        )
+        col1, col2 = st.columns(2)
+        with col1:
+            nt_ho_ten = st.text_input("Họ và tên *", value=row_dict.get('ho_ten', ''))
+            nt_cccd_nt = st.text_input("Số CCCD (nếu có)", value=row_dict.get('cccd_nhan_than', ''))
+            
+            try:
+                ns_val = datetime.strptime(str(row_dict.get('ngay_sinh', '')), "%Y-%m-%d").date() if row_dict.get('ngay_sinh') else None
+            except:
+                ns_val = None
+                
+            nt_ngay_sinh = st.date_input("Ngày sinh", value=ns_val,
+                                         format="DD/MM/YYYY", min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
+            nt_gioi_tinh = st.selectbox("Giới tính", GIOI_TINH_OPTIONS, 
+                                        index=GIOI_TINH_OPTIONS.index(row_dict.get('gioi_tinh')) if row_dict.get('gioi_tinh') in GIOI_TINH_OPTIONS else 0)
+        with col2:
+            nt_dia_chi_tinh = st.selectbox("Tỉnh/Thành phố", TINH_OPTIONS, 
+                                           index=TINH_OPTIONS.index(row_dict.get('dia_chi_tinh')) if row_dict.get('dia_chi_tinh') in TINH_OPTIONS else 0)
+            nt_dia_chi_xa = st.text_input("Quận/Huyện, Xã/Phường", value=row_dict.get('dia_chi_xa', ''))
+            nt_dia_chi_chi_tiet = st.text_input("Số nhà, Đường/Thôn", value=row_dict.get('dia_chi_chi_tiet', ''))
+            
+            # Tách nghe nghiệp
+            full_nn = row_dict.get('nghe_nghiep') or ''
+            pl_nn = PHAN_LOAI_NGHE_NGHIEP_OPTIONS[0]
+            ct_nn = ""
+            for opt in PHAN_LOAI_NGHE_NGHIEP_OPTIONS:
+                if full_nn.startswith(opt + ": "):
+                    pl_nn = opt
+                    ct_nn = full_nn[len(opt)+2:]
+                    break
+                elif full_nn == opt:
+                    pl_nn = opt
+                    break
+
+            nt_phan_loai_nghe = st.selectbox("Phân loại nghề nghiệp", PHAN_LOAI_NGHE_NGHIEP_OPTIONS, 
+                                             index=PHAN_LOAI_NGHE_NGHIEP_OPTIONS.index(pl_nn) if pl_nn in PHAN_LOAI_NGHE_NGHIEP_OPTIONS else 0)
+            nt_nghe_nghiep = st.text_input("Chi tiết nghề nghiệp", value=ct_nn)
+            nt_noi_o = st.text_input("Nơi ở hiện nay", value=row_dict.get('noi_o', ''))
+
+        nt_ghi_chu = st.text_input("Ghi chú", value=row_dict.get('ghi_chu', ''))
+
+        if st.form_submit_button("💾 Lưu thay đổi", type="primary"):
+            if nt_ho_ten:
+                nghe_nghiep_full = f"{nt_phan_loai_nghe}: {nt_nghe_nghiep}" if nt_nghe_nghiep else nt_phan_loai_nghe
+                
+                # --- Tự động tạo hồ sơ đối tượng nếu có CCCD mới ---
+                if nt_cccd_nt and len(nt_cccd_nt) == 12 and nt_cccd_nt.isdigit():
+                    if not check_cccd_exists(nt_cccd_nt):
+                        save_doi_tuong({
+                            'cccd': nt_cccd_nt,
+                            'ho_ten': nt_ho_ten,
+                            'ngay_sinh': nt_ngay_sinh.strftime('%Y-%m-%d') if nt_ngay_sinh else None,
+                            'gioi_tinh': nt_gioi_tinh,
+                            'dia_chi_tinh': nt_dia_chi_tinh,
+                            'dia_chi_xa': nt_dia_chi_xa,
+                            'dia_chi_chi_tiet': nt_dia_chi_chi_tiet,
+                            'phan_loai_nghe_nghiep': nt_phan_loai_nghe,
+                            'chi_tiet_nghe_nghiep': nt_nghe_nghiep,
+                            'ghi_chu_chung': f"Hồ sơ tạo tự động từ thân nhân của {cccd}"
+                        })
+                        st.session_state['pending_toast'] = f"✅ Hệ thống đã tự động tạo bộ hồ sơ lưu trữ riêng cho thân nhân: {nt_ho_ten}"
+                
+                from services import update_nhan_than
+                update_nhan_than(
+                    nhan_than_id=row_dict['id'],
+                    loai_quan_he=nt_loai_quan_he,
+                    ho_ten=nt_ho_ten,
+                    cccd_nhan_than=nt_cccd_nt,
+                    ngay_sinh=nt_ngay_sinh.strftime('%Y-%m-%d') if nt_ngay_sinh else None,
+                    gioi_tinh=nt_gioi_tinh,
+                    dia_chi_tinh=nt_dia_chi_tinh,
+                    dia_chi_xa=nt_dia_chi_xa,
+                    dia_chi_chi_tiet=nt_dia_chi_chi_tiet,
+                    nghe_nghiep=nghe_nghiep_full,
+                    noi_o=nt_noi_o,
+                    ghi_chu=nt_ghi_chu
+                )
+                get_nhan_than_by_cccd.clear()
+                st.success("✅ Đã cập nhật thành công!")
+                st.rerun()
+            else:
+                st.warning("⚠️ Vui lòng nhập họ tên!")
+
+
 def page_profile_view(cccd):
     """Trang xem chi tiết hồ sơ đối tượng 360 độ"""
+    # Hiển thị toast notice nếu có tạo hồ sơ tự động từ trước
+    if "pending_toast" in st.session_state:
+        st.toast(st.session_state.pending_toast, icon="🎉")
+        del st.session_state.pending_toast
+
     # Lấy thông tin đối tượng
     doi_tuong = get_doi_tuong_detail(cccd)
 
@@ -167,37 +264,63 @@ def page_profile_view(cccd):
             st.session_state.edit_mode = False
             st.rerun()
 
-        # Generate PDF Button
-        from utils.pdf_export import generate_profile_pdf
+        # --- Xuất file: Lưu trực tiếp vào ổ cứng (tương thích PyWebView) ---
+        import subprocess as _sp
         
-        pdf_bytes = generate_profile_pdf(cccd)
-        if pdf_bytes:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            file_name = f"HoSo_{cccd}_{timestamp}.pdf"
-            
-            st.download_button(
-                label="📄 Xuất PDF",
-                data=pdf_bytes,
-                file_name=file_name,
-                mime="application/pdf",
-                use_container_width=True
-            )
+        # Thư mục lưu mặc định: Desktop
+        _default_save_dir = Path.home() / "Desktop"
+        if not _default_save_dir.exists():
+            _default_save_dir = Path.home() / "Downloads"
+        
+        if "export_save_dir" not in st.session_state:
+            st.session_state.export_save_dir = str(_default_save_dir)
+        
+        save_dir = st.text_input(
+            "📁 Thư mục lưu file xuất",
+            value=st.session_state.export_save_dir,
+            key="save_dir_input",
+            help="Nhập đường dẫn thư mục bạn muốn lưu file PDF/Word vào"
+        )
+        st.session_state.export_save_dir = save_dir
 
-        # Generate DOCX Button
-        from utils.docx_export import generate_profile_docx
-        
-        docx_bytes = generate_profile_docx(cccd)
-        if docx_bytes:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            file_name = f"HoSo_{cccd}_{timestamp}.docx"
-            
-            st.download_button(
-                label="📝 Xuất Word",
-                data=docx_bytes,
-                file_name=file_name,
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                use_container_width=True
-            )
+        # Nút Xuất PDF
+        if st.button("📄 Xuất PDF", use_container_width=True):
+            try:
+                from utils.pdf_export import generate_profile_pdf
+                pdf_bytes = generate_profile_pdf(cccd)
+                if pdf_bytes:
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    file_name = f"HoSo_{cccd}_{timestamp}.pdf"
+                    save_path = Path(save_dir) / file_name
+                    save_path.parent.mkdir(parents=True, exist_ok=True)
+                    with open(save_path, "wb") as f:
+                        f.write(pdf_bytes)
+                    st.success(f"✅ Đã lưu PDF: **{save_path}**")
+                    # Mở thư mục chứa file
+                    _sp.Popen(f'explorer /select,"{save_path}"', shell=True)
+                else:
+                    st.warning("Không có dữ liệu để xuất PDF.")
+            except Exception as e:
+                st.error(f"❌ Lỗi xuất PDF: {e}")
+
+        # Nút Xuất Word
+        if st.button("📝 Xuất Word", use_container_width=True):
+            try:
+                from utils.docx_export import generate_profile_docx
+                docx_bytes = generate_profile_docx(cccd)
+                if docx_bytes:
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    file_name = f"HoSo_{cccd}_{timestamp}.docx"
+                    save_path = Path(save_dir) / file_name
+                    save_path.parent.mkdir(parents=True, exist_ok=True)
+                    with open(save_path, "wb") as f:
+                        f.write(docx_bytes)
+                    st.success(f"✅ Đã lưu Word: **{save_path}**")
+                    _sp.Popen(f'explorer /select,"{save_path}"', shell=True)
+                else:
+                    st.warning("Không có dữ liệu để xuất Word.")
+            except Exception as e:
+                st.error(f"❌ Lỗi xuất Word: {e}")
 
         if st.button("✏️ Sửa hồ sơ", type="primary", use_container_width=True):
             st.session_state.edit_mode = True
@@ -410,7 +533,7 @@ def page_profile_view(cccd):
             st.markdown("##### 📋 Danh sách thân nhân")
 
             for idx, row in df_nhan_than.iterrows():
-                col_info, col_del = st.columns([5, 1])
+                col_info, col_edit, col_del = st.columns([4, 1, 1])
                 with col_info:
                     gioi_tinh_txt = f" | 🚻 {row['gioi_tinh']}" if row.get('gioi_tinh') else ""
                     dia_chi_txt = ""
@@ -422,12 +545,16 @@ def page_profile_view(cccd):
                     📅 {format_date_vn(row['ngay_sinh']) if row['ngay_sinh'] else 'N/A'} | 
                     💼 {row['nghe_nghiep'] if row['nghe_nghiep'] else 'N/A'}{dia_chi_txt}
                     """)
+                with col_edit:
+                    if st.button("✏️ Sửa", key=f"edit_nt_btn_{row['id']}"):
+                        render_edit_nhan_than_dialog(row.to_dict(), cccd)
                 with col_del:
                     with st.popover("🗑️"):
                         st.markdown(f"Xóa **{row['ho_ten']}**?")
                         if st.button("Xác nhận", key=f"confirm_del_nt_{row['id']}", type="primary"):
                             delete_nhan_than(row['id'])
-                            st.toast(f"✅ Đã xóa {row['loai_quan_he']}: {row['ho_ten']}", icon="✅")
+                            get_nhan_than_by_cccd.clear()
+                            st.session_state['pending_toast'] = f"✅ Đã xóa {row['loai_quan_he']}: {row['ho_ten']}"
                             st.rerun()
             st.markdown("---")
         else:
@@ -436,40 +563,80 @@ def page_profile_view(cccd):
 
         # Form thêm thân nhân mới
         with st.expander("➕ Thêm thân nhân mới", expanded=False):
-            with st.form("add_nhan_than_profile_form"):
-                nt_loai_quan_he = st.selectbox(
-                    "Loại quan hệ",
-                    ["Bố đẻ", "Mẹ đẻ", "Vợ/Chồng", "Anh/Chị em ruột", "Anh/Chị em họ",
-                        "Ông/Bà", "Con", "Bạn thân", "Đồng nghiệp", "Khác"],
-                    key="pv_nt_loai"
+            nt_loai_quan_he = st.selectbox(
+                "Loại quan hệ",
+                ["Bố đẻ", "Mẹ đẻ", "Vợ/Chồng", "Anh/Chị em ruột", "Anh/Chị em họ",
+                    "Ông/Bà", "Con", "Bạn thân", "Đồng nghiệp", "Khác"],
+                key="pv_nt_loai"
+            )
+
+            col1, col2 = st.columns(2)
+            with col1:
+                nt_cccd_nt = st.text_input(
+                    "Số CCCD (nếu có)", key="pv_nt_cccd")
+                
+                # --- AUTOFILL LOGIC ---
+                if nt_cccd_nt and len(nt_cccd_nt) == 12 and nt_cccd_nt.isdigit():
+                    nt_existing = get_doi_tuong_detail(nt_cccd_nt)
+                    if nt_existing:
+                        if st.session_state.get("pv_last_autofill_nt_cccd") != nt_cccd_nt:
+                            st.session_state["pv_last_autofill_nt_cccd"] = nt_cccd_nt
+                            st.session_state["pv_nt_ho_ten"] = nt_existing.get("ho_ten", "")
+                            ns = nt_existing.get("ngay_sinh")
+                            if ns:
+                                try:
+                                    st.session_state["pv_nt_ngay_sinh"] = datetime.strptime(str(ns), "%Y-%m-%d").date()
+                                except (ValueError, TypeError):
+                                    pass
+                            gt = nt_existing.get("gioi_tinh", "")
+                            if gt in GIOI_TINH_OPTIONS:
+                                st.session_state["pv_nt_gioi_tinh"] = gt
+                            tinh = nt_existing.get("dia_chi_tinh", "Phú Thọ")
+                            if tinh in TINH_OPTIONS:
+                                st.session_state["pv_nt_dia_chi_tinh"] = tinh
+                            xa = nt_existing.get("dia_chi_xa", "")
+                            if tinh == "Phú Thọ":
+                                xa_opts = ["-- Chọn xã/phường --"] + DANH_SACH_XA_PHU_THO
+                                if xa in xa_opts:
+                                    st.session_state["pv_nt_xa_phuong_select"] = xa
+                            else:
+                                st.session_state["pv_nt_dia_chi_xa_text"] = xa
+                            st.session_state["pv_nt_dia_chi_chi_tiet"] = nt_existing.get("dia_chi_chi_tiet", "")
+                            pl = nt_existing.get("phan_loai_nghe_nghiep", "")
+                            if pl in PHAN_LOAI_NGHE_NGHIEP_OPTIONS:
+                                st.session_state["pv_nt_phan_loai"] = pl
+                            st.session_state["pv_nt_nghe"] = nt_existing.get("chi_tiet_nghe_nghiep", "")
+                            st.toast(f"✅ Đã lưu phiên và tự động tải thông tin từ CCCD {nt_cccd_nt}")
+                            st.rerun()
+                        st.info(f"📋 **Đang hiển thị dữ liệu gốc của CCCD {nt_cccd_nt}**")
+                    else:
+                        st.caption(f"ℹ️ CCCD {nt_cccd_nt} chưa có trong hệ thống — sẽ tự tạo hồ sơ gốc khi lưu.")
+                        if "pv_last_autofill_nt_cccd" in st.session_state:
+                             del st.session_state["pv_last_autofill_nt_cccd"]
+
+                nt_ho_ten = st.text_input(
+                    "Họ và tên *", key="pv_nt_ho_ten")
+
+                nt_ngay_sinh = st.date_input("Ngày sinh", value=None, key="pv_nt_ngay_sinh",
+                                             format="DD/MM/YYYY", min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
+                nt_gioi_tinh = st.selectbox("Giới tính", GIOI_TINH_OPTIONS, key="pv_nt_gioi_tinh")
+            with col2:
+                nt_dia_chi_tinh, nt_dia_chi_xa, nt_dia_chi_chi_tiet = render_address_fields(
+                    prefix="pv_nt",
+                    default_tinh="Phú Thọ",
+                    default_xa="",
+                    default_chi_tiet=""
                 )
+                nt_phan_loai_nghe = st.selectbox(
+                    "Phân loại nghề nghiệp", PHAN_LOAI_NGHE_NGHIEP_OPTIONS, key="pv_nt_phan_loai")
+                nt_nghe_nghiep = st.text_input(
+                    "Chi tiết nghề nghiệp", placeholder="Ví dụ: Giáo viên THPT, Nông dân...", key="pv_nt_nghe")
+                nt_noi_o = st.text_input(
+                    "Nơi ở hiện nay", key="pv_nt_noi_o")
 
-                col1, col2 = st.columns(2)
-                with col1:
-                    nt_ho_ten = st.text_input(
-                        "Họ và tên *", key="pv_nt_ho_ten")
-                    nt_cccd_nt = st.text_input(
-                        "Số CCCD (nếu có)", key="pv_nt_cccd")
-                    nt_ngay_sinh = st.date_input("Ngày sinh", value=None, key="pv_nt_ngay_sinh",
-                                                 format="DD/MM/YYYY", min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
-                    nt_gioi_tinh = st.selectbox("Giới tính", GIOI_TINH_OPTIONS, key="pv_nt_gioi_tinh")
-                with col2:
-                    nt_dia_chi_tinh, nt_dia_chi_xa, nt_dia_chi_chi_tiet = render_address_fields(
-                        prefix="pv_nt",
-                        default_tinh="Phú Thọ",
-                        default_xa="",
-                        default_chi_tiet=""
-                    )
-                    nt_phan_loai_nghe = st.selectbox(
-                        "Phân loại nghề nghiệp", PHAN_LOAI_NGHE_NGHIEP_OPTIONS, key="pv_nt_phan_loai")
-                    nt_nghe_nghiep = st.text_input(
-                        "Chi tiết nghề nghiệp", placeholder="Ví dụ: Giáo viên THPT, Nông dân...", key="pv_nt_nghe")
-                    nt_noi_o = st.text_input(
-                        "Nơi ở hiện nay", key="pv_nt_noi_o")
+            nt_ghi_chu = st.text_input("Ghi chú", key="pv_nt_ghi_chu")
 
-                nt_ghi_chu = st.text_input("Ghi chú", key="pv_nt_ghi_chu")
-
-                if st.form_submit_button("💾 Lưu thân nhân", type="primary"):
+            if st.button("💾 Lưu thân nhân", type="primary"):
                     if nt_ho_ten:
                         nghe_nghiep_full = f"{nt_phan_loai_nghe}: {nt_nghe_nghiep}" if nt_nghe_nghiep else nt_phan_loai_nghe
                         
@@ -488,6 +655,7 @@ def page_profile_view(cccd):
                                     'chi_tiet_nghe_nghiep': nt_nghe_nghiep,
                                     'ghi_chu_chung': f"Hồ sơ tạo tự động từ thân nhân của {cccd}"
                                 })
+                                st.session_state['pending_toast'] = f"✅ Hệ thống đã tự động tạo bộ hồ sơ lưu trữ riêng cho thân nhân: {nt_ho_ten}"
 
                         save_nhan_than(
                             cccd=cccd,
@@ -504,7 +672,13 @@ def page_profile_view(cccd):
                             noi_o=nt_noi_o,
                             ghi_chu=nt_ghi_chu
                         )
-                        st.success(f"✅ Đã thêm {nt_loai_quan_he}: {nt_ho_ten}")
+                        get_nhan_than_by_cccd.clear()
+                        
+                        keys_to_delete = [str(k) for k in st.session_state.keys() if str(k).startswith("pv_nt_") or str(k) == "pv_last_autofill_nt_cccd"]
+                        for k in keys_to_delete:
+                            del st.session_state[k]
+                            
+                        st.session_state['pending_toast'] = f"✅ Đã thêm {nt_loai_quan_he}: {nt_ho_ten}"
                         st.rerun()
                     else:
                         st.warning("⚠️ Vui lòng nhập họ tên!")

@@ -145,63 +145,59 @@ def page_nhap_lieu():
             if cccd and len(cccd) == 12:
                 if check_cccd_exists(cccd):
                     existing_data = get_doi_tuong_detail(cccd)
-                    if not st.session_state.get("nl_edit_mode"):
-                        st.warning(
-                            f"⚠️ CCCD **{cccd}** đã có trong hệ thống."
-                        )
-                        col_edit, col_bosung = st.columns(2)
-                        with col_edit:
-                            if st.button("✏️ Sửa thông tin cá nhân", key="btn_edit_existing", type="primary", use_container_width=True):
-                                # Load dữ liệu cũ vào session_state → form auto-fill
-                                if existing_data:
-                                    st.session_state["nl_ho_ten"] = existing_data.get("ho_ten", "")
-                                    # Ngày sinh
-                                    ns = existing_data.get("ngay_sinh")
-                                    if ns:
-                                        try:
-                                            st.session_state["main_ngay_sinh"] = datetime.strptime(str(ns), "%Y-%m-%d").date()
-                                        except (ValueError, TypeError):
-                                            pass
-                                    # Giới tính
-                                    gt = existing_data.get("gioi_tinh", "")
-                                    if gt in GIOI_TINH_OPTIONS:
-                                        st.session_state["main_gioi_tinh"] = gt
-                                    # Tỉnh
-                                    tinh = existing_data.get("dia_chi_tinh", "Phú Thọ")
-                                    if tinh in TINH_OPTIONS:
-                                        st.session_state["main_dia_chi_tinh"] = tinh
-                                    # Xã
-                                    xa = existing_data.get("dia_chi_xa", "")
-                                    if tinh == "Phú Thọ":
-                                        xa_options = ["-- Chọn xã/phường --"] + DANH_SACH_XA_PHU_THO
-                                        if xa in xa_options:
-                                            st.session_state["xa_phuong_select"] = xa
-                                    else:
-                                        st.session_state["main_dia_chi_xa_text"] = xa
-                                        st.session_state["main_dia_chi_chi_tiet"] = existing_data.get("dia_chi_chi_tiet", "")
-                                    # Nghề nghiệp
-                                    pl = existing_data.get("phan_loai_nghe_nghiep", "")
-                                    if pl in PHAN_LOAI_NGHE_NGHIEP_OPTIONS:
-                                        st.session_state["main_phan_loai_nghe"] = pl
-                                    st.session_state["main_chi_tiet_nghe"] = existing_data.get("chi_tiet_nghe_nghiep", "")
-                                    st.session_state["main_ghi_chu"] = existing_data.get("ghi_chu_chung", "")
-
-                                st.session_state.nl_edit_mode = True
-                                st.session_state.nl_them_bo_sung = True
-                                st.rerun()
-                        with col_bosung:
-                            if st.button("📎 Chỉ bổ sung thân nhân/liên hệ", key="btn_bosung_only", use_container_width=True):
-                                st.session_state.nl_them_bo_sung = True
-                                st.session_state.nl_edit_mode = False
-                                st.rerun()
-                    else:
+                    # Tự động điền nếu chưa được đánh dấu là đang ở mode edit cho CCCD này
+                    if st.session_state.get("nl_last_autofill_cccd") != cccd:
+                        st.session_state["nl_last_autofill_cccd"] = cccd
+                        
+                        if existing_data:
+                            st.session_state["nl_ho_ten"] = existing_data.get("ho_ten", "")
+                            # Ngày sinh
+                            ns = existing_data.get("ngay_sinh")
+                            if ns:
+                                try:
+                                    st.session_state["main_ngay_sinh"] = datetime.strptime(str(ns), "%Y-%m-%d").date()
+                                except (ValueError, TypeError):
+                                    pass
+                            # Giới tính
+                            gt = existing_data.get("gioi_tinh", "")
+                            if gt in GIOI_TINH_OPTIONS:
+                                st.session_state["main_gioi_tinh"] = gt
+                            # Tỉnh
+                            tinh = existing_data.get("dia_chi_tinh", "Phú Thọ")
+                            if tinh in TINH_OPTIONS:
+                                st.session_state["main_dia_chi_tinh"] = tinh
+                            # Xã
+                            xa = existing_data.get("dia_chi_xa", "")
+                            if tinh == "Phú Thọ":
+                                xa_options = ["-- Chọn xã/phường --"] + DANH_SACH_XA_PHU_THO
+                                if xa in xa_options:
+                                    st.session_state["main_xa_phuong_select"] = xa
+                            else:
+                                st.session_state["main_dia_chi_xa_text"] = xa
+                                
+                            st.session_state["main_dia_chi_chi_tiet"] = existing_data.get("dia_chi_chi_tiet", "")
+                            # Nghề nghiệp
+                            pl = existing_data.get("phan_loai_nghe_nghiep", "")
+                            if pl in PHAN_LOAI_NGHE_NGHIEP_OPTIONS:
+                                st.session_state["main_phan_loai_nghe"] = pl
+                            st.session_state["main_chi_tiet_nghe"] = existing_data.get("chi_tiet_nghe_nghiep", "")
+                            st.session_state["main_ghi_chu"] = existing_data.get("ghi_chu_chung", "")
+                            
+                        st.session_state.nl_edit_mode = True
+                        st.session_state.nl_them_bo_sung = True
+                        st.toast(f"✅ Đã tự động tải hồ sơ của CCCD {cccd}")
+                        st.rerun()
+                        
+                    if st.session_state.get("nl_edit_mode"):
                         st.info(
-                            "📝 **Chế độ chỉnh sửa** — Thay đổi thông tin và nhấn **Lưu toàn bộ** ở cuối trang."
+                            f"📋 **Đã hiển thị thông tin gốc của CCCD {cccd}** — Bạn có thể sửa trực tiếp hoặc chuyển sang các tab khác để bổ sung thêm thân nhân, quá trình,... rồi nhấn **Lưu toàn bộ**."
                         )
                         st.session_state.nl_them_bo_sung = True
                 else:
                     st.session_state.nl_them_bo_sung = False
                     st.session_state.nl_edit_mode = False
+                    if "nl_last_autofill_cccd" in st.session_state:
+                        del st.session_state["nl_last_autofill_cccd"]
 
             ho_ten = st.text_input(
                 "Họ và tên *",
@@ -309,15 +305,15 @@ def page_nhap_lieu():
 
         col1, col2 = st.columns(2)
         with col1:
-            nt_ho_ten = st.text_input("Họ và tên *", placeholder="Nguyễn Văn A", key="nt_ho_ten")
             nt_cccd = st.text_input("Số CCCD", placeholder="Nhập 12 số CCCD (nếu có)", key="nt_cccd")
 
             # Auto-fill khi cccd_nhan_than trùng trong DB
             if nt_cccd and len(nt_cccd) == 12 and nt_cccd.isdigit():
                 nt_existing = get_doi_tuong_detail(nt_cccd)
                 if nt_existing:
-                    st.info(f"📋 Tìm thấy hồ sơ: **{nt_existing.get('ho_ten', '')}** — Nhấn nút bên dưới để tự động điền.")
-                    def do_autofill_nt():
+                    if st.session_state.get("nl_last_autofill_nt_cccd") != nt_cccd:
+                        st.session_state["nl_last_autofill_nt_cccd"] = nt_cccd
+                        
                         st.session_state["nt_ho_ten"] = nt_existing.get("ho_ten", "")
                         ns = nt_existing.get("ngay_sinh")
                         if ns:
@@ -343,10 +339,16 @@ def page_nhap_lieu():
                         if pl in PHAN_LOAI_NGHE_NGHIEP_OPTIONS:
                             st.session_state["nt_phan_loai_nghe"] = pl
                         st.session_state["nt_nghe_nghiep"] = nt_existing.get("chi_tiet_nghe_nghiep", "")
-                        
-                    st.button("✅ Tự động điền thông tin", key="btn_autofill_nt", type="primary", on_click=do_autofill_nt)
+                        st.toast(f"✅ Đã lưu phiên và tự động tải thông tin từ CCCD {nt_cccd}")
+                        st.rerun()
+                    
+                    st.info(f"📋 **Đang hiển thị dữ liệu gốc của CCCD {nt_cccd}**")
                 else:
-                    st.caption(f"ℹ️ CCCD {nt_cccd} chưa có trong hệ thống — sẽ tự tạo hồ sơ mới khi lưu.")
+                    st.caption(f"ℹ️ CCCD {nt_cccd} chưa có trong hệ thống — sẽ tự tạo hồ sơ gốc khi lưu.")
+                    if "nl_last_autofill_nt_cccd" in st.session_state:
+                         del st.session_state["nl_last_autofill_nt_cccd"]
+            
+            nt_ho_ten = st.text_input("Họ và tên *", placeholder="Nguyễn Văn A", key="nt_ho_ten")
             nt_ngay_sinh = st.date_input(
                 "Ngày sinh", value=None, key="nt_ngay_sinh", format="DD/MM/YYYY",
                 min_value=date(1900, 1, 1), max_value=date(2100, 12, 31)
@@ -1044,10 +1046,8 @@ def _do_save_all(cccd, ho_ten, them_bo_sung,
     if saved_counts or not them_bo_sung:
         summary_str = " | ".join([f"**{v}** {k}" for k, v in saved_counts.items()])
         action = "bổ sung" if them_bo_sung else "tạo mới"
-        st.success(
-            f"✅ Đã {action} hồ sơ **{ho_ten}** (CCCD: {cccd})"
-            + (f"\n\n📊 {summary_str}" if summary_str else "")
-        )
+        msg = f"✅ Đã {action} hồ sơ **{ho_ten}** (CCCD: {cccd})" + (f"\n\n📊 {summary_str}" if summary_str else "")
+        
         st.session_state.current_cccd = cccd
 
         # Xóa staging sau khi lưu thành công
@@ -1058,4 +1058,7 @@ def _do_save_all(cccd, ho_ten, them_bo_sung,
         st.session_state.nl_edit_mode = False
 
         if not errors:
-            st.balloons()
+            from utils.ui_components import show_success_dialog
+            show_success_dialog(msg)
+        else:
+            st.success(msg)

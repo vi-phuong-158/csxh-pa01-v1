@@ -5,6 +5,7 @@ Giao diện đăng nhập và đổi mật khẩu
 """
 import streamlit as st
 from app.services.auth_service import authenticate, change_password, is_super_admin
+from pathlib import Path
 
 
 def show_login_form():
@@ -14,17 +15,23 @@ def show_login_form():
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
+        logo_path = Path("logo.png")
+        if logo_path.exists():
+            # Sử dụng columns để thu nhỏ logo và căn giữa
+            c1, c2, c3 = st.columns([1, 2, 1])
+            with c2:
+                st.image(str(logo_path), use_container_width=True)
+            
         st.markdown("""
-        <div style="text-align: center; padding: 20px;">
-            <h1>🔐 Security Profile 360</h1>
-            <p style="color: #aaa;">Hệ thống quản lý hồ sơ an ninh</p>
+        <div style="text-align: center; padding: 0px 20px 0px 20px;">
+            <h1 style="margin-top: 0; font-size: 20px; line-height: 1.2;">Security Profile 360</h1>
+            <p style="color: #aaa; font-size: 13px;">Hệ thống quản lý hồ sơ an ninh</p>
         </div>
+        <div style="height: 1px; background-color: #333; margin: 10px 0;"></div>
         """, unsafe_allow_html=True)
 
-        st.markdown("---")
-
         with st.form("login_form"):
-            st.markdown("### Đăng nhập")
+            st.markdown("<h3 style='margin-bottom: -15px;'>Đăng nhập</h3>", unsafe_allow_html=True)
 
             username = st.text_input(
                 "👤 Tên đăng nhập",
@@ -61,14 +68,20 @@ def show_change_password_form():
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
+        logo_path = Path("logo.png")
+        if logo_path.exists():
+            # Sử dụng columns để thu nhỏ logo và căn giữa
+            c1, c2, c3 = st.columns([1, 2, 1])
+            with c2:
+                st.image(str(logo_path), use_container_width=True)
+            
         st.markdown("""
-        <div style="text-align: center; padding: 20px;">
-            <h1>🔐 Đổi mật khẩu</h1>
-            <p style="color: #ffc107;">⚠️ Bạn cần đổi mật khẩu trước khi tiếp tục</p>
+        <div style="text-align: center; padding: 0px 20px 0px 20px;">
+            <h1 style="margin-top: 0; font-size: 20px; line-height: 1.2;">Đổi mật khẩu</h1>
+            <p style="color: #ffc107; font-size: 13px;">⚠️ Bạn cần đổi mật khẩu trước khi tiếp tục</p>
         </div>
+        <div style="height: 1px; background-color: #333; margin: 10px 0;"></div>
         """, unsafe_allow_html=True)
-
-        st.markdown("---")
 
         with st.form("change_password_form"):
             new_password = st.text_input(

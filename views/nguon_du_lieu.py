@@ -179,7 +179,7 @@ def page_nguon_du_lieu():
                         ten_nguon, loai_nguon, nguoi_import, file_goc, ghi_chu
                     )
                     if success:
-                        st.success(f"✅ {msg}")
-                        st.balloons()
+                        from utils.ui_components import show_success_dialog
+                        show_success_dialog(f"✅ {msg}")
                     else:
                         st.error(f"❌ {msg}")
