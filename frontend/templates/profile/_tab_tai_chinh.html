@@ -1,0 +1,55 @@
+<div class="space-y-4">
+  {% if profile.tai_chinh %}
+  <div class="card overflow-x-auto">
+    <table class="table-auto w-full">
+      <thead><tr><th>Ngân hàng</th><th>Số tài khoản</th><th>Chủ TK</th><th>Ghi chú</th><th></th></tr></thead>
+      <tbody>
+        {% for tc in profile.tai_chinh %}
+        <tr>
+          <td><span class="badge badge-gray">{{ tc.ngan_hang }}</span></td>
+          <td class="font-mono text-xs">{{ tc.so_tai_khoan }}</td>
+          <td>{{ tc.chu or '—' }}</td>
+          <td class="text-slate-400">{{ tc.ghi_chu or '—' }}</td>
+          <td>
+            <button hx-delete="/profile/{{ profile.cccd }}/tai-chinh/{{ tc.id }}"
+                    hx-target="#tab-content" hx-swap="innerHTML" hx-confirm="Xóa?"
+                    class="text-red-400 hover:text-red-300 text-xs">Xóa</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <div class="card" x-data="{open:false}">
+    <button @click="open=!open" class="btn-secondary text-xs w-full justify-center">+ Thêm tài chính</button>
+    <form x-show="open" x-cloak
+          hx-post="/profile/{{ profile.cccd }}/tai-chinh"
+          hx-target="#tab-content" hx-swap="innerHTML"
+          class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div>
+        <label class="label">Ngân hàng</label>
+        <select name="ngan_hang" class="input">
+          {% for nb in ngan_hang %}<option>{{ nb }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label">Số tài khoản</label>
+        <input name="so_tai_khoan" type="text" class="input font-mono" required />
+      </div>
+      <div>
+        <label class="label">Chủ tài khoản</label>
+        <input name="chu_tai_khoan" type="text" class="input" />
+      </div>
+      <div>
+        <label class="label">Ghi chú</label>
+        <input name="ghi_chu" type="text" class="input" />
+      </div>
+      <div class="md:col-span-2 flex gap-2 justify-end">
+        <button type="button" @click="open=false" class="btn-ghost text-xs">Hủy</button>
+        <button type="submit" class="btn-primary text-xs">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>

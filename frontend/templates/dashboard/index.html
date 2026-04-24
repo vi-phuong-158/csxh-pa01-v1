@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Tổng quan · PA01{% endblock %}
+{% block page_title %}Tổng quan{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Stats cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <p class="text-xs text-slate-400 mb-1">Tổng hồ sơ</p>
+    <p class="text-3xl font-bold text-white">{{ stats.total }}</p>
+  </div>
+  <div class="card">
+    <p class="text-xs text-slate-400 mb-1">Nam</p>
+    <p class="text-3xl font-bold text-blue-400">{{ stats.gioi_tinh.get('Nam', 0) }}</p>
+  </div>
+  <div class="card">
+    <p class="text-xs text-slate-400 mb-1">Nữ</p>
+    <p class="text-3xl font-bold text-pink-400">{{ stats.gioi_tinh.get('Nữ', 0) }}</p>
+  </div>
+  <div class="card">
+    <p class="text-xs text-slate-400 mb-1">Hồ sơ đặc thù</p>
+    <p class="text-3xl font-bold text-yellow-400">{{ stats.dac_thu.values() | sum }}</p>
+  </div>
+</div>
+
+<!-- Charts row -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+  <div class="card">
+    <p class="text-sm font-medium text-slate-200 mb-3">Phân bố nghề nghiệp</p>
+    <div id="chart-nghe-nghiep" class="w-full h-56"></div>
+  </div>
+  <div class="card">
+    <p class="text-sm font-medium text-slate-200 mb-3">Top địa bàn</p>
+    <div id="chart-dia-ban" class="w-full h-56"></div>
+  </div>
+</div>
+
+<!-- Recent records -->
+<div class="card">
+  <p class="text-sm font-medium text-slate-200 mb-3">Hồ sơ mới nhất</p>
+  <div class="overflow-x-auto">
+    <table class="table-auto w-full">
+      <thead>
+        <tr>
+          <th>CCCD</th><th>Họ tên</th><th>Ngày sinh</th><th>Giới tính</th><th>Địa bàn</th><th>Nghề nghiệp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recent %}
+        <tr>
+          <td><a href="/profile/{{ r.cccd }}" class="text-primary-400 hover:underline font-mono text-xs">{{ r.cccd }}</a></td>
+          <td class="font-medium">{{ r.ho_ten or '—' }}</td>
+          <td>{{ r.ngay_sinh or '—' }}</td>
+          <td>{{ r.gioi_tinh or '—' }}</td>
+          <td>{{ r.dia_chi_xa or '—' }}</td>
+          <td><span class="badge badge-blue">{{ r.nghe_nghiep or '—' }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ngheNghiepData = {{ stats.nghe_nghiep | tojson }};
+const diaBanData = {{ stats.dia_ban | tojson }};
+
+const chartNghe = echarts.init(document.getElementById('chart-nghe-nghiep'), 'dark');
+chartNghe.setOption({
+  backgroundColor: 'transparent',
+  tooltip: { trigger: 'item' },
+  series: [{
+    type: 'pie', radius: ['40%', '70%'],
+    data: Object.entries(ngheNghiepData).map(([n, v]) => ({name: n, value: v})),
+    label: { color: '#94a3b8', fontSize: 11 },
+  }]
+});
+
+const chartDia = echarts.init(document.getElementById('chart-dia-ban'), 'dark');
+chartDia.setOption({
+  backgroundColor: 'transparent',
+  tooltip: { trigger: 'axis' },
+  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+  xAxis: { type: 'value', axisLabel: { color: '#64748b' } },
+  yAxis: {
+    type: 'category',
+    data: Object.keys(diaBanData),
+    axisLabel: { color: '#94a3b8', fontSize: 11 },
+  },
+  series: [{
+    type: 'bar', data: Object.values(diaBanData),
+    itemStyle: { color: '#3b82f6', borderRadius: [0, 4, 4, 0] },
+  }]
+});
+
+window.addEventListener('resize', () => { chartNghe.resize(); chartDia.resize(); });
+</script>
+{% endblock %}

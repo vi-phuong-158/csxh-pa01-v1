@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Rà soát · PA01{% endblock %}
+{% block page_title %}Rà soát hồ sơ{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-4">
+  <div class="card">
+    <h2 class="text-sm font-semibold text-white mb-2">Upload file Excel để rà soát</h2>
+    <p class="text-xs text-slate-400 mb-4">File phải có cột <code class="bg-surface-900 px-1 rounded">ho_ten</code>. Hệ thống sẽ so sánh với database bằng fuzzy matching.</p>
+
+    <form hx-post="/ra-soat/api/upload"
+          hx-target="#ra-soat-results"
+          hx-swap="innerHTML"
+          hx-encoding="multipart/form-data"
+          class="space-y-3">
+      <input type="file" name="file" accept=".xlsx,.xls" class="input" required />
+      <button type="submit" class="btn-primary">
+        <span class="htmx-indicator animate-spin">⏳</span>
+        Tải lên & Rà soát
+      </button>
+    </form>
+  </div>
+
+  <div id="ra-soat-results"></div>
+</div>
+{% endblock %}
