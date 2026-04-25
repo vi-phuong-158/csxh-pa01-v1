@@ -21,11 +21,24 @@
         <h2 class="text-base font-semibold text-slate-800">Bộ lọc thống kê</h2>
         <p class="text-xs text-slate-400 mt-0.5">Dữ liệu cập nhật theo thời gian thực sau khi thay đổi bộ lọc</p>
       </div>
-      <button
-        id="btn-refresh"
-        onclick="loadStats()"
-        class="btn-secondary text-xs"
-      >Làm mới</button>
+      <div class="flex items-center gap-2">
+        <button
+          id="btn-export"
+          onclick="exportXlsx()"
+          class="btn-primary text-xs"
+        >
+          <svg class="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          Xuất Excel (.xlsx)
+        </button>
+        <button
+          id="btn-refresh"
+          onclick="loadStats()"
+          class="btn-secondary text-xs"
+        >Làm mới</button>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -160,7 +173,13 @@
       <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">
         Bảng chi tiết theo phân loại nghề nghiệp
       </span>
-      <span class="badge badge-gray">Áp dụng bộ lọc hiện tại</span>
+      <button onclick="exportXlsx()" class="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-800 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        Xuất báo cáo
+      </button>
     </div>
 
     <div class="overflow-x-auto">

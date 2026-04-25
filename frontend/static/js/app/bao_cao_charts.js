@@ -248,6 +248,37 @@ function resetFilters() {
   loadStats();
 }
 
+// ── Excel export ────────────────────────────────────────────────────────────
+
+function exportXlsx() {
+  const btn = el('btn-export');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `
+      <svg class="w-3.5 h-3.5 inline mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+      Đang xuất…`;
+  }
+
+  // Navigate to the export endpoint — browser triggers file download automatically
+  window.location.href = `/bao-cao/export-xlsx?${buildParams()}`;
+
+  // Re-enable button after 4s (download has started by then)
+  setTimeout(() => {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg class="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        Xuất Excel (.xlsx)`;
+    }
+  }, 4000);
+}
+
 function initCharts() {
   initPieChart();
   initBarChart();
