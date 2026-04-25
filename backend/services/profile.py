@@ -57,6 +57,7 @@ def create_draft(db: Session, cccd: str) -> Tuple[bool, str]:
 
 
 def update_basic_info(db: Session, cccd: str, data: Dict, nguoi: str = "") -> Tuple[bool, str]:
+    from backend.utils.validators import redact_sensitive
     dt = db.get(DoiTuong, cccd)
     if not dt:
         return False, "Không tìm thấy hồ sơ"
@@ -70,7 +71,10 @@ def update_basic_info(db: Session, cccd: str, data: Dict, nguoi: str = "") -> Tu
             dt.ngay_sinh = datetime.strptime(data["ngay_sinh"], "%Y-%m-%d").date()
         except ValueError:
             pass
-    _log(db, "doi_tuong", "UPDATE", cccd, str(old), str(data), nguoi)
+    # F-18: redact field nhạy cảm (password, csrf token...) trước khi lưu
+    # audit log. Form thực tế không gửi password ở route này, nhưng nếu
+    # frontend bị đổi để lẫn _csrf vào body, log cũ sẽ leak token.
+    _log(db, "doi_tuong", "UPDATE", cccd, str(old), str(redact_sensitive(data)), nguoi)
     db.commit()
     return True, "Cập nhật thành công"
 
@@ -254,8 +258,12 @@ def _parse_date(val):
 
 
 def _log(db, bang, hanh_dong, khoa, cu, moi, nguoi):
+    """
+    F-17 fix: log exception thay vì nuốt im lặng.
+    F-18 LƯU Ý: caller phải redact field nhạy cảm trước khi truyền `cu`/`moi`.
+    """
     try:
         db.add(AuditLog(bang=bang, hanh_dong=hanh_dong, khoa_chinh=khoa,
                         du_lieu_cu=cu, du_lieu_moi=moi, nguoi_thuc_hien=nguoi))
     except Exception:
-        pass
+        logger.exception("Không ghi được audit log: bang=%s hanh_dong=%s", bang, hanh_dong)

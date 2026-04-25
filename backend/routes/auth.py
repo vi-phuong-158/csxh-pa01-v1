@@ -9,6 +9,7 @@ from backend.deps import get_current_user, require_login
 from backend.limiter import check_login_rate, reset_login_rate
 from backend.security import create_session_token
 from backend.services import auth as auth_svc
+from backend.utils.validators import safe_next_url
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 templates = Jinja2Templates(directory="frontend/templates")
@@ -16,9 +17,12 @@ templates = Jinja2Templates(directory="frontend/templates")
 
 @router.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, next: str = "/dashboard", user=Depends(get_current_user)):
+    # F-09: chuẩn hoá next ngay khi nhận từ query string — nếu attacker chèn
+    # ?next=https://evil.com, sẽ bị quy về "/dashboard".
+    safe_next = safe_next_url(next, default="/dashboard")
     if user:
-        return RedirectResponse("/dashboard", status_code=302)
-    return templates.TemplateResponse(request, "auth/login.html", {"next": next, "error": None})
+        return RedirectResponse(safe_next, status_code=302)
+    return templates.TemplateResponse(request, "auth/login.html", {"next": safe_next, "error": None})
 
 
 @router.post("/login")
@@ -51,7 +55,10 @@ async def login_submit(
     reset_login_rate(username)
 
     token = create_session_token(user["id"])
-    redirect_url = "/auth/change-password" if user["must_change_password"] else next
+    # F-09: validate next lại lần nữa (defense-in-depth) — phòng case form
+    # bị tamper hidden field next bằng JS console / Burp.
+    safe_next = safe_next_url(next, default="/dashboard")
+    redirect_url = "/auth/change-password" if user["must_change_password"] else safe_next
     response = RedirectResponse(redirect_url, status_code=302)
     # F-12 fix: dùng cờ USE_HTTPS riêng biệt thay vì suy diễn từ DEBUG.
     # - Production trên localhost (không TLS) -> USE_HTTPS=False -> cookie

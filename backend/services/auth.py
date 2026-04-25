@@ -201,6 +201,11 @@ def is_super_admin(user: Dict) -> bool:
 
 
 def _add_audit(db: Session, nguoi: str, hanh_dong: str, khoa: str, mo_ta: str):
+    """
+    F-17 fix: ghi exception thay vì nuốt im lặng. Audit log thất bại có
+    thể là dấu hiệu đĩa đầy / DB lock / migration thiếu — cần thấy trong
+    log ngay để xử lý, không được giấu.
+    """
     try:
         db.add(AuditLog(
             bang="users",
@@ -210,4 +215,5 @@ def _add_audit(db: Session, nguoi: str, hanh_dong: str, khoa: str, mo_ta: str):
             nguoi_thuc_hien=nguoi,
         ))
     except Exception:
-        pass
+        # logger.exception tự kèm traceback đầy đủ
+        logger.exception("Không thể ghi audit log cho hành động %s", hanh_dong)

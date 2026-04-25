@@ -24,6 +24,36 @@ from typing import Iterable, Optional
 
 from fastapi import HTTPException, UploadFile
 
+# ============================================================================
+# F-18: Tập trung danh sách KEY nhạy cảm cần REDACT trước khi log
+# ============================================================================
+# Bao gồm cả các bí danh phổ biến của input form. So sánh case-insensitive.
+SENSITIVE_LOG_KEYS: frozenset[str] = frozenset({
+    "password", "password_hash",
+    "new_password", "confirm_password", "current_password", "old_password",
+    "_csrf", "csrf_token", "csrf",
+    "token", "secret", "secret_key",
+    "session_token",
+    "db_password", "admin_password",
+    "authorization", "cookie", "set-cookie",
+})
+
+
+def redact_sensitive(d) -> dict:
+    """
+    Trả về bản copy của dict với các key nhạy cảm được thay bằng "***REDACTED***".
+    KHÔNG sửa dict gốc. KHÔNG thực hiện đệ quy (audit log không lồng dict).
+
+    Đầu vào không phải dict -> trả về str(d) tránh crash; nếu cần đệ quy
+    cho cấu trúc lồng nhau, mở rộng thêm tại đây.
+    """
+    if not isinstance(d, dict):
+        return d
+    return {
+        k: ("***REDACTED***" if str(k).lower() in SENSITIVE_LOG_KEYS else v)
+        for k, v in d.items()
+    }
+
 
 # ============================================================================
 # F-04: Validate CCCD / CMND
@@ -57,6 +87,48 @@ def validate_cccd(cccd: str) -> str:
 # FastAPI sẽ tự lấy `cccd` từ path param/query vì cùng tên tham số.
 def validated_cccd(cccd: str) -> str:
     return validate_cccd(cccd)
+
+
+# ============================================================================
+# F-09: Validate `next` URL chống Open Redirect
+# ============================================================================
+def safe_next_url(value: Optional[str], default: str = "/dashboard") -> str:
+    """
+    Trả về 1 đường dẫn ĐÃ VALIDATE để dùng trong RedirectResponse.
+
+    Chấp nhận:
+        - Bắt đầu bằng "/" (path relative cùng origin)
+        - KHÔNG có ký tự xuống dòng / NUL (chống header injection)
+        - KHÔNG dạng "//evil.com/x" (protocol-relative URL — trình duyệt
+          coi như absolute, dẫn người dùng ra domain khác)
+        - KHÔNG có scheme "://" (http:, javascript:, data: ...)
+
+    Bất cứ giá trị nào không thoả -> dùng `default`.
+
+    Đặc biệt quan trọng cho hệ thống offline: dù không có Internet,
+    attacker có thể chèn `?next=javascript:fetch("file:///etc/passwd")`
+    để chạy XSS trong context cán bộ ngay sau khi đăng nhập.
+    """
+    if not value or not isinstance(value, str):
+        return default
+
+    # Strip whitespace 2 đầu, không cho phép xuống dòng / NUL
+    if any(c in value for c in "\r\n\x00"):
+        return default
+
+    # Phải bắt đầu bằng "/" và không phải "//" (protocol-relative)
+    if not value.startswith("/") or value.startswith("//"):
+        return default
+
+    # Cấm scheme dù core đã chặn ở trên
+    if "://" in value:
+        return default
+
+    # Backslash bị Windows browser ngầm hiểu là "/"
+    if "\\" in value:
+        return default
+
+    return value
 
 
 # ============================================================================

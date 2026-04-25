@@ -88,6 +88,19 @@ def _get_engine():
             safe_key = _escape_sqlcipher_key(settings.DB_PASSWORD)
             cursor.execute(f"PRAGMA key='{safe_key}';")
 
+            # F-16: PIN cipher params về SQLCipher 4 defaults RÕ RÀNG.
+            # Lý do: nếu sau này nâng cấp lên SQLCipher 5+ với defaults
+            # khác (kdf_iter cao hơn, hmac khác), DB cũ có thể không mở
+            # được. Khi pin, ta luôn đọc/ghi cùng định dạng dù version
+            # binary thay đổi.
+            #
+            # PRAGMA cipher_compatibility = 4: tương đương "SQLCipher 4
+            # default" preset, ép page_size=4096, kdf_iter=256000,
+            # hmac_algorithm=HMAC_SHA512, kdf_algorithm=PBKDF2_HMAC_SHA512.
+            # Đây là 1 lệnh thay thế bộ pragma chi tiết, hoạt động trên
+            # cả SQLCipher 4.x và 5.x.
+            cursor.execute("PRAGMA cipher_compatibility = 4;")
+
             # Verify ngay — nếu file DB cũ tồn tại nhưng key sai sẽ raise
             try:
                 _verify_key(cursor)

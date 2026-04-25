@@ -18,7 +18,7 @@ from backend.config import settings
 from backend.db.session import get_db
 from backend.models.models import DoiTuong, User
 from backend.security import verify_csrf_token, verify_session_token
-from backend.utils.validators import validate_cccd
+from backend.utils.validators import safe_next_url, validate_cccd
 
 
 # ============================================================================
@@ -64,10 +64,21 @@ def require_admin(
 
 
 def _redirect_to_login(request: Request) -> HTTPException:
-    next_url = str(request.url)
+    """
+    Redirect về trang đăng nhập, kèm `next` để quay lại sau login.
+
+    F-09 fix: chỉ truyền PATH (request.url.path + query) — KHÔNG truyền
+    nguyên full URL có scheme + host. Sau đó khi /auth/login đọc lại,
+    safe_next_url() vẫn validate lần nữa (defense-in-depth).
+    """
+    from urllib.parse import quote
+    raw = request.url.path
+    if request.url.query:
+        raw += "?" + request.url.query
+    safe = safe_next_url(raw, default="/dashboard")
     return HTTPException(
         status_code=307,
-        headers={"Location": f"/auth/login?next={next_url}"},
+        headers={"Location": f"/auth/login?next={quote(safe, safe='/')}"},
     )
 
 
