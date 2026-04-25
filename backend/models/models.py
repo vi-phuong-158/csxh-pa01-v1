@@ -13,16 +13,16 @@ class DoiTuong(Base):
     __tablename__ = "doi_tuong"
 
     cccd: Mapped[str] = mapped_column(String, primary_key=True)
-    ho_ten: Mapped[Optional[str]] = mapped_column(String)
+    ho_ten: Mapped[Optional[str]] = mapped_column(String, index=True)
     ngay_sinh: Mapped[Optional[datetime]] = mapped_column(Date)
-    gioi_tinh: Mapped[Optional[str]] = mapped_column(String)
+    gioi_tinh: Mapped[Optional[str]] = mapped_column(String, index=True)
     dia_chi_tinh: Mapped[Optional[str]] = mapped_column(String, default="Phú Thọ")
-    dia_chi_xa: Mapped[Optional[str]] = mapped_column(String)
+    dia_chi_xa: Mapped[Optional[str]] = mapped_column(String, index=True)
     anh_chan_dung: Mapped[Optional[str]] = mapped_column(String)
-    phan_loai_nghe_nghiep: Mapped[Optional[str]] = mapped_column(String)
+    phan_loai_nghe_nghiep: Mapped[Optional[str]] = mapped_column(String, index=True)
     chi_tiet_nghe_nghiep: Mapped[Optional[str]] = mapped_column(String)
     ghi_chu_chung: Mapped[Optional[str]] = mapped_column(Text)
-    is_draft: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_draft: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
