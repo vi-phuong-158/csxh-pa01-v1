@@ -15,6 +15,7 @@ from backend.limiter import limiter
 from backend.routes import auth, dashboard, tra_cuu, ra_soat, profile, nhap_lieu
 from backend.routes import quan_ly_user, audit_log, nguon_du_lieu, nhap_excel
 from backend.routes import danh_ba
+from backend.routes import bao_cao
 
 logging.basicConfig(level=logging.INFO if settings.DEBUG else logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -65,6 +66,7 @@ app.include_router(audit_log.router)
 app.include_router(nguon_du_lieu.router)
 app.include_router(nhap_excel.router)
 app.include_router(danh_ba.router)
+app.include_router(bao_cao.router)
 
 
 @app.get("/")
