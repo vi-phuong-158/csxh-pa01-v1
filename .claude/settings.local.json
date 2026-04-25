@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree -L 3 -d /d/Code/csxh-pa01-v1 --ignore node_modules)",
+      "Bash(grep -r \"st\\\\\\\\.write\\\\|st\\\\\\\\.button\\\\|st\\\\\\\\.text_input\\\\|st\\\\\\\\.form\\\\|st\\\\\\\\.sidebar\" /d/Code/csxh-pa01-v1/views --include=\"*.py\")",
+      "Bash(grep -l \"st\\\\\\\\.cache_data\\\\|st\\\\\\\\.cache_resource\" /d/Code/csxh-pa01-v1/views/*.py /d/Code/csxh-pa01-v1/database.py)",
+      "Bash(python -c ' *)",
+      "Bash(pip install *)"
+    ]
+  }
+}

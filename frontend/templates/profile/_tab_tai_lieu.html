@@ -1,0 +1,58 @@
+<div class="space-y-4">
+  {% if profile.tai_lieu %}
+  <div class="card overflow-x-auto">
+    <table class="table-auto w-full">
+      <thead><tr class="text-left text-sm text-slate-400 border-b border-slate-700"><th class="pb-2">Tên file</th><th class="pb-2">Loại</th><th class="pb-2">Mô tả</th><th class="pb-2"></th></tr></thead>
+      <tbody>
+        {% for tl in profile.tai_lieu %}
+        <tr class="border-b border-slate-700/50 hover:bg-surface-700/30">
+          <td class="py-2">
+            <a href="/static/{{ tl.duong_dan }}" target="_blank" class="text-primary-400 hover:underline text-xs flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+              {{ tl.ten_goc or tl.duong_dan }}
+            </a>
+          </td>
+          <td><span class="badge badge-gray">{{ tl.loai or '—' }}</span></td>
+          <td class="text-slate-400 text-xs">{{ tl.mo_ta or '—' }}</td>
+          <td class="text-right">
+            <button hx-delete="/profile/{{ profile.cccd }}/tai-lieu/{{ tl.id }}"
+                    hx-target="#tab-content" hx-swap="innerHTML" hx-confirm="Xóa tài liệu này?"
+                    class="text-red-400 hover:text-red-300 text-xs">Xóa</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <h3 class="text-sm font-semibold text-white mb-3">Thêm tài liệu mới</h3>
+    <form hx-post="/profile/{{ profile.cccd }}/upload-doc" hx-target="#tab-content" hx-swap="innerHTML" hx-encoding="multipart/form-data" class="space-y-3">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="label">Loại tài liệu</label>
+          <select name="loai_tai_lieu" class="input">
+            <option value="">-- Chọn loại --</option>
+            {% for opt in loai_tai_lieu %}
+            <option value="{{ opt }}">{{ opt }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="label">Mô tả ngắn</label>
+          <input type="text" name="mo_ta" class="input" placeholder="Ghi chú về file..." />
+        </div>
+      </div>
+      <div>
+        <label class="label">File đính kèm (PDF, DOCX, JPG, PNG)</label>
+        <input type="file" name="file" class="input py-1.5" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+      </div>
+      <div class="pt-2">
+        <button type="submit" class="btn-primary w-full md:w-auto">
+          <span class="htmx-indicator animate-spin mr-2">⏳</span> Tải lên
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

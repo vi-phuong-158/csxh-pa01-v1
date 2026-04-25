@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Lịch sử thay đổi · PA01{% endblock %}
+{% block page_title %}Lịch sử thay đổi{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <!-- Filters -->
+  <form method="get" class="card flex flex-wrap gap-3 items-end">
+    <div>
+      <label class="label">Người thực hiện</label>
+      <input name="nguoi" type="text" class="input w-40" value="{{ filter_nguoi }}" />
+    </div>
+    <div>
+      <label class="label">Hành động</label>
+      <select name="hanh_dong" class="input w-40">
+        <option value="">-- Tất cả --</option>
+        {% for a in ['INSERT','UPDATE','DELETE','LOGIN','LOGIN_LOCK'] %}
+        <option value="{{ a }}" {% if filter_hanh_dong == a %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn-primary text-xs">Lọc</button>
+    <a href="/audit-log" class="btn-ghost text-xs">Xóa lọc</a>
+    <span class="text-xs text-slate-400 ml-auto">{{ total }} bản ghi</span>
+  </form>
+
+  <div class="card overflow-x-auto">
+    <table class="table-auto w-full">
+      <thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Hành động</th><th>Bảng</th><th>Khóa chính</th><th>Nội dung</th></tr></thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="text-xs text-slate-500 whitespace-nowrap">{{ log.created_at.strftime('%d/%m/%Y %H:%M') if log.created_at else '—' }}</td>
+          <td class="font-mono text-xs">{{ log.nguoi_thuc_hien or '—' }}</td>
+          <td>
+            {% set color = {'INSERT':'badge-green','UPDATE':'badge-blue','DELETE':'badge-red','LOGIN':'badge-gray','LOGIN_LOCK':'badge-yellow'} %}
+            <span class="badge {{ color.get(log.hanh_dong, 'badge-gray') }}">{{ log.hanh_dong }}</span>
+          </td>
+          <td class="text-xs">{{ log.bang }}</td>
+          <td class="font-mono text-xs">{{ log.khoa_chinh or '—' }}</td>
+          <td class="text-xs text-slate-400 max-w-xs truncate">{{ log.du_lieu_moi or log.du_lieu_cu or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if pages > 1 %}
+  <div class="flex gap-1 justify-center">
+    {% for p in range(1, pages+1) %}
+    <a href="?page={{ p }}&nguoi={{ filter_nguoi }}&hanh_dong={{ filter_hanh_dong }}"
+       class="px-3 py-1 rounded text-xs {% if p == page %}bg-primary-700 text-white{% else %}bg-surface-700 text-slate-300 hover:bg-slate-600{% endif %}">{{ p }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

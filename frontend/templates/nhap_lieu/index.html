@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Nhập liệu · PA01{% endblock %}
+{% block page_title %}Nhập liệu hồ sơ mới{% endblock %}
+
+{% block content %}
+<div class="max-w-sm mx-auto mt-10">
+  <div class="card">
+    <h2 class="text-base font-semibold text-white mb-1">Bắt đầu nhập liệu</h2>
+    <p class="text-xs text-slate-400 mb-5">Nhập số CCCD (9 hoặc 12 chữ số) để tạo hồ sơ mới.</p>
+
+    {% if error %}
+    <div class="mb-4 px-3 py-2.5 bg-red-900/40 border border-red-700/50 rounded-lg text-sm text-red-300">{{ error }}</div>
+    {% endif %}
+
+    <form action="/nhap-lieu/start" method="post" class="space-y-4">
+      <div>
+        <label class="label">Số CCCD <span class="text-red-400">*</span></label>
+        <input name="cccd" type="text" class="input font-mono text-lg tracking-widest"
+               placeholder="123456789012" maxlength="12" pattern="[0-9]{9,12}"
+               autofocus required />
+        <p class="text-xs text-slate-500 mt-1">9 hoặc 12 chữ số</p>
+      </div>
+      <button type="submit" class="btn-primary w-full justify-center">Tạo hồ sơ</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

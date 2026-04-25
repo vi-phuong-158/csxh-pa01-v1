@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Nguồn dữ liệu · PA01{% endblock %}
+{% block page_title %}Nguồn dữ liệu{% endblock %}
+
+{% block content %}
+<div class="card overflow-x-auto">
+  <table class="table-auto w-full">
+    <thead><tr><th>Tên nguồn</th><th>Loại</th><th>Thời gian import</th><th>Người import</th><th>File gốc</th><th>Ghi chú</th></tr></thead>
+    <tbody>
+      {% for s in sources %}
+      <tr>
+        <td class="font-medium">{{ s.ten_nguon }}</td>
+        <td><span class="badge badge-gray">{{ s.loai_nguon or '—' }}</span></td>
+        <td class="text-xs text-slate-400">{{ s.thoi_gian_import.strftime('%d/%m/%Y %H:%M') if s.thoi_gian_import else '—' }}</td>
+        <td>{{ s.nguoi_import or '—' }}</td>
+        <td class="text-xs font-mono">{{ s.file_goc or '—' }}</td>
+        <td class="text-slate-400">{{ s.ghi_chu or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="text-center text-slate-500 py-8">Chưa có nguồn dữ liệu nào</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

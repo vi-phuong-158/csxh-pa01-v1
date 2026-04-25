@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Nhập liệu {{ profile.cccd }} · PA01{% endblock %}
+{% block page_title %}Nhập liệu: {{ profile.cccd }}{% endblock %}
+
+{% block content %}
+<div x-data="{ activeTab: 'basic' }" class="space-y-4">
+
+  <!-- Progress header -->
+  <div class="card flex items-center justify-between">
+    <div>
+      <p class="text-xs text-slate-400">CCCD: <span class="font-mono text-slate-200">{{ profile.cccd }}</span></p>
+      <p class="text-sm font-semibold text-white mt-0.5">{{ profile.ho_ten or '(Chưa điền tên)' }}</p>
+    </div>
+    <div class="flex gap-2">
+      <button hx-delete="/nhap-lieu/{{ profile.cccd }}"
+              hx-confirm="Hủy và xóa bản ghi nháp này?"
+              hx-push-url="/nhap-lieu"
+              class="btn-ghost text-xs">Hủy</button>
+      <button hx-post="/nhap-lieu/{{ profile.cccd }}/commit"
+              hx-confirm="Hoàn tất nhập liệu? Hồ sơ sẽ được lưu chính thức."
+              class="btn-primary text-xs">✓ Hoàn tất</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="border-b border-slate-700 flex overflow-x-auto">
+    {% set tabs = [('basic','Thông tin cơ bản'),('nhan-than','Nhân thân'),('lien-he','Liên hệ'),('tai-chinh','Tài chính'),('phuong-tien','Phương tiện'),('ho-so-dac-thu','Hồ sơ đặc thù'),('qua-trinh','Quá trình')] %}
+    {% for id, label in tabs %}
+    <button @click="activeTab='{{ id }}';
+      {% if id != 'basic' %}
+      htmx.ajax('GET', '/profile/{{ profile.cccd }}/tab/{{ id }}', '#tab-content')
+      {% endif %}"
+      :class="activeTab==='{{ id }}' ? 'tab-btn-active' : ''"
+      class="tab-btn">{{ label }}</button>
+    {% endfor %}
+  </div>
+
+  <div id="tab-content">
+    <div x-show="activeTab==='basic'">
+      {% include "profile/_tab_basic.html" %}
+    </div>
+  </div>
+</div>
+{% endblock %}

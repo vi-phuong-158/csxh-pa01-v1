@@ -1,0 +1,70 @@
+<form hx-post="/profile/{{ profile.cccd }}/update"
+      hx-target="#save-msg"
+      hx-swap="innerHTML"
+      class="card space-y-4">
+  <div class="flex items-center justify-between mb-2">
+    <p class="text-sm font-semibold text-slate-200">Thông tin cơ bản</p>
+    <div class="flex items-center gap-2">
+      <span id="save-msg" class="text-xs"></span>
+      <button type="submit" class="btn-primary text-xs">Lưu thay đổi</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="label">Họ và tên <span class="text-red-400">*</span></label>
+      <input name="ho_ten" type="text" class="input" value="{{ profile.ho_ten or '' }}" required />
+    </div>
+    <div>
+      <label class="label">CCCD</label>
+      <input type="text" class="input bg-surface-900 opacity-60 cursor-not-allowed" value="{{ profile.cccd }}" disabled />
+    </div>
+    <div>
+      <label class="label">Ngày sinh</label>
+      <input name="ngay_sinh" type="date" class="input" value="{{ profile.ngay_sinh or '' }}" />
+    </div>
+    <div>
+      <label class="label">Giới tính</label>
+      <select name="gioi_tinh" class="input">
+        <option value="">-- Chọn --</option>
+        {% for g in ['Nam', 'Nữ', 'Khác'] %}
+        <option value="{{ g }}" {% if profile.gioi_tinh == g %}selected{% endif %}>{{ g }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="label">Tỉnh/Thành</label>
+      <select name="dia_chi_tinh" class="input">
+        {% for t in tinh_thanh %}
+        <option value="{{ t }}" {% if profile.dia_chi_tinh == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="label">Xã/Phường</label>
+      <select name="dia_chi_xa" class="input">
+        <option value="">-- Chọn --</option>
+        {% for x in xa_phuong %}
+        <option value="{{ x }}" {% if profile.dia_chi_xa == x %}selected{% endif %}>{{ x }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="label">Phân loại nghề nghiệp</label>
+      <select name="phan_loai_nghe_nghiep" class="input">
+        <option value="">-- Chọn --</option>
+        {% for n in phan_loai_nghe_nghiep %}
+        <option value="{{ n }}" {% if profile.phan_loai_nghe_nghiep == n %}selected{% endif %}>{{ n }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="label">Chi tiết nghề nghiệp</label>
+      <input name="chi_tiet_nghe_nghiep" type="text" class="input" value="{{ profile.chi_tiet_nghe_nghiep or '' }}" />
+    </div>
+    <div class="md:col-span-2">
+      <label class="label">Ghi chú chung</label>
+      <textarea name="ghi_chu_chung" rows="3" class="input resize-none">{{ profile.ghi_chu_chung or '' }}</textarea>
+    </div>
+  </div>
+</form>

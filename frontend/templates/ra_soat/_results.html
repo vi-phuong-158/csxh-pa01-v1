@@ -1,0 +1,51 @@
+<div class="card mt-4">
+  <h3 class="text-sm font-semibold text-white mb-3">Kết quả rà soát</h3>
+  {% if error %}
+    <div class="text-red-400 text-sm p-3 bg-red-900/30 rounded border border-red-800">
+      {{ error }}
+    </div>
+  {% else %}
+    <div class="overflow-x-auto">
+      <table class="table-auto w-full text-sm">
+        <thead>
+          <tr>
+            <th class="w-12 text-center">STT</th>
+            <th>Tên đầu vào</th>
+            <th>Tên khớp trong DB</th>
+            <th class="w-24 text-center">Độ khớp</th>
+            <th class="w-48 text-center">Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in results %}
+          <tr class="hover:bg-surface-700/50 transition-colors">
+            <td class="text-center text-slate-500">{{ loop.index }}</td>
+            <td class="font-medium">{{ r.input }}</td>
+            <td>
+              {% if r.matched %}
+                <span class="text-primary-400">{{ r.matched }}</span>
+              {% else %}
+                <span class="text-slate-500 italic">Không có</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if r.score >= 95 %}
+                <span class="badge badge-green">{{ r.score }}%</span>
+              {% elif r.score >= 80 %}
+                <span class="badge badge-yellow">{{ r.score }}%</span>
+              {% elif r.score >= 60 %}
+                <span class="badge badge-gray">{{ r.score }}%</span>
+              {% else %}
+                <span class="text-slate-500">{{ r.score }}%</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <span class="text-xs">{{ r.status }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>

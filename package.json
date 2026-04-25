@@ -1,0 +1,12 @@
+{
+  "name": "csxh-pa01-v1",
+  "version": "1.0.0",
+  "description": "Security Profile 360 - Frontend Build",
+  "scripts": {
+    "build:css": "npx tailwindcss -i ./frontend/static/css/input.css -o ./frontend/static/css/output.css --minify",
+    "watch:css": "npx tailwindcss -i ./frontend/static/css/input.css -o ./frontend/static/css/output.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.4"
+  }
+}

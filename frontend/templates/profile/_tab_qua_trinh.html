@@ -1,0 +1,43 @@
+<div class="space-y-4">
+  {% if profile.qua_trinh %}
+  <div class="space-y-2">
+    {% for qt in profile.qua_trinh | sort(attribute='thoi_gian', reverse=True) %}
+    <div class="card flex items-start gap-3">
+      <div class="shrink-0 text-xs text-slate-500 w-28">{{ qt.thoi_gian or '—' }}</div>
+      <div class="flex-1">
+        <p class="text-sm text-slate-200">{{ qt.noi_dung or '—' }}</p>
+        {% if qt.ghi_chu %}<p class="text-xs text-slate-400 mt-0.5">{{ qt.ghi_chu }}</p>{% endif %}
+      </div>
+      <button hx-delete="/profile/{{ profile.cccd }}/qua-trinh/{{ qt.id }}"
+              hx-target="#tab-content" hx-swap="innerHTML" hx-confirm="Xóa?"
+              class="text-red-400 hover:text-red-300 text-xs shrink-0">Xóa</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="card" x-data="{open:false}">
+    <button @click="open=!open" class="btn-secondary text-xs w-full justify-center">+ Thêm sự kiện</button>
+    <form x-show="open" x-cloak
+          hx-post="/profile/{{ profile.cccd }}/qua-trinh"
+          hx-target="#tab-content" hx-swap="innerHTML"
+          class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div>
+        <label class="label">Thời gian (VD: 2023-06)</label>
+        <input name="thoi_gian" type="text" class="input" placeholder="MM/YYYY hoặc YYYY" />
+      </div>
+      <div>
+        <label class="label">Ghi chú</label>
+        <input name="ghi_chu" type="text" class="input" />
+      </div>
+      <div class="md:col-span-2">
+        <label class="label">Nội dung</label>
+        <textarea name="noi_dung" rows="3" class="input resize-none" required></textarea>
+      </div>
+      <div class="md:col-span-2 flex gap-2 justify-end">
+        <button type="button" @click="open=false" class="btn-ghost text-xs">Hủy</button>
+        <button type="submit" class="btn-primary text-xs">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>

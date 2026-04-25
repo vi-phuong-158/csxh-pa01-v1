@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Profile 360 - Dữ liệu An ninh trong tầm tay</title>
+    <style>
+        /* CSS Reset & Base */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #f1f5f9;
+            line-height: 1.6;
+        }
+
+        /* Color Palette */
+        :root {
+            --primary-red: #991b1b;
+            --primary-red-hover: #b91c1c;
+            --accent-gold: #d4af37;
+            --accent-green: #14532d;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-light: #e2e8f0;
+            --text-muted: #94a3b8;
+        }
+
+        /* Layout Utilities */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .text-center { text-align: center; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-8 { margin-top: 2rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .py-12 { padding-top: 3rem; padding-bottom: 3rem; }
+
+        /* Typography */
+        h1, h2, h3 { font-weight: 700; color: #fff; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        h2 { font-size: 2rem; margin-bottom: 1.5rem; color: var(--accent-gold); border-bottom: 2px solid var(--accent-gold); padding-bottom: 0.5rem; display: inline-block; }
+        h3 { font-size: 1.5rem; margin-bottom: 1rem; color: var(--accent-gold); }
+        p { margin-bottom: 1rem; color: var(--text-light); }
+        .subtitle { font-size: 1.25rem; color: var(--text-muted); max-width: 800px; margin: 0 auto; }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--primary-red) 100%);
+            padding: 5rem 20px;
+            text-align: center;
+            border-bottom: 4px solid var(--accent-gold);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        /* Badges */
+        .badge {
+            display: inline-block;
+            background-color: var(--accent-gold);
+            color: #000;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+
+        /* Grid System */
+        .grid { display: grid; gap: 2rem; }
+        .grid-cols-1 { grid-template-columns: 1fr; }
+        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+        @media (max-width: 768px) {
+            .grid-cols-2, .grid-cols-3 { grid-template-columns: 1fr; }
+            h1 { font-size: 2rem; }
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            padding: 2rem;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: var(--primary-red);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+            transform-origin: left;
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--accent-gold); }
+        .card:hover::before { transform: scaleX(1); }
+
+        /* Icon placeholder */
+        .icon-circle {
+            width: 64px; height: 64px;
+            border-radius: 50%;
+            background-color: rgba(153, 27, 27, 0.2);
+            border: 2px solid var(--primary-red);
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent-gold);
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        /* Images */
+        .image-container {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--accent-gold);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .image-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.5s ease;
+        }
+        .image-container:hover img { transform: scale(1.02); }
+        .image-caption {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(0,0,0,0.8);
+            color: var(--accent-gold);
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--primary-red);
+        }
+
+        /* Author Section */
+        .author-box {
+            background: linear-gradient(180deg, var(--bg-card) 0%, rgba(20, 83, 45, 0.3) 100%);
+            border-left: 4px solid var(--accent-gold);
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+        }
+        .author-name { font-size: 1.25rem; font-weight: bold; color: #fff; margin-bottom: 0.25rem; }
+        .author-title { color: var(--accent-gold); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Highlight text */
+        .highlight { color: var(--accent-gold); font-weight: bold; }
+
+        /* Footer */
+        footer {
+            background-color: #0b1120;
+            padding: 2rem;
+            text-align: center;
+            border-top: 1px solid var(--bg-card);
+            color: var(--text-muted);
+        }
+
+        /* ============================================ */
+        /* INTERACTIVE DEMO STYLES                      */
+        /* ============================================ */
+        .demo-shell {
+            background: #0b1120;
+            border: 2px solid var(--accent-gold);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            display: flex;
+            min-height: 620px;
+            margin-top: 2rem;
+        }
+        @media (max-width: 768px) {
+            .demo-shell { flex-direction: column; min-height: auto; }
+            .demo-sidebar { width: 100% !important; flex-direction: row !important; border-right: none !important; border-bottom: 2px solid #1e293b !important; padding: 10px !important; }
+            .demo-sidebar .demo-nav-item { padding: 8px 12px !important; font-size: 0.8rem !important; }
+            .demo-sidebar .demo-logo { display: none; }
+        }
+        .demo-sidebar {
+            width: 220px;
+            min-width: 220px;
+            background: linear-gradient(180deg, #131c31 0%, #0b1120 100%);
+            border-right: 2px solid #1e293b;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+        .demo-logo {
+            text-align: center;
+            padding: 0 15px 20px;
+            border-bottom: 1px solid #1e293b;
+            margin-bottom: 10px;
+        }
+        .demo-logo-text { color: var(--accent-gold); font-weight: 800; font-size: 0.95rem; letter-spacing: 1px; }
+        .demo-logo-sub { color: var(--text-muted); font-size: 0.7rem; margin-top: 2px; }
+        .demo-nav-item {
+            padding: 12px 20px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            border-left: 3px solid transparent;
+            user-select: none;
+        }
+        .demo-nav-item:hover { background: rgba(255,255,255,0.04); color: #fff; }
+        .demo-nav-item.active {
+            background: rgba(153,27,27,0.2);
+            color: var(--accent-gold);
+            border-left-color: var(--accent-gold);
+            font-weight: 600;
+        }
+        .demo-content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            background: var(--bg-dark);
+        }
+        .demo-page { display: none; }
+        .demo-page.active { display: block; }
+        .demo-title { font-size: 1.4rem; color: #fff; margin-bottom: 6px; }
+        .demo-subtitle { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px; }
+        .demo-hr { border: none; border-top: 1px solid #1e293b; margin: 16px 0; }
+
+        /* Metric Cards */
+        .demo-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        @media (max-width: 768px) { .demo-metrics { grid-template-columns: repeat(2, 1fr); } }
+        .demo-metric {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #2d3a4f;
+            text-align: center;
+        }
+        .demo-metric-icon { font-size: 1.3rem; margin-bottom: 4px; }
+        .demo-metric-value { font-size: 1.8rem; font-weight: 800; color: #fff; }
+        .demo-metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Charts area */
+        .demo-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        @media (max-width: 768px) { .demo-charts { grid-template-columns: 1fr; } }
+        .demo-chart-box {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #2d3a4f;
+        }
+        .demo-chart-title { font-size: 0.85rem; color: var(--accent-gold); margin-bottom: 12px; font-weight: 600; }
+
+        /* Search bar */
+        .demo-search-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .demo-search-bar input {
+            flex: 1;
+            background: #1a2332;
+            border: 1px solid #2d3a4f;
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .demo-search-bar input:focus { border-color: var(--accent-gold); }
+        .demo-search-bar input::placeholder { color: #4a5568; }
+        .demo-search-bar select {
+            background: #1a2332;
+            border: 1px solid #2d3a4f;
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: #fff;
+            font-size: 0.85rem;
+            outline: none;
+            cursor: pointer;
+        }
+        .demo-search-btn {
+            background: var(--primary-red);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        .demo-search-btn:hover { background: var(--primary-red-hover); }
+
+        /* Result table */
+        .demo-table-wrap { overflow-x: auto; }
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .demo-table th {
+            background: #131c31;
+            color: var(--accent-gold);
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #2d3a4f;
+            white-space: nowrap;
+        }
+        .demo-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #1e293b;
+            color: var(--text-light);
+            vertical-align: top;
+        }
+        .demo-table tr { cursor: pointer; transition: background 0.15s; }
+        .demo-table tbody tr:hover { background: rgba(153,27,27,0.15); }
+        .demo-table .match-source {
+            color: #60a5fa;
+            font-size: 0.78rem;
+        }
+
+        /* Info badge (search result count) */
+        .demo-info {
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 6px;
+            padding: 8px 14px;
+            color: #93c5fd;
+            font-size: 0.85rem;
+            margin-bottom: 14px;
+        }
+
+        /* Profile view */
+        .demo-profile-header {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) { .demo-profile-header { flex-direction: column; } }
+        .demo-avatar {
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-red), #4a1515);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; color: #fff; font-weight: 700;
+            border: 3px solid var(--accent-gold);
+            flex-shrink: 0;
+        }
+        .demo-profile-info { flex: 1; }
+        .demo-profile-name { font-size: 1.3rem; color: #fff; font-weight: 700; }
+        .demo-profile-cccd { color: var(--accent-gold); font-size: 0.85rem; font-family: monospace; letter-spacing: 1px; }
+        .demo-profile-meta { color: var(--text-muted); font-size: 0.82rem; margin-top: 6px; }
+        .demo-back-btn {
+            background: transparent;
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            padding: 6px 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            transition: all 0.2s;
+            margin-bottom: 14px;
+            display: inline-block;
+        }
+        .demo-back-btn:hover { background: rgba(212,175,55,0.1); }
+
+        /* Profile tabs */
+        .demo-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid #1e293b;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .demo-tab {
+            padding: 8px 16px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.82rem;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .demo-tab:hover { color: #fff; }
+        .demo-tab.active { color: var(--accent-gold); border-bottom-color: var(--accent-gold); font-weight: 600; }
+        .demo-tab-content { display: none; }
+        .demo-tab-content.active { display: block; }
+
+        /* Satellite data cards */
+        .demo-sat-card {
+            background: #131c31;
+            border: 1px solid #2d3a4f;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            font-size: 0.84rem;
+        }
+        .demo-sat-label { color: var(--accent-gold); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .demo-sat-value { color: var(--text-light); margin-top: 3px; }
+
+        /* Recent records table */
+        .demo-recent-title { font-size: 0.95rem; color: #fff; font-weight: 600; margin-bottom: 10px; }
+
+        /* Toast notification */
+        .demo-toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(20,83,45,0.95);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            z-index: 9999;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--accent-gold);
+        }
+        .demo-toast.show { transform: translateY(0); opacity: 1; }
+
+        /* Workflow section */
+        .demo-workflow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 2rem; position: relative; }
+        @media (max-width: 768px) { .demo-workflow { grid-template-columns: 1fr; } }
+        .demo-wf-step {
+            text-align: center;
+            padding: 20px 15px;
+            position: relative;
+        }
+        .demo-wf-num {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: var(--primary-red);
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            margin: 0 auto 10px;
+            border: 2px solid var(--accent-gold);
+        }
+        .demo-wf-title { color: #fff; font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; }
+        .demo-wf-desc { color: var(--text-muted); font-size: 0.78rem; }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header>
+        <div class="container">
+            <span class="badge">Sáng kiến cấp Cơ sở 2026</span>
+            <h1>Security Profile 360</h1>
+            <p class="subtitle">Dữ liệu An ninh trong tầm tay – Chuyển đổi số toàn diện công tác quản lý đối tượng nghiệp vụ, rút ngắn thời gian xử lý từ hàng giờ xuống tính bằng giây, với độ bảo mật tuyệt đối.</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Tác giả -->
+        <section class="py-12" style="background-color: var(--bg-dark);">
+            <div class="container">
+                <div class="text-center mb-8">
+                    <h2>Nhóm tác giả Sáng kiến</h2>
+                </div>
+                <div class="grid grid-cols-2 mt-8">
+                    <div class="author-box">
+                        <div class="author-title">Trưởng Công an phường Phong Châu</div>
+                        <div class="author-name">Thượng tá Nguyễn Tiến Công</div>
+                        <p class="mt-4 text-sm" style="color: var(--text-muted);">Khảo sát thực tiễn, định hướng nghiệp vụ và chuẩn hóa quy trình quản lý.</p>
+                    </div>
+                    <div class="author-box">
+                        <div class="author-title">Cán bộ Phòng An ninh đối ngoại (PA01)</div>
+                        <div class="author-name">Đại úy Vi Ngọc Phương</div>
+                        <p class="mt-4 text-sm" style="color: var(--text-muted);">Phát triển hệ thống, lập trình, mã hóa và đóng gói phần mềm.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tính năng cốt lõi -->
+        <section class="py-12" style="background-color: rgba(30, 41, 59, 0.4);">
+            <div class="container">
+                <div class="text-center mb-8">
+                    <h2>Tính năng Cốt lõi</h2>
+                    <p class="subtitle mt-4">Hệ thống áp dụng kiến trúc mạng lưới, lấy Số CCCD/Định danh làm khóa chính để liên kết đa chiều.</p>
+                </div>
+                <div class="grid grid-cols-3 mt-8">
+                    <div class="card">
+                        <div class="icon-circle">01</div>
+                        <h3>Hoạt động Độc lập (Offline)</h3>
+                        <p>Được đóng gói tự động thành tệp hệ thống thực thi độc lập (Portable) bằng PyInstaller. Không cần cài đặt rườm rà, không yêu cầu kết nối Internet hay máy chủ tốn kém. Hoạt động trên mọi máy tính Công an cấp cơ sở.</p>
+                    </div>
+                    <div class="card">
+                        <div class="icon-circle">02</div>
+                        <h3>Bảo mật Tuyệt đối</h3>
+                        <p>Tất cả cơ sở dữ liệu đều được mã hóa bằng thuật toán <span class="highlight">SQLCipher AES-256</span> tiêu chuẩn quân sự. Rủi ro lộ lọt thông tin nghiệp vụ bị triệt tiêu hoàn toàn ngay cả khi thiết bị lưu trữ bị đánh cắp.</p>
+                    </div>
+                    <div class="card">
+                        <div class="icon-circle">03</div>
+                        <h3>Tìm kiếm Mờ (Fuzzy Matching)</h3>
+                        <p>Ứng dụng công nghệ xử lý linh hoạt giúp nhận diện đối tượng ngay cả khi nhập sai dấu tiếng Việt, nhầm lẫn chữ cái hay đảo thứ tự họ tên. Không bỏ sót bất kì đối tượng quản lý nào.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Giao diện Hệ thống -->
+        <section class="py-12">
+            <div class="container">
+                <div class="text-center mb-8">
+                    <h2>Giao diện Hệ thống Trực quan</h2>
+                    <p class="subtitle mt-4">Thiết kế thông minh, thân thiện, giúp cán bộ chiến sĩ có thể sử dụng ngay mà không đòi hỏi chuyên môn nghiệp vụ công nghệ cao.</p>
+                </div>
+                <div class="grid grid-cols-2 mt-8">
+                    <div class="image-container">
+                        <img src="assets/dashboard.png" alt="Ảnh màn hình Dashboard">
+                        <div class="image-caption">Trực quan Dashboard - Báo cáo thống kê tổng quan</div>
+                    </div>
+                    <div class="image-container">
+                        <img src="assets/object_management.png" alt="Ảnh màn hình Quản lý đối tượng">
+                        <div class="image-caption">Quản trị Hồ sơ Đối tượng Liên kết đa chiều</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- INTERACTIVE DEMO SECTION                     -->
+        <!-- ============================================ -->
+        <section class="py-12" style="background: linear-gradient(180deg, rgba(15,23,42,1) 0%, rgba(11,17,32,1) 100%);">
+            <div class="container">
+                <div class="text-center mb-8">
+                    <h2>Trải nghiệm Phần mềm Trực tuyến</h2>
+                    <p class="subtitle mt-4">Mô phỏng đầy đủ giao diện Security Profile 360. Trải nghiệm Dashboard, Tra cứu Fuzzy Matching và Hồ sơ Đối tượng liên kết đa chiều ngay trên trình duyệt.</p>
+                </div>
+
+                <!-- Quy trình hoạt động -->
+                <div class="demo-workflow">
+                    <div class="demo-wf-step">
+                        <div class="demo-wf-num">1</div>
+                        <div class="demo-wf-title">Tiếp nhận</div>
+                        <div class="demo-wf-desc">Nhập trực tiếp hoặc Excel mẫu</div>
+                    </div>
+                    <div class="demo-wf-step">
+                        <div class="demo-wf-num">2</div>
+                        <div class="demo-wf-title">Liên kết</div>
+                        <div class="demo-wf-desc">Fuzzy Matching & Auto-link</div>
+                    </div>
+                    <div class="demo-wf-step">
+                        <div class="demo-wf-num">3</div>
+                        <div class="demo-wf-title">Mã hóa</div>
+                        <div class="demo-wf-desc">SQLCipher AES-256</div>
+                    </div>
+                    <div class="demo-wf-step">
+                        <div class="demo-wf-num">4</div>
+                        <div class="demo-wf-title">Trích xuất</div>
+                        <div class="demo-wf-desc">Xuất PDF & Báo cáo</div>
+                    </div>
+                </div>
+
+                <!-- App Shell -->
+                <div class="demo-shell" id="demoShell">
+                    <!-- Sidebar -->
+                    <div class="demo-sidebar">
+                        <div class="demo-logo">
+                            <div class="demo-logo-text">🛡️ SP360</div>
+                            <div class="demo-logo-sub">Security Profile 360</div>
+                        </div>
+                        <div class="demo-nav-item active" data-page="dashboard">🏠 Dashboard</div>
+                        <div class="demo-nav-item" data-page="search">🔍 Tra cứu</div>
+                        <div class="demo-nav-item" data-page="nhaplieu">📝 Nhập liệu</div>
+                        <div class="demo-nav-item" data-page="rasoat">📋 Rà soát</div>
+                    </div>
+
+                    <!-- Content Area -->
+                    <div class="demo-content" id="demoContent">
+
+                        <!-- PAGE: Dashboard -->
+                        <div class="demo-page active" id="page-dashboard">
+                            <div class="demo-title">🏠 Dashboard</div>
+                            <div class="demo-subtitle">Tổng quan hệ thống quản lý hồ sơ an ninh</div>
+                            <hr class="demo-hr">
+
+                            <div class="demo-metrics">
+                                <div class="demo-metric">
+                                    <div class="demo-metric-icon">📋</div>
+                                    <div class="demo-metric-value" id="metricTotal">0</div>
+                                    <div class="demo-metric-label">Tổng đối tượng</div>
+                                </div>
+                                <div class="demo-metric">
+                                    <div class="demo-metric-icon">👨</div>
+                                    <div class="demo-metric-value" id="metricNam">0</div>
+                                    <div class="demo-metric-label">Nam giới</div>
+                                </div>
+                                <div class="demo-metric">
+                                    <div class="demo-metric-icon">👩</div>
+                                    <div class="demo-metric-value" id="metricNu">0</div>
+                                    <div class="demo-metric-label">Nữ giới</div>
+                                </div>
+                                <div class="demo-metric">
+                                    <div class="demo-metric-icon">🌐</div>
+                                    <div class="demo-metric-value" id="metricNN">0</div>
+                                    <div class="demo-metric-label">Yếu tố nước ngoài</div>
+                                </div>
+                            </div>
+
+                            <div class="demo-charts">
+                                <div class="demo-chart-box">
+                                    <div class="demo-chart-title">👥 Phân bố giới tính</div>
+                                    <canvas id="chartGender" width="300" height="200"></canvas>
+                                </div>
+                                <div class="demo-chart-box">
+                                    <div class="demo-chart-title">📊 Phân loại nghề nghiệp</div>
+                                    <canvas id="chartJob" width="300" height="200"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="demo-recent-title">📋 Hồ sơ được thêm gần đây</div>
+                            <div class="demo-table-wrap">
+                                <table class="demo-table" id="recentTable">
+                                    <thead>
+                                        <tr>
+                                            <th>CCCD</th><th>Họ tên</th><th>Ngày sinh</th><th>Giới tính</th><th>Xã/Phường</th><th>Phân loại</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- PAGE: Tra cứu -->
+                        <div class="demo-page" id="page-search">
+                            <div class="demo-title">🔍 Tra cứu</div>
+                            <div class="demo-subtitle">Tìm kiếm và tra cứu hồ sơ đối tượng</div>
+                            <hr class="demo-hr">
+
+                            <div class="demo-search-bar">
+                                <input type="text" id="searchInput" placeholder="Nhập CCCD, họ tên, SĐT, tài khoản NH, biển số xe...">
+                                <select id="searchType">
+                                    <option value="all">Tất cả</option>
+                                    <option value="cccd">CCCD</option>
+                                    <option value="name">Họ tên</option>
+                                    <option value="phone">📱 SĐT</option>
+                                    <option value="bank">🏦 Tài khoản NH</option>
+                                    <option value="vehicle">🚗 Biển số xe</option>
+                                </select>
+                                <button class="demo-search-btn" id="searchBtn">🔍 Tìm kiếm</button>
+                            </div>
+
+                            <div id="searchInfo" class="demo-info" style="display:none;"></div>
+
+                            <div class="demo-table-wrap">
+                                <table class="demo-table" id="searchTable">
+                                    <thead>
+                                        <tr>
+                                            <th>CCCD</th><th>Họ tên</th><th>Ngày sinh</th><th>Giới tính</th><th>Xã/Phường</th><th>Phân loại</th><th>🔗 Nguồn</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                            <div id="searchEmpty" style="display:none; text-align:center; padding: 30px; color: var(--text-muted);">
+                                💡 Nhập từ khóa để bắt đầu tìm kiếm. Thử: "<span style="color:var(--accent-gold);cursor:pointer;" onclick="document.getElementById('searchInput').value='Phuong';document.getElementById('searchBtn').click();">Phuong</span>" hoặc "<span style="color:var(--accent-gold);cursor:pointer;" onclick="document.getElementById('searchInput').value='0987';document.getElementById('searchBtn').click();">0987</span>"
+                            </div>
+                        </div>
+
+                        <!-- PAGE: Profile (hidden, shown on row click) -->
+                        <div class="demo-page" id="page-profile">
+                            <button class="demo-back-btn" id="profileBackBtn">← Quay lại Tra cứu</button>
+                            <div id="profileContent"></div>
+                        </div>
+
+                        <!-- PAGE: Nhập liệu -->
+                        <div class="demo-page" id="page-nhaplieu">
+                            <div class="demo-title">📝 Nhập liệu</div>
+                            <div class="demo-subtitle">Thêm mới / bổ sung hồ sơ đối tượng</div>
+                            <hr class="demo-hr">
+                            <div class="demo-info">💡 <strong>Hướng dẫn:</strong> Nhập thông tin tự do ở tất cả các tab, sau đó nhấn <strong>✅ Lưu toàn bộ hồ sơ</strong> một lần ở cuối trang.</div>
+
+                            <div class="demo-tabs" id="nhaplieuTabs">
+                                <div class="demo-tab active" data-tab="nl-tab1">👤 Thông tin cá nhân</div>
+                                <div class="demo-tab" data-tab="nl-tab2">👨‍👩‍👧‍👦 Thân nhân</div>
+                                <div class="demo-tab" data-tab="nl-tab3">📞 Liên hệ & Tài sản</div>
+                                <div class="demo-tab" data-tab="nl-tab4">🌐 Yếu tố nước ngoài</div>
+                            </div>
+
+                            <div class="demo-tab-content active" id="nl-tab1">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                                    <div>
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Số CCCD *</label>
+                                        <input type="text" maxlength="12" placeholder="Nhập 12 số CCCD" style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:10px;">
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Họ và tên *</label>
+                                        <input type="text" placeholder="Nguyễn Văn A" style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:10px;">
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Ngày sinh</label>
+                                        <input type="date" style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:10px;">
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Giới tính</label>
+                                        <select style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:10px;">
+                                            <option>Nam</option><option>Nữ</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Tỉnh/TP</label>
+                                        <select style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:10px;">
+                                            <option>Phú Thọ</option><option>Khác</option>
+                                        </select>
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Xã/Phường</label>
+                                        <select style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:10px;">
+                                            <option>Phường Phong Châu</option><option>Phường Âu Cơ</option><option>Xã Hy Cương</option><option>Phường Nông Trang</option>
+                                        </select>
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Phân loại nghề nghiệp</label>
+                                        <select style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:10px;">
+                                            <option>Cơ quan nhà nước</option><option>Lao động tự do</option><option>Doanh nghiệp tư nhân</option><option>FDI</option><option>NGO</option>
+                                        </select>
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Chi tiết nơi làm việc</label>
+                                        <input type="text" placeholder="Công an tỉnh Phú Thọ" style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;">
+                                    </div>
+                                </div>
+                                <hr class="demo-hr">
+                                <label style="color:var(--text-muted);font-size:0.8rem;">Ghi chú chung</label>
+                                <textarea placeholder="Các thông tin ghi chú khác..." style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;height:60px;resize:vertical;"></textarea>
+                                <button class="demo-search-btn" style="margin-top:14px;width:100%;padding:12px;" onclick="showToast('✅ Đã lưu hồ sơ thành công! (Mô phỏng)')">✅ Lưu toàn bộ hồ sơ</button>
+                            </div>
+
+                            <div class="demo-tab-content" id="nl-tab2">
+                                <div class="demo-info">Thêm thông tin bố mẹ, vợ/chồng, anh chị em... Hệ thống sẽ tự động tạo liên kết hai chiều.</div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                                    <div>
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Loại quan hệ</label>
+                                        <select style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:10px;">
+                                            <option>Bố đẻ</option><option>Mẹ đẻ</option><option>Vợ/Chồng</option><option>Anh/Chị em ruột</option><option>Con</option>
+                                        </select>
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Họ và tên *</label>
+                                        <input type="text" placeholder="Nguyễn Văn B" style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:10px;">
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">CCCD nhân thân</label>
+                                        <input type="text" maxlength="12" placeholder="Nhập 12 số (nếu có)" style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;">
+                                    </div>
+                                    <div>
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Nghề nghiệp</label>
+                                        <input type="text" placeholder="Giáo viên THPT" style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:10px;">
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Nơi ở hiện nay</label>
+                                        <input type="text" placeholder="Địa chỉ" style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;">
+                                    </div>
+                                </div>
+                                <button class="demo-search-btn" style="margin-top:14px;width:100%;padding:10px;" onclick="showToast('➕ Đã thêm thân nhân vào danh sách chờ (Mô phỏng)')">➕ Thêm vào danh sách</button>
+                            </div>
+
+                            <div class="demo-tab-content" id="nl-tab3">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                                    <div>
+                                        <div class="demo-chart-title">📱 Số điện thoại / Mạng xã hội</div>
+                                        <select style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:8px;">
+                                            <option>SĐT</option><option>Email</option><option>Facebook</option><option>Zalo</option><option>Telegram</option>
+                                        </select>
+                                        <input type="text" placeholder="0912345678 hoặc link FB..." style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:8px;">
+                                        <button class="demo-search-btn" style="width:100%;padding:8px;" onclick="showToast('➕ Đã thêm liên hệ (Mô phỏng)')">➕ Thêm liên hệ</button>
+                                    </div>
+                                    <div>
+                                        <div class="demo-chart-title">🏦 Tài khoản ngân hàng</div>
+                                        <select style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:8px;">
+                                            <option>Vietcombank</option><option>BIDV</option><option>Agribank</option><option>Techcombank</option><option>MB Bank</option>
+                                        </select>
+                                        <input type="text" placeholder="1234567890" style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:8px;">
+                                        <button class="demo-search-btn" style="width:100%;padding:8px;" onclick="showToast('➕ Đã thêm tài khoản (Mô phỏng)')">➕ Thêm tài khoản</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="demo-tab-content" id="nl-tab4">
+                                <div class="demo-chart-title">📌 Loại hình hồ sơ đặc thù</div>
+                                <select style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:12px;">
+                                    <option>📌 Kết hôn/sống chung với người nước ngoài</option>
+                                    <option>📌 Làm việc cho tổ chức nước ngoài (NGO/FDI)</option>
+                                    <option>📌 Du học/Công tác nước ngoài</option>
+                                    <option>📌 Từng vi phạm pháp luật ở nước ngoài</option>
+                                    <option>📌 Đã từng được xác minh</option>
+                                </select>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                                    <div>
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Họ tên đối tác</label>
+                                        <input type="text" placeholder="" style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:8px;">
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Quốc tịch</label>
+                                        <select style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;">
+                                            <option>Trung Quốc</option><option>Hàn Quốc</option><option>Nhật Bản</option><option>Mỹ</option><option>Nga</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Số hộ chiếu</label>
+                                        <input type="text" placeholder="" style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;margin-bottom:8px;">
+                                        <label style="color:var(--text-muted);font-size:0.8rem;">Tình trạng</label>
+                                        <select style="width:100%;background:#1a2332;border:1px solid #2d3a4f;border-radius:5px;padding:8px 10px;color:#fff;font-size:0.85rem;outline:none;">
+                                            <option>Kết hôn hợp pháp</option><option>Sinh sống như vợ chồng</option><option>Đã ly hôn</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button class="demo-search-btn" style="margin-top:14px;width:100%;padding:10px;" onclick="showToast('➕ Đã thêm hồ sơ đặc thù (Mô phỏng)')">➕ Thêm hồ sơ đặc thù</button>
+                            </div>
+                        </div>
+
+                        <!-- PAGE: Rà soát -->
+                        <div class="demo-page" id="page-rasoat">
+                            <div class="demo-title">📋 Rà soát danh sách</div>
+                            <div class="demo-subtitle">Rà soát đối tượng trùng khớp từ danh sách Excel mẫu</div>
+                            <hr class="demo-hr">
+                            <div class="demo-info">📂 Tải lên file Excel chứa danh sách cần rà soát. Hệ thống sẽ sử dụng Fuzzy Matching để tự động đối chiếu.</div>
+                            <div style="border: 2px dashed #2d3a4f; border-radius: 8px; padding: 40px; text-align: center; margin: 20px 0; cursor: pointer;" onclick="showToast('📂 Chức năng upload Excel (Mô phỏng)')">
+                                <div style="font-size: 2rem; margin-bottom: 10px;">📄</div>
+                                <div style="color: var(--text-muted);">Kéo thả file Excel vào đây<br>hoặc <span style="color: var(--accent-gold);">nhấn để chọn file</span></div>
+                                <div style="font-size: 0.75rem; color: #4a5568; margin-top: 8px;">.xlsx, .xls — Tối đa 10MB</div>
+                            </div>
+                            <div class="demo-chart-box" style="margin-top:16px;">
+                                <div class="demo-chart-title">💡 Hướng dẫn sử dụng Rà soát</div>
+                                <div style="font-size:0.84rem;color:var(--text-light);">
+                                    <p>1. Chuẩn bị file Excel theo <strong>mẫu chuẩn</strong> (mau_ho_so_csxh.xlsx).</p>
+                                    <p>2. Upload file → Hệ thống tự động đối chiếu với CSDL qua Fuzzy Matching.</p>
+                                    <p>3. Kết quả hiển thị: Trùng khớp, Gần giống, Không tìm thấy.</p>
+                                    <p>4. Xuất báo cáo kết quả rà soát ra PDF hoặc Excel.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Hiệu quả thực tiễn -->
+        <section class="py-12" style="background: linear-gradient(135deg, rgba(20, 83, 45, 0.4) 0%, rgba(153, 27, 27, 0.2) 100%);">
+            <div class="container text-center">
+                <h2>Hiệu quả Thực tiễn tại Công an Cơ sở</h2>
+                <div class="mt-8" style="max-width: 800px; margin: 0 auto;">
+                    <p style="font-size: 1.2rem; line-height: 1.8;">
+                        Security Profile 360 đánh dấu bước đột phá trong chuyển đổi số 100% hồ sơ quản lý đối tượng/CSXH. Đặc biệt tại Công an Phường Phong Châu, thay vì phải mất hàng giờ lật tìm trong đống sổ sách giấy hay lục tìm trong nhiều file Excel phân tán, cán bộ trinh sát giờ đây <span class="highlight" style="font-size: 1.5rem; display: block; margin: 1.5rem 0;">"Chỉ cần 30 giây"</span> để tra cứu liên kết hồ sơ, lập và xuất báo cáo khép kín bảo mật ra File PDF tự động.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Sáng kiến Cải tiến kỹ thuật Công an Tỉnh Phú Thọ.</p>
+        </div>
+    </footer>
+
+    <!-- Toast -->
+    <div class="demo-toast" id="demoToast"></div>
+
+    <script>
+    /* ============================================
+       SAMPLE DATABASE (Dữ liệu mẫu giả lập)
+       ============================================ */
+    var DB = [
+        {cccd:"001203012345",ho_ten:"Nguyễn Văn An",ngay_sinh:"15/03/1985",gioi_tinh:"Nam",xa:"Phường Phong Châu",phan_loai:"Lao động tự do",nghe:"Thợ xây dựng",ghi_chu:"Theo dõi từ 2024",lien_he:[{loai:"SĐT",val:"0987654321"},{loai:"Zalo",val:"0987654321"}],tai_chinh:[{bank:"Vietcombank",stk:"1900123456",chu:"NGUYEN VAN AN"}],phuong_tien:[{loai:"Xe máy",bks:"19B1-12345",ten:"Honda Wave"}],nhan_than:[{quan_he:"Vợ",ten:"Trần Thị Bình",cccd:"001203067890",nghe:"Giáo viên"},{quan_he:"Con",ten:"Nguyễn Văn Cường",cccd:"",nghe:"Học sinh"}],dac_thu:[{loai:"Xac_Minh",nd:"Xác minh lý lịch 03/2025 — Đủ điều kiện"}]},
+        {cccd:"001203067890",ho_ten:"Trần Thị Bình",ngay_sinh:"22/07/1988",gioi_tinh:"Nữ",xa:"Phường Phong Châu",phan_loai:"Cơ quan nhà nước",nghe:"Giáo viên THCS",ghi_chu:"",lien_he:[{loai:"SĐT",val:"0912345678"},{loai:"Email",val:"binh.tran@edu.vn"}],tai_chinh:[{bank:"BIDV",stk:"3120067890",chu:"TRAN THI BINH"}],phuong_tien:[],nhan_than:[{quan_he:"Chồng",ten:"Nguyễn Văn An",cccd:"001203012345",nghe:"Thợ xây dựng"}],dac_thu:[]},
+        {cccd:"001203034567",ho_ten:"Lê Hoàng Phương",ngay_sinh:"10/11/1990",gioi_tinh:"Nam",xa:"Phường Nông Trang",phan_loai:"FDI",nghe:"Kỹ sư Samsung Bắc Ninh",ghi_chu:"Đã về Phú Thọ 2025",lien_he:[{loai:"SĐT",val:"0977112233"},{loai:"Facebook",val:"fb.com/hoangphuong90"}],tai_chinh:[{bank:"Techcombank",stk:"19271234567",chu:"LE HOANG PHUONG"}],phuong_tien:[{loai:"Ô tô",bks:"19A-56789",ten:"Toyota Vios 2022"}],nhan_than:[{quan_he:"Bố đẻ",ten:"Lê Văn Đức",cccd:"001198012345",nghe:"Hưu trí"}],dac_thu:[{loai:"Lam_Viec_NN",nd:"Samsung Display Vietnam — Kỹ sư QC, 2018-2025"},{loai:"Hoc_Tap_Cong_Tac_NN",nd:"Đào tạo tại Hàn Quốc 6 tháng (2019)"}]},
+        {cccd:"001203045678",ho_ten:"Phạm Thị Hương",ngay_sinh:"05/04/1992",gioi_tinh:"Nữ",xa:"Xã Hy Cương",phan_loai:"Doanh nghiệp tư nhân",nghe:"Chủ cửa hàng thời trang",ghi_chu:"",lien_he:[{loai:"SĐT",val:"0388776655"},{loai:"Instagram",val:"@huongpham_fashion"},{loai:"Tiktok",val:"@huongfashion"}],tai_chinh:[{bank:"MB Bank",stk:"0388776655",chu:"PHAM THI HUONG"},{bank:"Vietcombank",stk:"0071234567",chu:"PHAM THI HUONG"}],phuong_tien:[{loai:"Xe máy",bks:"19C2-98765",ten:"Honda SH 150i"}],nhan_than:[{quan_he:"Chồng",ten:"Đỗ Mạnh Hùng",cccd:"001203078901",nghe:"Lái xe"}],dac_thu:[]},
+        {cccd:"001203078901",ho_ten:"Đỗ Mạnh Hùng",ngay_sinh:"18/09/1989",gioi_tinh:"Nam",xa:"Xã Hy Cương",phan_loai:"Lao động tự do",nghe:"Lái xe đường dài",ghi_chu:"Thường xuyên vắng mặt tại địa phương",lien_he:[{loai:"SĐT",val:"0966554433"}],tai_chinh:[{bank:"Agribank",stk:"4500078901",chu:"DO MANH HUNG"}],phuong_tien:[{loai:"Ô tô tải",bks:"19C-11223",ten:"Hyundai HD72"},{loai:"Xe máy",bks:"19F1-44556",ten:"Yamaha Exciter"}],nhan_than:[{quan_he:"Vợ",ten:"Phạm Thị Hương",cccd:"001203045678",nghe:"Kinh doanh"}],dac_thu:[]},
+        {cccd:"001203056789",ho_ten:"Vi Ngọc Phương",ngay_sinh:"15/08/1995",gioi_tinh:"Nam",xa:"Phường Âu Cơ",phan_loai:"Cơ quan nhà nước",nghe:"Công an tỉnh Phú Thọ",ghi_chu:"Cán bộ Phòng PA01",lien_he:[{loai:"SĐT",val:"0978123456"},{loai:"Zalo",val:"0978123456"}],tai_chinh:[{bank:"Vietinbank",stk:"1080056789",chu:"VI NGOC PHUONG"}],phuong_tien:[{loai:"Xe máy",bks:"19D1-77889",ten:"Honda Air Blade"}],nhan_than:[],dac_thu:[]},
+        {cccd:"001198012345",ho_ten:"Lê Văn Đức",ngay_sinh:"01/01/1958",gioi_tinh:"Nam",xa:"Phường Nông Trang",phan_loai:"Hưu trí",nghe:"Cựu chiến binh",ghi_chu:"",lien_he:[{loai:"SĐT",val:"0355667788"}],tai_chinh:[],phuong_tien:[],nhan_than:[{quan_he:"Con",ten:"Lê Hoàng Phương",cccd:"001203034567",nghe:"Kỹ sư"}],dac_thu:[]},
+        {cccd:"001203089012",ho_ten:"Hoàng Thị Mai Lan",ngay_sinh:"28/02/1993",gioi_tinh:"Nữ",xa:"Phường Phong Châu",phan_loai:"NGO",nghe:"Nhân viên World Vision",ghi_chu:"Dự án trẻ em vùng cao",lien_he:[{loai:"SĐT",val:"0944332211"},{loai:"Email",val:"mailan.hoang@wvi.org"}],tai_chinh:[{bank:"ACB",stk:"9900089012",chu:"HOANG THI MAI LAN"}],phuong_tien:[],nhan_than:[],dac_thu:[{loai:"Lam_Viec_NN",nd:"World Vision International — Nhân viên dự án, 2020-nay"}]}
+    ];
+
+    var LOAI_HINH_MAP = {"Hon_Nhan_NN":"Kết hôn/sống chung với người NN","Lam_Viec_NN":"Làm việc cho tổ chức NN","Hoc_Tap_Cong_Tac_NN":"Du học/Công tác NN","Vi_Pham_NN":"Vi phạm PL ở NN","Xac_Minh":"Đã xác minh"};
+
+    /* ============================================
+       NORMALIZE (Chuẩn hóa tiếng Việt)
+       ============================================ */
+    function normalize(s) {
+        if (!s) return '';
+        return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+    }
+
+    /* ============================================
+       FUZZY MATCH (Thuật toán giống hệ thống thật)
+       ============================================ */
+    function isFuzzyMatch(query, text) {
+        if (!query || !text) return false;
+        var nq = normalize(query), nt = normalize(text);
+        if (nt.indexOf(nq) !== -1) return true;
+        if (nq.length >= 3) {
+            var it = 0;
+            for (var i = 0; i < nq.length; i++) {
+                var found = false;
+                while (it < nt.length) { if (nt[it] === nq[i]) { it++; found = true; break; } it++; }
+                if (!found) return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /* ============================================
+       SEARCH ENGINE (Multi-table)
+       ============================================ */
+    function searchDB(query, type) {
+        if (!query.trim()) return [];
+        var results = [];
+        var q = query.trim();
+        DB.forEach(function(p) {
+            var sources = [];
+            var matched = false;
+            if (type === 'all' || type === 'cccd') { if (p.cccd.indexOf(q) !== -1) { matched = true; } }
+            if (type === 'all' || type === 'name') { if (isFuzzyMatch(q, p.ho_ten)) { matched = true; } }
+            if (type === 'all' || type === 'phone') {
+                p.lien_he.forEach(function(l) { if (l.val.indexOf(q) !== -1) { matched = true; sources.push('📱 ' + l.loai + ': ' + l.val); } });
+            }
+            if (type === 'all' || type === 'bank') {
+                p.tai_chinh.forEach(function(t) { if (t.stk.indexOf(q) !== -1 || t.chu.toLowerCase().indexOf(q.toLowerCase()) !== -1) { matched = true; sources.push('🏦 ' + t.bank + ': ' + t.stk); } });
+            }
+            if (type === 'all' || type === 'vehicle') {
+                p.phuong_tien.forEach(function(v) { if (v.bks.toLowerCase().indexOf(q.toLowerCase()) !== -1) { matched = true; sources.push('🚗 ' + v.loai + ': ' + v.bks); } });
+            }
+            if (matched) results.push({person: p, sources: sources});
+        });
+        return results;
+    }
+
+    /* ============================================
+       NAVIGATION
+       ============================================ */
+    document.querySelectorAll('.demo-nav-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+            var page = this.dataset.page;
+            document.querySelectorAll('.demo-nav-item').forEach(function(n) { n.classList.remove('active'); });
+            this.classList.add('active');
+            document.querySelectorAll('.demo-page').forEach(function(p) { p.classList.remove('active'); });
+            document.getElementById('page-' + page).classList.add('active');
+            if (page === 'search') { document.getElementById('searchEmpty').style.display = 'block'; }
+        });
+    });
+
+    /* NhapLieu tabs */
+    document.querySelectorAll('#nhaplieuTabs .demo-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('#nhaplieuTabs .demo-tab').forEach(function(t) { t.classList.remove('active'); });
+            this.classList.add('active');
+            document.querySelectorAll('#page-nhaplieu .demo-tab-content').forEach(function(tc) { tc.classList.remove('active'); });
+            document.getElementById(this.dataset.tab).classList.add('active');
+        });
+    });
+
+    /* ============================================
+       DASHBOARD: Animate metrics + draw charts
+       ============================================ */
+    function animateMetric(el, target) {
+        var current = 0; var step = Math.max(1, Math.floor(target / 30));
+        var timer = setInterval(function() { current += step; if (current >= target) { current = target; clearInterval(timer); } el.textContent = current; }, 40);
+    }
+
+    function initDashboard() {
+        var nam = DB.filter(function(p) { return p.gioi_tinh === 'Nam'; }).length;
+        var nu = DB.filter(function(p) { return p.gioi_tinh === 'Nữ'; }).length;
+        var nn = DB.filter(function(p) { return p.dac_thu.length > 0; }).length;
+        animateMetric(document.getElementById('metricTotal'), DB.length);
+        animateMetric(document.getElementById('metricNam'), nam);
+        animateMetric(document.getElementById('metricNu'), nu);
+        animateMetric(document.getElementById('metricNN'), nn);
+        drawPieChart('chartGender', {'Nam': nam, 'Nữ': nu}, ['#3b82f6','#ec4899']);
+        var jobCounts = {};
+        DB.forEach(function(p) { jobCounts[p.phan_loai] = (jobCounts[p.phan_loai] || 0) + 1; });
+        drawBarChart('chartJob', jobCounts);
+        var tbody = document.querySelector('#recentTable tbody');
+        tbody.innerHTML = '';
+        DB.slice(0, 5).forEach(function(p) {
+            var tr = document.createElement('tr');
+            tr.innerHTML = '<td style="font-family:monospace;font-size:0.8rem;">' + p.cccd + '</td><td>' + p.ho_ten + '</td><td>' + p.ngay_sinh + '</td><td>' + p.gioi_tinh + '</td><td>' + p.xa + '</td><td>' + p.phan_loai + '</td>';
+            tbody.appendChild(tr);
+        });
+    }
+
+    /* Canvas Pie Chart */
+    function drawPieChart(id, data, colors) {
+        var canvas = document.getElementById(id);
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var w = canvas.width, h = canvas.height, cx = w * 0.4, cy = h / 2, r = Math.min(cx, cy) - 10;
+        ctx.clearRect(0, 0, w, h);
+        var total = 0; var keys = Object.keys(data); keys.forEach(function(k) { total += data[k]; });
+        var startAngle = -Math.PI / 2;
+        keys.forEach(function(k, i) {
+            var sliceAngle = (data[k] / total) * 2 * Math.PI;
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, startAngle, startAngle + sliceAngle);
+            ctx.fillStyle = colors[i % colors.length]; ctx.fill();
+            startAngle += sliceAngle;
+        });
+        /* Legend */
+        keys.forEach(function(k, i) {
+            var lx = w * 0.7, ly = 40 + i * 30;
+            ctx.fillStyle = colors[i % colors.length]; ctx.fillRect(lx, ly, 14, 14);
+            ctx.fillStyle = '#e2e8f0'; ctx.font = '12px Segoe UI'; ctx.fillText(k + ': ' + data[k], lx + 20, ly + 12);
+        });
+    }
+
+    /* Canvas Bar Chart */
+    function drawBarChart(id, data) {
+        var canvas = document.getElementById(id);
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        var keys = Object.keys(data), vals = keys.map(function(k) { return data[k]; });
+        var maxVal = Math.max.apply(null, vals) || 1;
+        var barH = Math.min(22, (h - 20) / keys.length - 4);
+        var leftPad = 120;
+        keys.forEach(function(k, i) {
+            var y = 10 + i * (barH + 6);
+            var barW = ((vals[i] / maxVal) * (w - leftPad - 40));
+            /* Label */
+            ctx.fillStyle = '#94a3b8'; ctx.font = '11px Segoe UI'; ctx.textAlign = 'right';
+            var label = k.length > 16 ? k.substring(0, 15) + '…' : k;
+            ctx.fillText(label, leftPad - 6, y + barH / 2 + 4);
+            /* Bar */
+            var grad = ctx.createLinearGradient(leftPad, 0, leftPad + barW, 0);
+            grad.addColorStop(0, '#991b1b'); grad.addColorStop(1, '#d4af37');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.roundRect(leftPad, y, barW, barH, 3); ctx.fill();
+            /* Value */
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Segoe UI'; ctx.textAlign = 'left';
+            ctx.fillText(vals[i], leftPad + barW + 6, y + barH / 2 + 4);
+        });
+    }
+
+    /* ============================================
+       SEARCH
+       ============================================ */
+    document.getElementById('searchBtn').addEventListener('click', doSearch);
+    document.getElementById('searchInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') doSearch(); });
+
+    function doSearch() {
+        var q = document.getElementById('searchInput').value;
+        var type = document.getElementById('searchType').value;
+        var results = searchDB(q, type);
+        var info = document.getElementById('searchInfo');
+        var empty = document.getElementById('searchEmpty');
+        var tbody = document.querySelector('#searchTable tbody');
+        tbody.innerHTML = '';
+
+        if (!q.trim()) { info.style.display = 'none'; empty.style.display = 'block'; return; }
+        empty.style.display = 'none';
+
+        var satCount = results.filter(function(r) { return r.sources.length > 0; }).length;
+        info.style.display = 'block';
+        info.innerHTML = '🔍 Tìm thấy <strong>' + results.length + '</strong> kết quả cho: "' + q + '"' +
+            (satCount > 0 ? ' (trong đó <strong>' + satCount + '</strong> từ dữ liệu vệ tinh)' : '');
+
+        results.forEach(function(r) {
+            var p = r.person;
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td style="font-family:monospace;font-size:0.8rem;">' + p.cccd + '</td>' +
+                '<td><strong>' + p.ho_ten + '</strong></td>' +
+                '<td>' + p.ngay_sinh + '</td>' +
+                '<td>' + p.gioi_tinh + '</td>' +
+                '<td>' + p.xa + '</td>' +
+                '<td>' + p.phan_loai + '</td>' +
+                '<td class="match-source">' + (r.sources.join(' | ') || '') + '</td>';
+            tr.addEventListener('click', function() { showProfile(p); });
+            tbody.appendChild(tr);
+        });
+
+        showToast('🔍 Tìm thấy ' + results.length + ' kết quả');
+    }
+
+    /* ============================================
+       PROFILE VIEW
+       ============================================ */
+    function showProfile(p) {
+        document.querySelectorAll('.demo-page').forEach(function(pg) { pg.classList.remove('active'); });
+        document.getElementById('page-profile').classList.add('active');
+
+        var initials = p.ho_ten.split(' ').map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase();
+        var html = '';
+        html += '<div class="demo-profile-header">';
+        html += '<div class="demo-avatar">' + initials + '</div>';
+        html += '<div class="demo-profile-info">';
+        html += '<div class="demo-profile-name">' + p.ho_ten + '</div>';
+        html += '<div class="demo-profile-cccd">CCCD: ' + p.cccd + '</div>';
+        html += '<div class="demo-profile-meta">' + p.gioi_tinh + ' · Sinh: ' + p.ngay_sinh + ' · ' + p.xa + '</div>';
+        html += '<div class="demo-profile-meta">💼 ' + p.phan_loai + ': ' + p.nghe + '</div>';
+        if (p.ghi_chu) html += '<div class="demo-profile-meta" style="color:#fbbf24;">📝 ' + p.ghi_chu + '</div>';
+        html += '</div></div>';
+
+        /* Tabs */
+        var tabs = [
+            {id:'pt-lienhe', label:'📱 Liên hệ (' + p.lien_he.length + ')'},
+            {id:'pt-taichinh', label:'🏦 Tài chính (' + p.tai_chinh.length + ')'},
+            {id:'pt-phuongtien', label:'🚗 Phương tiện (' + p.phuong_tien.length + ')'},
+            {id:'pt-nhanthan', label:'👤 Nhân thân (' + p.nhan_than.length + ')'},
+            {id:'pt-dacthu', label:'🌐 Đặc thù (' + p.dac_thu.length + ')'}
+        ];
+
+        html += '<div class="demo-tabs" id="profileTabs">';
+        tabs.forEach(function(t, i) {
+            html += '<div class="demo-tab' + (i === 0 ? ' active' : '') + '" data-ptab="' + t.id + '">' + t.label + '</div>';
+        });
+        html += '</div>';
+
+        /* Tab contents */
+        /* Liên hệ */
+        html += '<div class="demo-tab-content active" id="pt-lienhe">';
+        if (p.lien_he.length === 0) html += '<div style="color:var(--text-muted);padding:20px;text-align:center;">Chưa có dữ liệu liên hệ.</div>';
+        p.lien_he.forEach(function(l) {
+            html += '<div class="demo-sat-card"><div class="demo-sat-label">' + l.loai + '</div><div class="demo-sat-value">' + l.val + '</div></div>';
+        });
+        html += '</div>';
+
+        /* Tài chính */
+        html += '<div class="demo-tab-content" id="pt-taichinh">';
+        if (p.tai_chinh.length === 0) html += '<div style="color:var(--text-muted);padding:20px;text-align:center;">Chưa có tài khoản ngân hàng.</div>';
+        p.tai_chinh.forEach(function(t) {
+            html += '<div class="demo-sat-card"><div class="demo-sat-label">' + t.bank + '</div><div class="demo-sat-value">STK: ' + t.stk + '<br>Chủ TK: ' + t.chu + '</div></div>';
+        });
+        html += '</div>';
+
+        /* Phương tiện */
+        html += '<div class="demo-tab-content" id="pt-phuongtien">';
+        if (p.phuong_tien.length === 0) html += '<div style="color:var(--text-muted);padding:20px;text-align:center;">Chưa có phương tiện đăng ký.</div>';
+        p.phuong_tien.forEach(function(v) {
+            html += '<div class="demo-sat-card"><div class="demo-sat-label">' + v.loai + '</div><div class="demo-sat-value">BKS: ' + v.bks + '<br>Tên xe: ' + v.ten + '</div></div>';
+        });
+        html += '</div>';
+
+        /* Nhân thân */
+        html += '<div class="demo-tab-content" id="pt-nhanthan">';
+        if (p.nhan_than.length === 0) html += '<div style="color:var(--text-muted);padding:20px;text-align:center;">Chưa có thông tin nhân thân.</div>';
+        p.nhan_than.forEach(function(n) {
+            html += '<div class="demo-sat-card" style="cursor:pointer;" onclick="navigateToProfile(\'' + n.cccd + '\')">';
+            html += '<div class="demo-sat-label">' + n.quan_he + '</div>';
+            html += '<div class="demo-sat-value">' + n.ten;
+            if (n.cccd) html += ' <span style="color:#60a5fa;font-size:0.78rem;">(CCCD: ' + n.cccd + ' — Click để xem)</span>';
+            html += '<br>💼 ' + n.nghe + '</div></div>';
+        });
+        html += '</div>';
+
+        /* Đặc thù */
+        html += '<div class="demo-tab-content" id="pt-dacthu">';
+        if (p.dac_thu.length === 0) html += '<div style="color:var(--text-muted);padding:20px;text-align:center;">Không có hồ sơ đặc thù.</div>';
+        p.dac_thu.forEach(function(d) {
+            html += '<div class="demo-sat-card"><div class="demo-sat-label">📌 ' + (LOAI_HINH_MAP[d.loai] || d.loai) + '</div><div class="demo-sat-value">' + d.nd + '</div></div>';
+        });
+        html += '</div>';
+
+        document.getElementById('profileContent').innerHTML = html;
+
+        /* Profile tabs event */
+        document.querySelectorAll('#profileTabs .demo-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('#profileTabs .demo-tab').forEach(function(t) { t.classList.remove('active'); });
+                this.classList.add('active');
+                var target = this.dataset.ptab;
+                document.querySelectorAll('#page-profile .demo-tab-content').forEach(function(tc) { tc.classList.remove('active'); });
+                document.getElementById(target).classList.add('active');
+            });
+        });
+    }
+
+    /* Navigate to profile by CCCD */
+    function navigateToProfile(cccd) {
+        if (!cccd) return;
+        var person = DB.find(function(p) { return p.cccd === cccd; });
+        if (person) { showProfile(person); showToast('🔗 Liên kết hồ sơ: ' + person.ho_ten); }
+        else { showToast('⚠️ CCCD ' + cccd + ' không tìm thấy trong CSDL mẫu'); }
+    }
+
+    /* Profile back button */
+    document.getElementById('profileBackBtn').addEventListener('click', function() {
+        document.querySelectorAll('.demo-page').forEach(function(pg) { pg.classList.remove('active'); });
+        document.getElementById('page-search').classList.add('active');
+        document.querySelectorAll('.demo-nav-item').forEach(function(n) { n.classList.remove('active'); });
+        document.querySelector('.demo-nav-item[data-page="search"]').classList.add('active');
+    });
+
+    /* ============================================
+       TOAST
+       ============================================ */
+    function showToast(msg) {
+        var t = document.getElementById('demoToast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(function() { t.classList.remove('show'); }, 2500);
+    }
+
+    /* ============================================
+       INIT
+       ============================================ */
+    initDashboard();
+    document.getElementById('searchEmpty').style.display = 'block';
+    </script>
+
+</body>
+</html>
