@@ -23,6 +23,14 @@ class DoiTuong(Base):
     chi_tiet_nghe_nghiep: Mapped[Optional[str]] = mapped_column(String)
     ghi_chu_chung: Mapped[Optional[str]] = mapped_column(Text)
     is_draft: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    # F-14: cán bộ phụ trách hồ sơ. NULL = chưa phân công (mọi user xem được).
+    # Đã có FK -> users.id; ondelete=SET NULL để khi xoá user, hồ sơ chỉ
+    # mất thông tin phụ trách chứ KHÔNG bị xoá theo (an toàn dữ liệu).
+    nguoi_phu_trach_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 

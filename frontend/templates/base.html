@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}VCFE Database{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/output.css" />
+  {# === F-10: CSRF token nhúng vào meta để JS HTMX đọc được === #}
+  {# Token được sinh ở middleware (backend/main.py) và gắn vào request.state. #}
+  <meta name="csrf-token" content="{{ request.state.csrf_token }}"/>
   {# === Tài nguyên JS load CỤC BỘ (offline) — KHÔNG dùng CDN === #}
   {# Các file vendor được sinh bởi `python scripts/download_vendor.py` #}
   {# trên máy có Internet rồi commit vào repo. Trên máy standalone không cần mạng. #}
@@ -86,6 +89,8 @@
         <p class="text-slate-400">{{ user.role }}</p>
       </div>
       <form action="/auth/logout" method="post">
+        {# F-10: CSRF token cho form logout (POST) #}
+        <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}"/>
         <button type="submit" class="ml-2 text-slate-500 hover:text-red-400 transition-colors" title="Đăng xuất">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
         </button>
@@ -142,6 +147,17 @@
 </div>
 
 <script>
+// ===== F-10: Tự động gắn CSRF token vào MỌI request HTMX =====
+// HTMX bắn sự kiện `htmx:configRequest` ngay trước khi gửi. Hook vào
+// đó để inject header X-CSRF-Token. Token đọc từ <meta name="csrf-token">
+// (luôn có sẵn nhờ middleware backend/main.py:csrf_cookie_middleware).
+document.body.addEventListener('htmx:configRequest', (evt) => {
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  if (meta && meta.content) {
+    evt.detail.headers['X-CSRF-Token'] = meta.content;
+  }
+});
+
 function toastManager() {
   return {
     toasts: [],

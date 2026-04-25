@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session
 from backend.config import settings
 from backend.db.session import get_db
 from backend.deps import get_current_user, require_login
+from backend.limiter import check_login_rate, reset_login_rate
 from backend.security import create_session_token
 from backend.services import auth as auth_svc
-from backend.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 templates = Jinja2Templates(directory="frontend/templates")
@@ -22,7 +22,6 @@ def login_page(request: Request, next: str = "/dashboard", user=Depends(get_curr
 
 
 @router.post("/login")
-@limiter.limit("5/minute")
 async def login_submit(
     request: Request,
     username: str = Form(...),
@@ -30,6 +29,15 @@ async def login_submit(
     next: str = Form("/dashboard"),
     db: Session = Depends(get_db),
 ):
+    # F-11 fix: rate-limit theo USERNAME (không phải IP) — máy standalone IP
+    # luôn 127.0.0.1 nên IP-based vô tác dụng. 5 lần / 60s / mỗi username.
+    if not check_login_rate(username):
+        # 429 Too Many Requests — chỉ dội thông điệp ngắn, không leak username
+        raise HTTPException(
+            status_code=429,
+            detail="Quá nhiều lần thử đăng nhập. Vui lòng đợi 1 phút rồi thử lại.",
+        )
+
     user = auth_svc.authenticate(db, username, password)
     if not user:
         return templates.TemplateResponse(
@@ -38,15 +46,24 @@ async def login_submit(
             status_code=401,
         )
 
+    # F-11: reset bộ đếm khi đăng nhập THÀNH CÔNG -> không phạt user thật
+    # vì vài lần lỡ gõ sai trước đó.
+    reset_login_rate(username)
+
     token = create_session_token(user["id"])
     redirect_url = "/auth/change-password" if user["must_change_password"] else next
     response = RedirectResponse(redirect_url, status_code=302)
+    # F-12 fix: dùng cờ USE_HTTPS riêng biệt thay vì suy diễn từ DEBUG.
+    # - Production trên localhost (không TLS) -> USE_HTTPS=False -> cookie
+    #   vẫn được trình duyệt gửi lại trên HTTP -> không bị "đăng nhập xong
+    #   văng ngược ra trang login".
+    # - Khi triển khai sau reverse proxy có TLS thật -> đặt USE_HTTPS=True.
     response.set_cookie(
         key=settings.SESSION_COOKIE,
         value=token,
-        httponly=True,
-        samesite="lax",
-        secure=not settings.DEBUG,  # Use secure cookies in production
+        httponly=True,             # Chặn JS đọc cookie session (chống XSS đánh cắp phiên)
+        samesite="lax",            # Chặn cross-site POST gửi kèm cookie (bổ trợ CSRF)
+        secure=settings.USE_HTTPS, # F-12: chỉ True khi thật sự có HTTPS
         max_age=settings.SESSION_MAX_AGE,
     )
     return response

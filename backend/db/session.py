@@ -124,17 +124,48 @@ def init_db():
     """
     Tạo các bảng nếu chưa có. Cũng là điểm kiểm tra fail-fast lần đầu:
     nếu PRAGMA key sai, lệnh `create_all` sẽ raise.
+
+    F-14: chạy auto-migrate idempotent cho các cột mới được thêm sau lần
+    deploy đầu tiên (vì `create_all` không tự ALTER bảng đã tồn tại).
     """
     from backend.models.models import Base  # noqa: F401
 
     try:
         Base.metadata.create_all(bind=engine)
+        _auto_migrate()
     except DatabaseError as e:
         # Bao bọc lại để stack trace ngắn gọn cho admin
         raise RuntimeError(
             "Khởi tạo database thất bại — kiểm tra DB_PASSWORD hoặc tính toàn vẹn "
             "của file DB."
         ) from e
+
+
+# ============================================================================
+# F-14: auto-migrate idempotent — thêm cột mới mà không phá DB cũ
+# ============================================================================
+# Danh sách (table, column, ddl). Mỗi entry chạy 1 lần; nếu cột đã có thì
+# bỏ qua. Khi thêm cột mới trong tương lai chỉ cần append vào list.
+_PENDING_COLUMNS: list[tuple[str, str, str]] = [
+    # F-14: gán cán bộ phụ trách hồ sơ
+    ("doi_tuong", "nguoi_phu_trach_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL"),
+]
+
+
+def _auto_migrate() -> None:
+    """
+    Quét `_PENDING_COLUMNS` và ALTER TABLE nếu cột chưa tồn tại.
+    Dùng PRAGMA table_info để check tồn tại — chuẩn SQLite/SQLCipher.
+    """
+    with engine.connect() as conn:
+        for table, col, ddl in _PENDING_COLUMNS:
+            rows = conn.exec_driver_sql(f"PRAGMA table_info({table})").fetchall()
+            existing_cols = {r[1] for r in rows}  # row[1] = name
+            if col in existing_cols:
+                continue
+            logger.info("Auto-migrate: ALTER TABLE %s ADD COLUMN %s", table, col)
+            conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}")
+            conn.commit()
 
 
 @atexit.register

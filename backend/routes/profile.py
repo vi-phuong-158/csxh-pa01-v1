@@ -31,7 +31,7 @@ from backend.constants import (
     LOAI_XE, NGAN_HANG, PHAN_LOAI_NGHE_NGHIEP, TINH_THANH, XA_PHUONG,
 )
 from backend.db.session import get_db
-from backend.deps import require_admin, require_login
+from backend.deps import require_admin, require_login, require_profile_access
 from backend.models.models import DoiTuong, TaiLieu
 from backend.services import profile as profile_svc
 from backend.services.docx_export import generate_profile_docx
@@ -82,7 +82,7 @@ def _cccd_dep(cccd: str) -> str:
 @router.get("/{cccd}/export-docx")
 def export_docx(
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     """Tải file DOCX báo cáo hồ sơ."""
@@ -109,7 +109,7 @@ def export_docx(
 def profile_page(
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     data = profile_svc.get_profile_full(db, cccd)
@@ -126,7 +126,7 @@ def profile_tab(
     tab_name: str,
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     data = profile_svc.get_profile_full(db, cccd)
@@ -164,7 +164,7 @@ def _tab_response(request, db, cccd, user, tpl):
 async def update_basic(
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     form = await request.form()
@@ -184,7 +184,7 @@ async def update_basic(
 async def add_nhan_than(
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     profile_svc.add_nhan_than(db, cccd, dict(await request.form()))
@@ -196,7 +196,7 @@ def delete_nhan_than(
     item_id: int,
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     profile_svc.delete_nhan_than(db, item_id)
@@ -207,7 +207,7 @@ def delete_nhan_than(
 async def add_lien_he(
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     profile_svc.add_lien_he(db, cccd, dict(await request.form()))
@@ -219,7 +219,7 @@ def delete_lien_he(
     item_id: int,
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     profile_svc.delete_lien_he(db, item_id)
@@ -230,7 +230,7 @@ def delete_lien_he(
 async def add_tai_chinh(
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     profile_svc.add_tai_chinh(db, cccd, dict(await request.form()))
@@ -242,7 +242,7 @@ def delete_tai_chinh(
     item_id: int,
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     profile_svc.delete_tai_chinh(db, item_id)
@@ -253,7 +253,7 @@ def delete_tai_chinh(
 async def add_phuong_tien(
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     profile_svc.add_phuong_tien(db, cccd, dict(await request.form()))
@@ -265,7 +265,7 @@ def delete_phuong_tien(
     item_id: int,
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     profile_svc.delete_phuong_tien(db, item_id)
@@ -276,7 +276,7 @@ def delete_phuong_tien(
 async def add_dac_thu(
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     profile_svc.add_ho_so_dac_thu(db, cccd, dict(await request.form()))
@@ -288,7 +288,7 @@ def delete_dac_thu(
     item_id: int,
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     profile_svc.delete_ho_so_dac_thu(db, item_id)
@@ -299,7 +299,7 @@ def delete_dac_thu(
 async def add_qua_trinh(
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     profile_svc.add_qua_trinh(db, cccd, dict(await request.form()))
@@ -311,7 +311,7 @@ def delete_qua_trinh(
     item_id: int,
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     profile_svc.delete_qua_trinh(db, item_id)
@@ -325,7 +325,7 @@ def delete_qua_trinh(
 async def upload_avatar(
     file: UploadFile = File(...),
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     """
@@ -368,7 +368,7 @@ async def upload_doc(
     loai_tai_lieu: str = Form(""),
     mo_ta: str = Form(""),
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     """
@@ -411,7 +411,7 @@ def delete_tai_lieu(
     item_id: int,
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_login),
+    user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
     profile_svc.delete_tai_lieu(db, item_id)
