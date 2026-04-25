@@ -1,0 +1,196 @@
+{# File: frontend/templates/bao_cao/index.html #}
+{% extends "base.html" %}
+{% block title %}Báo cáo thống kê · PA01{% endblock %}
+{% block page_title %}Báo cáo thống kê chuyên sâu{% endblock %}
+
+{% block head %}
+{# ECharts must load before bao_cao_charts.js — no defer #}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  {# ===== ERROR BANNER ===================================================== #}
+  <div id="bao-cao-error"></div>
+
+  {# ===== FILTER CARD ======================================================= #}
+  <div class="card">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="text-base font-semibold text-slate-800">Bộ lọc thống kê</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Dữ liệu cập nhật theo thời gian thực sau khi thay đổi bộ lọc</p>
+      </div>
+      <button
+        id="btn-refresh"
+        onclick="loadStats()"
+        class="btn-secondary text-xs"
+      >Làm mới</button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="label" for="tu-ngay">Từ ngày</label>
+        <input id="tu-ngay" type="date" class="input" onchange="loadStats()" />
+      </div>
+      <div>
+        <label class="label" for="den-ngay">Đến ngày</label>
+        <input id="den-ngay" type="date" class="input" onchange="loadStats()" />
+      </div>
+      <div>
+        <label class="label" for="phan-loai">Phân loại nghề nghiệp</label>
+        <select id="phan-loai" class="input" onchange="loadStats()">
+          <option value="">— Tất cả phân loại —</option>
+          {% for opt in phan_loai_options %}
+          <option value="{{ opt }}">{{ opt }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="flex justify-end mt-3">
+      <button onclick="resetFilters()" class="btn-ghost text-xs text-slate-400 hover:text-slate-700">
+        <svg class="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Xóa bộ lọc
+      </button>
+    </div>
+  </div>
+
+  {# ===== SUMMARY STAT CARDS ================================================ #}
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+    <div class="card hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs text-slate-500 mb-1">Tổng hồ sơ</p>
+          <p id="stat-total" class="text-3xl font-bold text-slate-800">—</p>
+        </div>
+        <div class="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">Hồ sơ đã hoàn chỉnh</p>
+    </div>
+
+    <div class="card hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs text-slate-500 mb-1">Đang soạn thảo</p>
+          <p id="stat-draft" class="text-3xl font-bold text-amber-500">—</p>
+        </div>
+        <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">Hồ sơ nháp chưa hoàn tất</p>
+    </div>
+
+    <div class="card hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs text-slate-500 mb-1">Có số điện thoại</p>
+          <p id="stat-sdt" class="text-3xl font-bold text-primary-600">—</p>
+        </div>
+        <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">Đối tượng có dữ liệu liên lạc</p>
+    </div>
+
+    <div class="card hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs text-slate-500 mb-1">Có tài khoản ngân hàng</p>
+          <p id="stat-stk" class="text-3xl font-bold text-violet-600">—</p>
+        </div>
+        <div class="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">Đối tượng có dữ liệu tài chính</p>
+    </div>
+
+  </div>
+
+  {# ===== CHARTS GRID (Pie + Bar) =========================================== #}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+    {# Pie chart — phan_loai_nghe_nghiep #}
+    <div class="card hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
+      <div class="flex items-center justify-between mb-1">
+        <p class="text-sm font-semibold text-slate-700">Phân bố theo phân loại nghề nghiệp</p>
+        <span class="badge badge-blue">Pie Chart</span>
+      </div>
+      <p class="text-xs text-slate-400 mb-4">Tỷ lệ phần trăm từng nhóm trong tổng hồ sơ</p>
+      <div id="chart-pie" class="w-full" style="height:280px"></div>
+    </div>
+
+    {# Bar chart — monthly trend #}
+    <div class="card hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
+      <div class="flex items-center justify-between mb-1">
+        <p class="text-sm font-semibold text-slate-700">Biến động nhập hồ sơ theo tháng</p>
+        <span class="badge badge-green">Bar Chart</span>
+      </div>
+      <p class="text-xs text-slate-400 mb-4">Số lượng hồ sơ được tạo mới theo từng tháng</p>
+      <div id="chart-bar" class="w-full" style="height:280px"></div>
+    </div>
+
+  </div>
+
+  {# ===== DETAIL TABLE ======================================================= #}
+  <div class="card p-0 overflow-hidden">
+
+    <div class="px-5 py-3 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
+      <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        Bảng chi tiết theo phân loại nghề nghiệp
+      </span>
+      <span class="badge badge-gray">Áp dụng bộ lọc hiện tại</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="table-auto w-full">
+        <thead>
+          <tr>
+            <th>Phân loại nghề nghiệp</th>
+            <th class="text-center">Số hồ sơ</th>
+            <th style="min-width:180px">Tỷ lệ</th>
+          </tr>
+        </thead>
+        <tbody id="bao-cao-table-body">
+          <tr>
+            <td colspan="3" class="text-center py-10 text-slate-400">
+              <svg class="w-8 h-8 mx-auto mb-2 text-slate-200 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              Đang tải dữ liệu...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/app/bao_cao_charts.js"></script>
+{% endblock %}
