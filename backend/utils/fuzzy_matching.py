@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Module Fuzzy Matching cho tiếng Việt - Security Profile 360
+Module Fuzzy Matching cho tiếng Việt - VCFE Database
 Áp dụng patterns từ thefuzz/rapidfuzz với ngưỡng 80%
 """
 from rapidfuzz import fuzz, process

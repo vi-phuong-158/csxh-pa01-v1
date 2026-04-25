@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Unit Tests cho auth_service.py - Security Profile 360
+Unit Tests cho auth_service.py - VCFE Database
 ======================================================
 Sử dụng pytest framework.
 

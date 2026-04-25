@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    PROJECT_NAME: str = "Security Profile 360"
+    PROJECT_NAME: str = "VCFE Database"
     PROJECT_VERSION: str = "2.0.0"
 
     BASE_DIR: Path = Path(__file__).resolve().parent.parent

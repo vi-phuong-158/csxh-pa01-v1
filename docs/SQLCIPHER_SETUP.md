@@ -1,4 +1,4 @@
-# Hướng dẫn thiết lập SQLCipher cho Security Profile 360
+# Hướng dẫn thiết lập SQLCipher cho VCFE Database
 
 ## 📌 Tổng quan
 

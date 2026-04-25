@@ -5,7 +5,7 @@
 # -*- coding: utf-8 -*-
 """
 SECURITY PROFILE 360
-Hệ thống Quản trị An ninh PA01
+Cơ sở dữ liệu về người Việt Nam có yếu tố nước ngoài
 Phiên bản: 1.0 (với Authentication)
 """
 
@@ -56,7 +56,7 @@ logger = logging.getLogger(__name__)
 # CẤU HÌNH TRANG
 # ============================================
 st.set_page_config(
-    page_title="Security Profile 360",
+    page_title="VCFE Database",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -291,17 +291,17 @@ from app.services.auth_service import (  # noqa: F401
 ```
 
 ## Bao_cao_phan_mem_PA01.md
-# BÁO CÁO ĐỀ XUẤT TRIỂN KHAI THÍ ĐIỂM HỆ THỐNG QUẢN TRỊ AN NINH PA01 (SECURITY PROFILE 360)
+# BÁO CÁO ĐỀ XUẤT TRIỂN KHAI THÍ ĐIỂM CƠ SỞ DỮ LIỆU VỀ NGƯỜI VIỆT NAM CÓ YẾU TỐ NƯỚC NGOÀI (VCFE DATABASE)
 
 **Kính gửi:** Thủ trưởng đơn vị / Lãnh đạo Phòng
 
-**Về việc:** Đề xuất triển khai thí điểm Phần mềm Quản trị hồ sơ nghiệp vụ an ninh (Security Profile 360).
+**Về việc:** Đề xuất triển khai thí điểm Phần mềm Quản trị hồ sơ nghiệp vụ an ninh (VCFE Database).
 
 ---
 
 ## I. GIỚI THIỆU CHUNG VỀ PHẦN MỀM
 
-Hệ thống **Security Profile 360 (PA01)** là phần mềm đặc tả nghiệp vụ được xây dựng với mục tiêu số hóa, quản lý và khai thác hiệu quả hồ sơ đối tượng thuộc diện quản lý chuyên sâu (CSXH), có yếu tố nước ngoài hoặc các đối tượng nghiệp vụ an ninh.
+Hệ thống **VCFE Database (PA01)** là phần mềm đặc tả nghiệp vụ được xây dựng với mục tiêu số hóa, quản lý và khai thác hiệu quả hồ sơ đối tượng thuộc diện quản lý chuyên sâu (CSXH), có yếu tố nước ngoài hoặc các đối tượng nghiệp vụ an ninh.
 
 Phần mềm được thiết kế tối ưu hóa cho môi trường mạng nội bộ, đảm bảo tính bảo mật cao (local/offline) kết hợp với các công cụ phân tích dữ liệu ứng dụng thuật toán thông minh, nâng cao hiệu suất làm việc của cán bộ trinh sát và cán bộ quản lý so với phương pháp thủ công hoặc trên Excel truyền thống.
 
@@ -400,7 +400,7 @@ Không yêu cầu cơ sở hạ tầng Server phức tạp hay cài đặt Datab
 
 ## V. ĐỀ XUẤT, KIẾN NGHỊ
 
-Từ những phân tích về hiệu quả nghiệp vụ thực tiễn nêu trên, kính đề xuất Lãnh đạo xem xét cho triển khai thí điểm phần mềm **Security Profile 360** trên 01 tổ/đội chuyên trách để áp dụng nhập liệu và quản lý tệp đối tượng có yếu tố nước ngoài.
+Từ những phân tích về hiệu quả nghiệp vụ thực tiễn nêu trên, kính đề xuất Lãnh đạo xem xét cho triển khai thí điểm phần mềm **VCFE Database** trên 01 tổ/đội chuyên trách để áp dụng nhập liệu và quản lý tệp đối tượng có yếu tố nước ngoài.
 
 Sau 1 tháng thí điểm sẽ có báo cáo đánh giá thực tiễn về thời gian tiết kiệm được và hiệu suất trích xuất thông tin trước khi nhân rộng trong đơn vị.
 
@@ -425,7 +425,7 @@ pause
 ## build_portable.ps1
 ```ps1
 # ============================================
-# BUILD PORTABLE - Security Profile 360
+# BUILD PORTABLE - VCFE Database
 # Python Embedded + PyArmor
 # ============================================
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -451,7 +451,7 @@ else {
 
 Write-Host ""
 Write-Host "==================================================" -ForegroundColor Cyan
-Write-Host "  BUILD PORTABLE - Security Profile 360" -ForegroundColor Cyan
+Write-Host "  BUILD PORTABLE - VCFE Database" -ForegroundColor Cyan
 Write-Host "  Python Embedded + PyArmor" -ForegroundColor Cyan
 Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host ""
@@ -646,7 +646,7 @@ $launcherLines = @(
     "    )"
     "    "
     "    if wait_for_port(8501):"
-    "        webview.create_window('Ho so CSXH - Security Profile 360', 'http://localhost:8501', width=1280, height=800)"
+    "        webview.create_window('Ho so CSXH - VCFE Database', 'http://localhost:8501', width=1280, height=800)"
     "        webview.start()"
     "    "
     "    process.terminate()"
@@ -740,7 +740,7 @@ Write-Host ""
 ```
 
 ## code_review.md
-# 🔍 Code Review: Security Profile 360 (csxh-pa01-v1)
+# 🔍 Code Review: VCFE Database (csxh-pa01-v1)
 
 Comprehensive review of the entire codebase. Findings sorted by severity.
 
@@ -956,7 +956,7 @@ No test files, no test infrastructure, no `pytest.ini` or similar configuration.
 ```py
 # -*- coding: utf-8 -*-
 """
-Constants cho hệ thống Security Profile 360
+Constants cho hệ thống VCFE Database
 Danh sách 148 đơn vị hành chính cấp xã/phường tỉnh Phú Thọ
 (Cập nhật ngày 11/01/2026)
 """
@@ -1250,7 +1250,7 @@ class Messages:
 ```py
 # -*- coding: utf-8 -*-
 """
-Database module cho hệ thống Security Profile 360
+Database module cho hệ thống VCFE Database
 Tạo cơ sở dữ liệu SQLite với các bảng theo Schema PRD
 """
 
@@ -1668,7 +1668,7 @@ def verify_database():
 
 
 if __name__ == "__main__":
-    logger.info("Khởi tạo Database Security Profile 360...")
+    logger.info("Khởi tạo Database VCFE Database...")
     create_tables()
     verify_database()
     logger.info("Hoàn tất! Database đã sẵn sàng sử dụng.")
@@ -3383,7 +3383,7 @@ from pathlib import Path
 
 
 class Settings:
-    PROJECT_NAME: str = "Security Profile 360"
+    PROJECT_NAME: str = "VCFE Database"
     PROJECT_VERSION: str = "2.0.0"
 
     # Base directory
@@ -3939,7 +3939,7 @@ def is_super_admin(user: Dict) -> bool:
 ```
 
 ## docs/SQLCIPHER_SETUP.md
-# Hướng dẫn thiết lập SQLCipher cho Security Profile 360
+# Hướng dẫn thiết lập SQLCipher cho VCFE Database
 
 ## 📌 Tổng quan
 
@@ -4174,7 +4174,7 @@ DB_PASSWORD = getpass.getpass("Nhập mật khẩu mã hóa database: ")
 ```py
 # -*- coding: utf-8 -*-
 """
-Backup Script - Security Profile 360
+Backup Script - VCFE Database
 =====================================
 Tự động sao lưu cơ sở dữ liệu `security_profile.db` hàng ngày.
 
@@ -4507,7 +4507,7 @@ def run_backup(db_path_str: str | None = None, keep_days: int = DEFAULT_KEEP_DAY
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Backup cơ sở dữ liệu Security Profile 360",
+        description="Backup cơ sở dữ liệu VCFE Database",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ví dụ:
@@ -4560,7 +4560,7 @@ Ví dụ:
 ```py
 # -*- coding: utf-8 -*-
 """
-Unit Tests cho auth_service.py - Security Profile 360
+Unit Tests cho auth_service.py - VCFE Database
 ======================================================
 Sử dụng pytest framework.
 
@@ -5449,7 +5449,7 @@ if __name__ == '__main__':
 ```py
 # -*- coding: utf-8 -*-
 """
-Unit Tests cho services.py - Security Profile 360
+Unit Tests cho services.py - VCFE Database
 ==================================================
 Sử dụng pytest framework.
 
@@ -6001,7 +6001,7 @@ if __name__ == "__main__":
 ```py
 # -*- coding: utf-8 -*-
 """
-Module Khử trùng lặp dữ liệu - Security Profile 360
+Module Khử trùng lặp dữ liệu - VCFE Database
 Áp dụng patterns từ dedupe library: Record Linkage, Blocking, Clustering
 """
 from rapidfuzz import fuzz
@@ -6613,7 +6613,7 @@ def generate_profile_docx(cccd: str) -> bytes:
 ```py
 # -*- coding: utf-8 -*-
 """
-Module Fuzzy Matching cho tiếng Việt - Security Profile 360
+Module Fuzzy Matching cho tiếng Việt - VCFE Database
 Áp dụng patterns từ thefuzz/rapidfuzz với ngưỡng 80%
 """
 from rapidfuzz import fuzz, process
@@ -8441,7 +8441,7 @@ __all__ = [
 ```py
 # -*- coding: utf-8 -*-
 """
-Audit Log Viewer - Security Profile 360
+Audit Log Viewer - VCFE Database
 Xem lịch sử thay đổi dữ liệu
 """
 import logging
@@ -9047,7 +9047,7 @@ def page_dashboard():
 ```py
 # -*- coding: utf-8 -*-
 """
-Login Page - Security Profile 360
+Login Page - VCFE Database
 Giao diện đăng nhập và đổi mật khẩu
 """
 import streamlit as st
@@ -9063,7 +9063,7 @@ def show_login_form():
     with col2:
         st.markdown("""
         <div style="text-align: center; padding: 20px;">
-            <h1>🔐 Security Profile 360</h1>
+            <h1>🔐 VCFE Database</h1>
             <p style="color: #aaa;">Hệ thống quản lý hồ sơ an ninh</p>
         </div>
         """, unsafe_allow_html=True)
@@ -9262,7 +9262,7 @@ def require_login():
 ```py
 # -*- coding: utf-8 -*-
 """
-Quản lý Nguồn dữ liệu - Security Profile 360
+Quản lý Nguồn dữ liệu - VCFE Database
 Theo dõi provenance của dữ liệu (OSINT Pattern)
 """
 import logging
@@ -9673,7 +9673,7 @@ def page_nhap_excel():
 ```py
 # -*- coding: utf-8 -*-
 """
-User Management Page - Security Profile 360
+User Management Page - VCFE Database
 Quản lý tài khoản (chỉ Super Admin)
 """
 import streamlit as st
