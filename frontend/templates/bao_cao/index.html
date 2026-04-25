@@ -5,7 +5,8 @@
 
 {% block head %}
 {# ECharts must load before bao_cao_charts.js — no defer #}
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+{# F-01 fix: load từ vendor cục bộ — tuyệt đối không CDN #}
+<script src="/static/js/vendor/echarts.min.js"></script>
 {% endblock %}
 
 {% block content %}

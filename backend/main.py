@@ -1,24 +1,41 @@
+# backend/main.py
+"""
+Entry point FastAPI cho VCFE Database.
+
+Phase 3 thay đổi:
+    - Đăng ký dependency global `csrf_protect` (F-10) -> mọi request
+      POST/PUT/PATCH/DELETE bị kiểm tra CSRF token.
+    - Middleware `csrf_cookie_middleware`: với mọi response trang HTML,
+      đảm bảo client có cookie `csrf_token` (httponly=False) để JS HTMX
+      đọc và gắn vào header X-CSRF-Token.
+    - Bỏ CORS toàn cục `allow_origins=["*"]` — app offline same-origin,
+      không cần CORS; lại còn bị spec không hợp lệ với credentials=True.
+"""
+
+from __future__ import annotations
+
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
+
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from backend.config import settings
 from backend.db.session import init_db
+from backend.deps import csrf_protect
 from backend.limiter import limiter
-from backend.routes import auth, dashboard, tra_cuu, ra_soat, profile, nhap_lieu
-from backend.routes import quan_ly_user, audit_log, nguon_du_lieu, nhap_excel
-from backend.routes import danh_ba
-from backend.routes import bao_cao
+from backend.routes import (
+    audit_log, auth, bao_cao, danh_ba, dashboard, files, nguon_du_lieu,
+    nhap_excel, nhap_lieu, profile, quan_ly_user, ra_soat, tra_cuu,
+)
+from backend.security import issue_csrf_token
 
 logging.basicConfig(level=logging.INFO if settings.DEBUG else logging.WARNING)
 logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -38,23 +55,64 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.PROJECT_VERSION,
     lifespan=lifespan,
+    # F-10: enforce CSRF cho TOÀN BỘ ứng dụng. Mỗi request unsafe phải có
+    # token hợp lệ; csrf_protect tự bỏ qua GET/HEAD/OPTIONS.
+    dependencies=[Depends(csrf_protect)],
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # TODO Phase 8: thu hẹp về domain cụ thể khi production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# (CORS đã được gỡ ở Phase 1 review — app offline same-origin)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Static files
+
+# ============================================================================
+# F-10: Middleware đặt cookie csrf_token cho mọi GET trang HTML
+# ============================================================================
+@app.middleware("http")
+async def csrf_cookie_middleware(request: Request, call_next):
+    """
+    Đảm bảo client luôn có cookie `csrf_token` (httponly=False để JS đọc).
+
+    - Nếu request đã có cookie -> tái sử dụng giá trị, set lại request.state
+      để template hiển thị (cần tránh sinh token mới mỗi lần làm vô hiệu
+      tab khác).
+    - Nếu chưa có -> sinh token mới, set vào request.state TRƯỚC khi gọi
+      handler (để template render được), và set cookie SAU khi handler trả.
+    """
+    existing = request.cookies.get("csrf_token")
+    if existing:
+        request.state.csrf_token = existing
+        new_token = None
+    else:
+        new_token = issue_csrf_token()
+        request.state.csrf_token = new_token
+
+    response = await call_next(request)
+
+    if new_token is not None:
+        # httponly=False để JS đọc được giá trị (HTMX cần)
+        # samesite=Lax để chặn cross-site GET kèm cookie
+        # secure=USE_HTTPS (F-12) để cookie chạy được trên HTTP localhost
+        response.set_cookie(
+            key="csrf_token",
+            value=new_token,
+            httponly=False,
+            samesite="lax",
+            secure=settings.USE_HTTPS,
+            max_age=8 * 60 * 60,  # đồng bộ với CSRF_MAX_AGE
+            path="/",
+        )
+    return response
+
+
+# ============================================================================
+# Static + Routes
+# ============================================================================
+# Static files — CHỈ phục vụ asset frontend công khai. Uploads serve qua
+# /api/documents/... (xem F-05 fix).
 app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
-# Routes
 app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(tra_cuu.router)
@@ -67,6 +125,7 @@ app.include_router(nguon_du_lieu.router)
 app.include_router(nhap_excel.router)
 app.include_router(danh_ba.router)
 app.include_router(bao_cao.router)
+app.include_router(files.router)
 
 
 @app.get("/")

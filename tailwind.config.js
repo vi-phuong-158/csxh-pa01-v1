@@ -30,6 +30,15 @@ module.exports = {
           900: '#131720',
         },
       },
+      // F-19: Font 'Inter' chỉ hiển thị nếu MÁY của cán bộ CÀI SẴN.
+      // KHÔNG @import từ Google Fonts / CDN ở input.css -> không có
+      // network call ra ngoài khi vận hành offline. Khi máy không có
+      // Inter, trình duyệt fallback ngay sang ui-sans-serif/system-ui
+      // (font hệ thống) -> giao diện vẫn hiển thị bình thường.
+      // Nếu tương lai cần đồng bộ giao diện 100% giữa các máy, hãy:
+      //   1) Tải Inter .woff2 về frontend/static/fonts/
+      //   2) Khai báo @font-face trong input.css với src local
+      //   3) Build lại Tailwind
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },

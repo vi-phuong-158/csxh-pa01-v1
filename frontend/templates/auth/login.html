@@ -30,6 +30,8 @@
       {% endif %}
 
       <form action="/auth/login" method="post" class="space-y-4">
+        {# F-10: hidden input CSRF cho form HTML thuần (không dùng HTMX) #}
+        <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}"/>
         <input type="hidden" name="next" value="{{ next }}"/>
 
         <div>

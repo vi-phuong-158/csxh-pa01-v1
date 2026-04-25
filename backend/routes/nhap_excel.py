@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, Request, UploadFile, File
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -5,6 +7,8 @@ from sqlalchemy.orm import Session
 
 from backend.db.session import get_db
 from backend.deps import require_login
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/nhap-excel", tags=["nhap-excel"])
 templates = Jinja2Templates(directory="frontend/templates")
@@ -83,10 +87,21 @@ async def upload_excel(
                 if isinstance(ns_raw, datetime):
                     ngay_sinh = ns_raw.date()
                 else:
+                    # F-15 fix: bắt CHÍNH XÁC ngoại lệ parse date thay vì
+                    # bare `except:` (sẽ nuốt cả KeyboardInterrupt/SystemExit
+                    # và ẩn lỗi nghiêm trọng). Khi gặp dữ liệu xấu, ghi log
+                    # đầy đủ + đánh dấu dòng lỗi cho cán bộ rà soát Excel.
                     try:
                         ngay_sinh = pd.to_datetime(ns_raw).date()
-                    except:
-                        pass
+                    except (ValueError, TypeError, pd.errors.ParserError) as e:
+                        logger.warning(
+                            "Excel row %s: không parse được ngay_sinh=%r: %s",
+                            row_num, ns_raw, e,
+                        )
+                        errors.append({
+                            "row": row_num,
+                            "msg": f"Ngày sinh không hợp lệ ({ns_raw!r})",
+                        })
                         
             dt = DoiTuong(
                 cccd=cccd,
