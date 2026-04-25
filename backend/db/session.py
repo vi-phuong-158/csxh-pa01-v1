@@ -1,22 +1,12 @@
 import atexit
-import sqlite3
 import logging
+from sqlcipher3 import dbapi2 as sqlite3  # noqa: F401 — must use sqlcipher3, no fallback
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import sessionmaker, Session
 from backend.config import settings
 
 logger = logging.getLogger(__name__)
-
-# Thử dùng sqlcipher3 nếu có, nếu không fallback sang sqlite3 tiêu chuẩn
-try:
-    from sqlcipher3 import dbapi2 as _sqlite_module
-    USE_SQLCIPHER = True
-    logger.info("Sử dụng sqlcipher3 (mã hóa DB)")
-except ImportError:
-    _sqlite_module = sqlite3
-    USE_SQLCIPHER = False
-    logger.warning("sqlcipher3 không khả dụng — dùng sqlite3 tiêu chuẩn (DB KHÔNG mã hóa)")
 
 
 def _get_engine():
@@ -29,8 +19,7 @@ def _get_engine():
     @event.listens_for(engine, "connect")
     def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
-        if USE_SQLCIPHER:
-            cursor.execute(f"PRAGMA key='{settings.DB_PASSWORD}';")
+        cursor.execute(f"PRAGMA key='{settings.DB_PASSWORD}';")
         cursor.execute("PRAGMA foreign_keys = ON")
         cursor.execute("PRAGMA journal_mode=WAL;")
         cursor.close()
