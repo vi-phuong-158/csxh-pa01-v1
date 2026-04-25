@@ -1,21 +1,42 @@
-from fastapi import APIRouter, Depends, Form, Request, UploadFile, File
+# backend/routes/profile.py
+"""
+Routes liên quan tới hồ sơ đối tượng.
+
+CÁC FIX BẢO MẬT ĐÃ ÁP DỤNG TRONG FILE NÀY:
+    F-04 (Path Traversal qua CCCD): mọi handler nhận `cccd` từ URL đều
+        validate ngay đầu hàm bằng `validate_cccd()` -> raise HTTP 400 nếu sai.
+    F-05 (Bảo vệ thư mục Uploads): file lưu tại `data/uploads/...` (NGOÀI
+        `frontend/static/`); response hiển thị qua URL `/api/documents/...`
+        — yêu cầu xác thực, không public qua mount tĩnh.
+    F-08 (Kiểm soát File Upload): mọi UploadFile chạy qua
+        `validate_upload_file()` để giới hạn 5MB, MIME thật theo magic bytes,
+        sanitize tên file gốc trước khi lưu DB.
+"""
+
+from __future__ import annotations
+
+import uuid
+from pathlib import Path
+from urllib.parse import quote
+
+import aiofiles
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from pathlib import Path
-import aiofiles
-import uuid
 
 from backend.config import settings
+from backend.constants import (
+    LOAI_HINH_DAC_THU, LOAI_LIEN_HE, LOAI_QUAN_HE, LOAI_TAI_LIEU,
+    LOAI_XE, NGAN_HANG, PHAN_LOAI_NGHE_NGHIEP, TINH_THANH, XA_PHUONG,
+)
 from backend.db.session import get_db
-from backend.deps import require_login, require_admin
+from backend.deps import require_admin, require_login
+from backend.models.models import DoiTuong, TaiLieu
 from backend.services import profile as profile_svc
 from backend.services.docx_export import generate_profile_docx
-from backend.models.models import DoiTuong
-from backend.constants import (
-    TINH_THANH, XA_PHUONG, LOAI_LIEN_HE, LOAI_QUAN_HE,
-    LOAI_HINH_DAC_THU, NGAN_HANG, LOAI_XE, LOAI_TAI_LIEU,
-    PHAN_LOAI_NGHE_NGHIEP,
+from backend.utils.validators import (
+    sanitize_filename, validate_cccd, validate_upload_file,
 )
 
 router = APIRouter(prefix="/profile", tags=["profile"])
@@ -33,11 +54,38 @@ _CTX_OPTS = {
     "phan_loai_nghe_nghiep": PHAN_LOAI_NGHE_NGHIEP,
 }
 
+# F-08: ngưỡng dung lượng tối đa cho 1 file upload (5 MB theo yêu cầu).
+# Có thể nâng qua settings.MAX_UPLOAD_MB nhưng cap cứng 5MB ở route này.
+_MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 
+# Allowlist MIME thật cho ảnh chân dung và tài liệu (DOC/PDF + ảnh).
+_AVATAR_MIME = {"image/jpeg", "image/png", "image/webp"}
+_DOC_MIME = {
+    "image/jpeg", "image/png", "image/webp",
+    "application/pdf",
+    "application/msword",  # .doc cũ
+    "application/zip",     # .docx (zip-based Office Open XML)
+}
+
+
+# ============================================================================
+# F-04 helper — Dependency rút gọn để FastAPI tự gọi validate_cccd().
+# ============================================================================
+def _cccd_dep(cccd: str) -> str:
+    """Dependency: validate `cccd` từ path. Raise 400 nếu sai chuẩn."""
+    return validate_cccd(cccd)
+
+
+# ============================================================================
+# Export DOCX
+# ============================================================================
 @router.get("/{cccd}/export-docx")
-def export_docx(cccd: str, user: dict = Depends(require_login), db: Session = Depends(get_db)):
-    """Download a DOCX report for this profile."""
-    from urllib.parse import quote
+def export_docx(
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
+    """Tải file DOCX báo cáo hồ sơ."""
     data = profile_svc.get_profile_full(db, cccd)
     if not data:
         return HTMLResponse("Không tìm thấy hồ sơ", status_code=404)
@@ -46,55 +94,76 @@ def export_docx(cccd: str, user: dict = Depends(require_login), db: Session = De
         return HTMLResponse("Không thể tạo báo cáo", status_code=500)
     ho_ten = (data.get("ho_ten") or cccd).replace(" ", "_")
     filename = f"HoSo_{ho_ten}_{cccd}.docx"
-    # RFC 5987: encode UTF-8 filename so Vietnamese chars work in browsers
-    encoded_filename = quote(filename, safe="")
-    content_disposition = f"attachment; filename*=UTF-8''{encoded_filename}"
+    encoded = quote(filename, safe="")
     return Response(
         content=docx_bytes,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": content_disposition},
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"},
     )
 
 
+# ============================================================================
+# Trang chi tiết hồ sơ + load tab động (HTMX)
+# ============================================================================
 @router.get("/{cccd}", response_class=HTMLResponse)
-def profile_page(cccd: str, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
+def profile_page(
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
     data = profile_svc.get_profile_full(db, cccd)
     if not data:
         return HTMLResponse("Không tìm thấy hồ sơ", status_code=404)
-    return templates.TemplateResponse(request, "profile/index.html", {
-        "user": user, "profile": data, **_CTX_OPTS,
-    })
+    return templates.TemplateResponse(
+        request, "profile/index.html",
+        {"user": user, "profile": data, **_CTX_OPTS},
+    )
 
 
 @router.get("/{cccd}/tab/{tab_name}", response_class=HTMLResponse)
-def profile_tab(cccd: str, tab_name: str, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
+def profile_tab(
+    tab_name: str,
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
     data = profile_svc.get_profile_full(db, cccd)
     if not data:
         return HTMLResponse("", status_code=404)
     template_map = {
-        "nhan-than":    "profile/_tab_nhan_than.html",
-        "lien-he":      "profile/_tab_lien_he.html",
-        "tai-chinh":    "profile/_tab_tai_chinh.html",
-        "phuong-tien":  "profile/_tab_phuong_tien.html",
-        "ho-so-dac-thu":"profile/_tab_ho_so_dac_thu.html",
-        "tai-lieu":     "profile/_tab_tai_lieu.html",
-        "qua-trinh":    "profile/_tab_qua_trinh.html",
+        "nhan-than":     "profile/_tab_nhan_than.html",
+        "lien-he":       "profile/_tab_lien_he.html",
+        "tai-chinh":     "profile/_tab_tai_chinh.html",
+        "phuong-tien":   "profile/_tab_phuong_tien.html",
+        "ho-so-dac-thu": "profile/_tab_ho_so_dac_thu.html",
+        "tai-lieu":      "profile/_tab_tai_lieu.html",
+        "qua-trinh":     "profile/_tab_qua_trinh.html",
     }
     tpl = template_map.get(tab_name)
     if not tpl:
         return HTMLResponse("Tab không tồn tại", status_code=404)
-    return templates.TemplateResponse(request, tpl, {"user": user, "profile": data, **_CTX_OPTS})
+    return templates.TemplateResponse(
+        request, tpl, {"user": user, "profile": data, **_CTX_OPTS},
+    )
 
 
 def _tab_response(request, db, cccd, user, tpl):
-    """Helper to reload profile data and render a tab partial."""
+    """Helper: nạp lại data hồ sơ và render partial của 1 tab."""
     data = profile_svc.get_profile_full(db, cccd)
-    return templates.TemplateResponse(request, tpl, {"user": user, "profile": data, **_CTX_OPTS})
+    return templates.TemplateResponse(
+        request, tpl, {"user": user, "profile": data, **_CTX_OPTS},
+    )
 
 
+# ============================================================================
+# Cập nhật thông tin cơ bản
+# ============================================================================
 @router.post("/{cccd}/update")
 async def update_basic(
-    cccd: str, request: Request,
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
     user: dict = Depends(require_login),
     db: Session = Depends(get_db),
 ):
@@ -107,149 +176,231 @@ async def update_basic(
     return RedirectResponse(f"/profile/{cccd}", status_code=302)
 
 
+# ============================================================================
+# CRUD nhân thân / liên hệ / tài chính / phương tiện / hồ sơ đặc thù / quá trình
+# (DB-only, không động chạm filesystem — vẫn validate cccd defense-in-depth)
+# ============================================================================
 @router.post("/{cccd}/nhan-than")
-async def add_nhan_than(cccd: str, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
-    form = await request.form()
-    profile_svc.add_nhan_than(db, cccd, dict(form))
+async def add_nhan_than(
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
+    profile_svc.add_nhan_than(db, cccd, dict(await request.form()))
     return _tab_response(request, db, cccd, user, "profile/_tab_nhan_than.html")
 
 
 @router.delete("/{cccd}/nhan-than/{item_id}", response_class=HTMLResponse)
-def delete_nhan_than(cccd: str, item_id: int, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
+def delete_nhan_than(
+    item_id: int,
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
     profile_svc.delete_nhan_than(db, item_id)
     return _tab_response(request, db, cccd, user, "profile/_tab_nhan_than.html")
 
 
 @router.post("/{cccd}/lien-he")
-async def add_lien_he(cccd: str, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
-    form = await request.form()
-    profile_svc.add_lien_he(db, cccd, dict(form))
+async def add_lien_he(
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
+    profile_svc.add_lien_he(db, cccd, dict(await request.form()))
     return _tab_response(request, db, cccd, user, "profile/_tab_lien_he.html")
 
 
 @router.delete("/{cccd}/lien-he/{item_id}", response_class=HTMLResponse)
-def delete_lien_he(cccd: str, item_id: int, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
+def delete_lien_he(
+    item_id: int,
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
     profile_svc.delete_lien_he(db, item_id)
     return _tab_response(request, db, cccd, user, "profile/_tab_lien_he.html")
 
 
 @router.post("/{cccd}/tai-chinh")
-async def add_tai_chinh(cccd: str, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
-    form = await request.form()
-    profile_svc.add_tai_chinh(db, cccd, dict(form))
+async def add_tai_chinh(
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
+    profile_svc.add_tai_chinh(db, cccd, dict(await request.form()))
     return _tab_response(request, db, cccd, user, "profile/_tab_tai_chinh.html")
 
 
 @router.delete("/{cccd}/tai-chinh/{item_id}", response_class=HTMLResponse)
-def delete_tai_chinh(cccd: str, item_id: int, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
+def delete_tai_chinh(
+    item_id: int,
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
     profile_svc.delete_tai_chinh(db, item_id)
     return _tab_response(request, db, cccd, user, "profile/_tab_tai_chinh.html")
 
 
 @router.post("/{cccd}/phuong-tien")
-async def add_phuong_tien(cccd: str, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
-    form = await request.form()
-    profile_svc.add_phuong_tien(db, cccd, dict(form))
+async def add_phuong_tien(
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
+    profile_svc.add_phuong_tien(db, cccd, dict(await request.form()))
     return _tab_response(request, db, cccd, user, "profile/_tab_phuong_tien.html")
 
 
 @router.delete("/{cccd}/phuong-tien/{item_id}", response_class=HTMLResponse)
-def delete_phuong_tien(cccd: str, item_id: int, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
+def delete_phuong_tien(
+    item_id: int,
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
     profile_svc.delete_phuong_tien(db, item_id)
     return _tab_response(request, db, cccd, user, "profile/_tab_phuong_tien.html")
 
 
 @router.post("/{cccd}/ho-so-dac-thu")
-async def add_dac_thu(cccd: str, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
-    form = await request.form()
-    profile_svc.add_ho_so_dac_thu(db, cccd, dict(form))
+async def add_dac_thu(
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
+    profile_svc.add_ho_so_dac_thu(db, cccd, dict(await request.form()))
     return _tab_response(request, db, cccd, user, "profile/_tab_ho_so_dac_thu.html")
 
 
 @router.delete("/{cccd}/ho-so-dac-thu/{item_id}", response_class=HTMLResponse)
-def delete_dac_thu(cccd: str, item_id: int, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
+def delete_dac_thu(
+    item_id: int,
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
     profile_svc.delete_ho_so_dac_thu(db, item_id)
     return _tab_response(request, db, cccd, user, "profile/_tab_ho_so_dac_thu.html")
 
 
 @router.post("/{cccd}/qua-trinh")
-async def add_qua_trinh(cccd: str, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
-    form = await request.form()
-    profile_svc.add_qua_trinh(db, cccd, dict(form))
+async def add_qua_trinh(
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
+    profile_svc.add_qua_trinh(db, cccd, dict(await request.form()))
     return _tab_response(request, db, cccd, user, "profile/_tab_qua_trinh.html")
 
 
 @router.delete("/{cccd}/qua-trinh/{item_id}", response_class=HTMLResponse)
-def delete_qua_trinh(cccd: str, item_id: int, request: Request, user: dict = Depends(require_login), db: Session = Depends(get_db)):
+def delete_qua_trinh(
+    item_id: int,
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
+):
     profile_svc.delete_qua_trinh(db, item_id)
     return _tab_response(request, db, cccd, user, "profile/_tab_qua_trinh.html")
 
 
+# ============================================================================
+# F-05 + F-08: UPLOAD AVATAR & DOC — file lưu trong data/uploads/ (ngoài static)
+# ============================================================================
 @router.post("/{cccd}/upload-avatar")
 async def upload_avatar(
-    cccd: str,
     file: UploadFile = File(...),
+    cccd: str = Depends(_cccd_dep),
     user: dict = Depends(require_login),
     db: Session = Depends(get_db),
 ):
-    ALLOWED = {".jpg", ".jpeg", ".png", ".webp"}
-    ext = Path(file.filename).suffix.lower()
-    if ext not in ALLOWED:
-        return HTMLResponse('<p class="text-red-400">Chỉ hỗ trợ JPG/PNG/WebP</p>', status_code=400)
+    """
+    Upload ảnh chân dung. Quy trình:
+        1) F-04: cccd đã được validate qua _cccd_dep.
+        2) F-08: validate_upload_file -> max 5MB + MIME thật khớp ảnh.
+        3) F-05: lưu file vào `<UPLOAD_DIR>/avatars/<cccd>/<uuid>.<ext>`,
+                ngoài thư mục static, chỉ truy cập được qua /api/documents/.
+    """
+    checked = await validate_upload_file(file, _AVATAR_MIME, _MAX_UPLOAD_BYTES)
 
-    folder = Path(settings.BASE_DIR) / settings.UPLOAD_DIR / "avatars" / cccd
+    folder = (Path(settings.BASE_DIR) / settings.UPLOAD_DIR / "avatars" / cccd).resolve()
     folder.mkdir(parents=True, exist_ok=True)
-    filename = f"{uuid.uuid4().hex}{ext}"
-    dest = folder / filename
 
+    # Tên file LƯU TRÊN ĐĨA do server tự sinh — KHÔNG dùng tên client.
+    stored_name = f"{uuid.uuid4().hex}{checked.extension}"
+    dest = folder / stored_name
     async with aiofiles.open(dest, "wb") as f:
-        await f.write(await file.read())
+        await f.write(checked.content)
 
-    rel_path = f"uploads/avatars/{cccd}/{filename}"
+    # Đường dẫn LOGIC lưu DB (relative tới UPLOAD_DIR) — không kèm
+    # prefix "/static/" vì file không nằm dưới static nữa.
+    rel_path = f"avatars/{cccd}/{stored_name}"
     dt = db.get(DoiTuong, cccd)
     if dt:
         dt.anh_chan_dung = rel_path
         db.commit()
 
-    return HTMLResponse(f'<img src="/static/{rel_path}" class="w-24 h-24 rounded-full object-cover">')
+    # F-05: trả URL serve qua endpoint có auth
+    serve_url = f"/api/documents/{rel_path}"
+    return HTMLResponse(
+        f'<img src="{serve_url}" class="w-24 h-24 rounded-full object-cover">'
+    )
 
 
 @router.post("/{cccd}/upload-doc")
 async def upload_doc(
-    cccd: str,
     request: Request,
     file: UploadFile = File(...),
     loai_tai_lieu: str = Form(""),
     mo_ta: str = Form(""),
+    cccd: str = Depends(_cccd_dep),
     user: dict = Depends(require_login),
     db: Session = Depends(get_db),
 ):
-    ALLOWED = {".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png"}
-    ext = Path(file.filename).suffix.lower()
-    if ext not in ALLOWED:
-        return HTMLResponse('<p class="text-red-400">File không hợp lệ</p>', status_code=400)
+    """
+    Upload tài liệu (PDF/DOC/DOCX/ảnh). Áp F-04 + F-05 + F-08 đầy đủ.
+    Tên file gốc do client gửi -> sanitize TRƯỚC khi lưu DB và hiển thị,
+    chống XSS qua attribute / text node của template Jinja.
+    """
+    checked = await validate_upload_file(file, _DOC_MIME, _MAX_UPLOAD_BYTES)
 
-    folder = Path(settings.BASE_DIR) / settings.UPLOAD_DIR / "docs" / cccd
+    folder = (Path(settings.BASE_DIR) / settings.UPLOAD_DIR / "docs" / cccd).resolve()
     folder.mkdir(parents=True, exist_ok=True)
-    filename = f"{uuid.uuid4().hex}{ext}"
-    dest = folder / filename
 
+    stored_name = f"{uuid.uuid4().hex}{checked.extension}"
+    dest = folder / stored_name
     async with aiofiles.open(dest, "wb") as f:
-        await f.write(await file.read())
+        await f.write(checked.content)
 
-    rel_path = f"uploads/docs/{cccd}/{filename}"
-    
-    from backend.models.models import TaiLieu
-    tl = TaiLieu(
+    rel_path = f"docs/{cccd}/{stored_name}"
+
+    # F-08: tên gốc của user -> sanitize. Lưu cả tên gốc (đã sạch) lẫn
+    # tên server-side (UUID) để đối chiếu khi cần.
+    safe_original = sanitize_filename(checked.safe_name)
+
+    db.add(TaiLieu(
         cccd=cccd,
-        ten_file_goc=file.filename,
-        ten_file_luu=filename,
+        ten_file_goc=safe_original,
+        ten_file_luu=stored_name,
         duong_dan=rel_path,
-        loai_tai_lieu=loai_tai_lieu,
-        mo_ta=mo_ta,
-        dinh_dang=ext.strip(".")
-    )
-    db.add(tl)
+        loai_tai_lieu=sanitize_filename(loai_tai_lieu, max_len=50),
+        mo_ta=mo_ta[:1000] if mo_ta else "",
+        dinh_dang=checked.extension.lstrip(".") or "bin",
+    ))
     db.commit()
 
     return _tab_response(request, db, cccd, user, "profile/_tab_tai_lieu.html")
@@ -257,22 +408,25 @@ async def upload_doc(
 
 @router.delete("/{cccd}/tai-lieu/{item_id}", response_class=HTMLResponse)
 def delete_tai_lieu(
-    cccd: str, 
-    item_id: int, 
-    request: Request, 
-    user: dict = Depends(require_login), 
-    db: Session = Depends(get_db)
+    item_id: int,
+    request: Request,
+    cccd: str = Depends(_cccd_dep),
+    user: dict = Depends(require_login),
+    db: Session = Depends(get_db),
 ):
     profile_svc.delete_tai_lieu(db, item_id)
     return _tab_response(request, db, cccd, user, "profile/_tab_tai_lieu.html")
 
 
-
+# ============================================================================
+# Xoá hồ sơ (admin only)
+# ============================================================================
 @router.delete("/{cccd}")
 def delete_profile(
-    cccd: str,
+    cccd: str = Depends(_cccd_dep),
     user: dict = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
+    """Chỉ super_admin được xoá. cccd đã validate -> service an toàn rmtree."""
     ok, msg = profile_svc.delete_profile(db, cccd, user["username"])
     return {"ok": ok, "message": msg}

@@ -87,15 +87,41 @@ def commit_draft(db: Session, cccd: str) -> Tuple[bool, str]:
 
 
 def delete_profile(db: Session, cccd: str, nguoi: str = "") -> Tuple[bool, str]:
+    """
+    Xoá hồ sơ + dọn dẹp file đính kèm trên đĩa.
+
+    F-04 fix: dù cccd ĐÃ được route layer validate (regex 9/12 số), service
+    này vẫn thực hiện kiểm tra prefix ĐỘC LẬP trước khi gọi shutil.rmtree —
+    defense-in-depth: nếu sau này có code path khác gọi service trực tiếp
+    với cccd lạ, file system vẫn an toàn.
+    """
+    from backend.utils.validators import validate_cccd
+
+    # Defense-in-depth: nếu service được gọi từ nơi không qua route layer,
+    # vẫn raise HTTPException(400) — caller sẽ tự handle.
+    validate_cccd(cccd)
+
     dt = db.get(DoiTuong, cccd)
     if not dt:
         return False, "Không tìm thấy hồ sơ"
     _log(db, "doi_tuong", "DELETE", cccd, f"ho_ten={dt.ho_ten}", None, nguoi)
     db.delete(dt)
     db.commit()
-    upload_folder = Path(settings.BASE_DIR) / settings.UPLOAD_DIR / cccd
-    if upload_folder.exists():
-        shutil.rmtree(upload_folder)
+
+    # Resolve absolute path; sau đó verify rằng cây thư mục đích vẫn nằm
+    # bên trong upload_root. Bằng việc check qua relative_to, dù cccd
+    # chứa "../../etc" cũng sẽ bị bắt ở đây và bỏ qua bước rmtree.
+    upload_root = (Path(settings.BASE_DIR) / settings.UPLOAD_DIR).resolve()
+    for sub in ("avatars", "docs"):
+        target = (upload_root / sub / cccd).resolve()
+        try:
+            target.relative_to(upload_root)
+        except ValueError:
+            # target leak ra ngoài upload_root -> bỏ qua an toàn, không xoá
+            continue
+        if target.exists() and target.is_dir():
+            shutil.rmtree(target)
+
     return True, "Đã xóa hồ sơ"
 
 

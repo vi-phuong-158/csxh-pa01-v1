@@ -16,6 +16,7 @@ from backend.routes import auth, dashboard, tra_cuu, ra_soat, profile, nhap_lieu
 from backend.routes import quan_ly_user, audit_log, nguon_du_lieu, nhap_excel
 from backend.routes import danh_ba
 from backend.routes import bao_cao
+from backend.routes import files  # F-05: phục vụ tài liệu upload có xác thực
 
 logging.basicConfig(level=logging.INFO if settings.DEBUG else logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -51,7 +52,9 @@ app.add_middleware(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Static files
+# Static files — CHỈ phục vụ asset frontend công khai (CSS/JS vendor, icon).
+# Tuyệt đối KHÔNG mount thư mục uploads vào đây: file CCCD, ảnh chân dung,
+# tài liệu chỉ được phục vụ qua route `/api/documents/...` (xem F-05 fix).
 app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
 # Routes
@@ -67,6 +70,7 @@ app.include_router(nguon_du_lieu.router)
 app.include_router(nhap_excel.router)
 app.include_router(danh_ba.router)
 app.include_router(bao_cao.router)
+app.include_router(files.router)  # F-05: GET /api/documents/{kind}/{cccd}/{filename}
 
 
 @app.get("/")
