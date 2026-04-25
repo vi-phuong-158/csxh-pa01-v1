@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Constants cho hệ thống Security Profile 360
+Constants cho hệ thống VCFE Database
 Danh sách 148 đơn vị hành chính cấp xã/phường tỉnh Phú Thọ
 (Cập nhật ngày 11/01/2026)
 """

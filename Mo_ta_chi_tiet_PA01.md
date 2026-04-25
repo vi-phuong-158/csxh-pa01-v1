@@ -1,7 +1,7 @@
 # MÔ TẢ CHI TIẾT DỰ ÁN (SECURITY PROFILE 360)
 
 ## 1. Giới thiệu chung
-**Tên dự án:** Hệ thống Quản trị An ninh PA01 (Security Profile 360)
+**Tên dự án:** Cơ sở dữ liệu về người Việt Nam có yếu tố nước ngoài (VCFE Database)
 **Mục tiêu:** Số hóa, quản lý và khai thác hiệu quả hồ sơ đối tượng thuộc diện quản lý chuyên sâu (CSXH), đối tượng có yếu tố nước ngoài hoặc các diện đối tượng nghiệp vụ an ninh khác.
 
 ### Công nghệ sử dụng

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-DOCX Export Service – Security Profile 360
+DOCX Export Service – VCFE Database
 Generates a professional Word document for a given CCCD profile.
 """
 
@@ -241,7 +241,7 @@ def generate_profile_docx(profile: dict, base_dir: str = "") -> Optional[bytes]:
 
     p_sys = doc.add_paragraph()
     p_sys.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    rs = p_sys.add_run("Security Profile 360 · PA01")
+    rs = p_sys.add_run("VCFE Database")
     rs.font.size = Pt(9)
     rs.font.color.rgb = None  # default
     rs.italic = True

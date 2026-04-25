@@ -1,14 +1,14 @@
-# BÁO CÁO ĐỀ XUẤT TRIỂN KHAI THÍ ĐIỂM HỆ THỐNG QUẢN TRỊ AN NINH PA01 (SECURITY PROFILE 360)
+# BÁO CÁO ĐỀ XUẤT TRIỂN KHAI THÍ ĐIỂM CƠ SỞ DỮ LIỆU VỀ NGƯỜI VIỆT NAM CÓ YẾU TỐ NƯỚC NGOÀI (VCFE DATABASE)
 
 **Kính gửi:** Thủ trưởng đơn vị / Lãnh đạo Phòng
 
-**Về việc:** Đề xuất triển khai thí điểm Phần mềm Quản trị hồ sơ nghiệp vụ an ninh (Security Profile 360).
+**Về việc:** Đề xuất triển khai thí điểm Phần mềm Quản trị hồ sơ nghiệp vụ an ninh (VCFE Database).
 
 ---
 
 ## I. GIỚI THIỆU CHUNG VỀ PHẦN MỀM
 
-Hệ thống **Security Profile 360 (PA01)** là phần mềm đặc tả nghiệp vụ được xây dựng với mục tiêu số hóa, quản lý và khai thác hiệu quả hồ sơ đối tượng thuộc diện quản lý chuyên sâu (CSXH), có yếu tố nước ngoài hoặc các đối tượng nghiệp vụ an ninh.
+Hệ thống **VCFE Database (PA01)** là phần mềm đặc tả nghiệp vụ được xây dựng với mục tiêu số hóa, quản lý và khai thác hiệu quả hồ sơ đối tượng thuộc diện quản lý chuyên sâu (CSXH), có yếu tố nước ngoài hoặc các đối tượng nghiệp vụ an ninh.
 
 Phần mềm được thiết kế tối ưu hóa cho môi trường mạng nội bộ, đảm bảo tính bảo mật cao (local/offline) kết hợp với các công cụ phân tích dữ liệu ứng dụng thuật toán thông minh, nâng cao hiệu suất làm việc của cán bộ trinh sát và cán bộ quản lý so với phương pháp thủ công hoặc trên Excel truyền thống.
 
@@ -107,7 +107,7 @@ Không yêu cầu cơ sở hạ tầng Server phức tạp hay cài đặt Datab
 
 ## V. ĐỀ XUẤT, KIẾN NGHỊ
 
-Từ những phân tích về hiệu quả nghiệp vụ thực tiễn nêu trên, kính đề xuất Lãnh đạo xem xét cho triển khai thí điểm phần mềm **Security Profile 360** trên 01 tổ/đội chuyên trách để áp dụng nhập liệu và quản lý tệp đối tượng có yếu tố nước ngoài.
+Từ những phân tích về hiệu quả nghiệp vụ thực tiễn nêu trên, kính đề xuất Lãnh đạo xem xét cho triển khai thí điểm phần mềm **VCFE Database** trên 01 tổ/đội chuyên trách để áp dụng nhập liệu và quản lý tệp đối tượng có yếu tố nước ngoài.
 
 Sau 1 tháng thí điểm sẽ có báo cáo đánh giá thực tiễn về thời gian tiết kiệm được và hiệu suất trích xuất thông tin trước khi nhân rộng trong đơn vị.
 

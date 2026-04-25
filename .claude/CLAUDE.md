@@ -1,6 +1,6 @@
 THÔNG TIN DỰ ÁN (PROJECT OVERVIEW)
 
-Tên dự án: SECURITY PROFILE 360 (Hệ thống Quản trị An ninh PA01)
+Tên dự án: VCFE Database (Cơ sở dữ liệu về người Việt Nam có yếu tố nước ngoài)
 
 Mục tiêu: Refactor kiến trúc từ Monolith Streamlit sang mô hình Frontend-Backend phân tách (Server-rendered HTML + FastAPI).
 

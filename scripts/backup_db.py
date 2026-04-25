@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Backup Script - Security Profile 360
+Backup Script - VCFE Database
 =====================================
 Tự động sao lưu cơ sở dữ liệu `security_profile.db` hàng ngày.
 
@@ -333,7 +333,7 @@ def run_backup(db_path_str: str | None = None, keep_days: int = DEFAULT_KEEP_DAY
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Backup cơ sở dữ liệu Security Profile 360",
+        description="Backup cơ sở dữ liệu VCFE Database",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ví dụ:

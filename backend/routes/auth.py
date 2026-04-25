@@ -46,6 +46,7 @@ async def login_submit(
         value=token,
         httponly=True,
         samesite="lax",
+        secure=not settings.DEBUG,  # Use secure cookies in production
         max_age=settings.SESSION_MAX_AGE,
     )
     return response

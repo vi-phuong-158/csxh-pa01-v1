@@ -5,7 +5,7 @@ import os
 # Add repo root to path to allow imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.security_utils import sanitize_dataframe_for_csv
+from backend.utils.security_utils import sanitize_dataframe_for_csv
 
 def test_sanitize_dataframe():
     # Simulate user data with malicious payload

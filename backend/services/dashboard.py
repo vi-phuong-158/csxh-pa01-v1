@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 _stats_cache: TTLCache = TTLCache(maxsize=1, ttl=300)
 
 
+@cached(_stats_cache)
 def get_statistics(db: Session) -> Dict[str, Any]:
     try:
         total = db.execute(

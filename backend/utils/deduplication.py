@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Module Khử trùng lặp dữ liệu - Security Profile 360
+Module Khử trùng lặp dữ liệu - VCFE Database
 Áp dụng patterns từ dedupe library: Record Linkage, Blocking, Clustering
 """
 from rapidfuzz import fuzz
