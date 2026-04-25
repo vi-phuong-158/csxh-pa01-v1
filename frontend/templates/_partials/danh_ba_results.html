@@ -1,0 +1,78 @@
+{# File: frontend/templates/_partials/danh_ba_results.html
+   Variables: results (list), search_type (str), query (str) #}
+
+{% if not query %}
+<tr>
+  <td colspan="6" class="py-14 text-center">
+    <svg class="w-10 h-10 mx-auto mb-3 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+    </svg>
+    <p class="text-sm text-slate-400">Nhập từ khóa để bắt đầu tìm kiếm</p>
+  </td>
+</tr>
+
+{% elif not results %}
+<tr>
+  <td colspan="6" class="py-14 text-center">
+    <svg class="w-10 h-10 mx-auto mb-3 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <p class="text-sm text-slate-400">Không tìm thấy kết quả cho "<strong class="text-slate-600">{{ query }}</strong>"</p>
+    <p class="text-xs text-slate-300 mt-1">Thử rút ngắn từ khóa hoặc kiểm tra lại loại tra cứu (SĐT / STK)</p>
+  </td>
+</tr>
+
+{% else %}
+{% for r in results %}
+<tr>
+  <td>
+    <span class="font-mono font-semibold text-slate-700">{{ r.value }}</span>
+  </td>
+  <td>
+    {% if r.sub %}
+      <span class="badge {% if search_type == 'bank' %}badge-green{% else %}badge-blue{% endif %}">
+        {{ r.sub }}
+      </span>
+    {% else %}
+      <span class="text-slate-300 text-xs">—</span>
+    {% endif %}
+  </td>
+  <td>
+    <span class="font-medium text-slate-700">{{ r.ho_ten or "—" }}</span>
+    {% if search_type == 'bank' and r.chu and r.chu != r.ho_ten %}
+      <br>
+      <span class="text-xs text-slate-400">Chủ TK: {{ r.chu }}</span>
+    {% endif %}
+  </td>
+  <td>
+    <span class="font-mono text-xs text-slate-500">{{ r.cccd }}</span>
+  </td>
+  <td>
+    <span class="text-xs text-slate-400" title="{{ r.ghi_chu }}">
+      {{ (r.ghi_chu[:60] + '…') if r.ghi_chu and r.ghi_chu|length > 60 else (r.ghi_chu or '—') }}
+    </span>
+  </td>
+  <td class="text-center">
+    <a
+      href="/profile/{{ r.cccd }}"
+      class="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-800 hover:underline transition-colors"
+    >
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+      </svg>
+      Xem hồ sơ
+    </a>
+  </td>
+</tr>
+{% endfor %}
+
+<!-- Footer row: result count -->
+<tr class="bg-slate-50/60">
+  <td colspan="6" class="py-2.5 text-center text-xs text-slate-400">
+    Tìm thấy <strong class="text-slate-600">{{ results | length }}</strong> kết quả
+    {% if results | length >= 100 %}
+      <span class="text-amber-500">(đã giới hạn 100 — hãy thu hẹp từ khóa)</span>
+    {% endif %}
+  </td>
+</tr>
+{% endif %}

@@ -1,0 +1,103 @@
+<div class="space-y-4">
+  <!-- Existing list -->
+  {% if profile.nhan_than %}
+  <div class="card overflow-x-auto">
+    <table class="table-auto w-full">
+      <thead><tr><th>Quan hệ</th><th>Họ tên</th><th>CCCD</th><th>Ngày sinh</th><th>Địa bàn</th><th>Nghề nghiệp</th><th></th></tr></thead>
+      <tbody>
+        {% for nt in profile.nhan_than %}
+        <tr id="nt-{{ nt.id }}">
+          <td><span class="badge badge-blue">{{ nt.quan_he }}</span></td>
+          <td class="font-medium">{{ nt.ho_ten or '—' }}</td>
+          <td class="font-mono text-xs">{{ nt.cccd or '—' }}</td>
+          <td>{{ nt.ngay_sinh or '—' }}</td>
+          <td>{{ nt.dia_chi_xa or '' }}{% if nt.dia_chi_tinh %} / {{ nt.dia_chi_tinh }}{% endif %}</td>
+          <td>{{ nt.nghe_nghiep or '—' }}</td>
+          <td>
+            <button hx-delete="/profile/{{ profile.cccd }}/nhan-than/{{ nt.id }}"
+                    hx-target="#tab-content"
+                    hx-swap="innerHTML"
+                    hx-confirm="Xóa nhân thân này?"
+                    class="text-red-400 hover:text-red-300 text-xs">Xóa</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Add form -->
+  <div class="card" x-data="{open: false}">
+    <button @click="open=!open" class="btn-secondary text-xs w-full justify-center">
+      + Thêm nhân thân
+    </button>
+    <form x-show="open" x-cloak
+          hx-post="/profile/{{ profile.cccd }}/nhan-than"
+          hx-target="#tab-content"
+          hx-swap="innerHTML"
+          class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div>
+        <label class="label">Quan hệ <span class="text-red-400">*</span></label>
+        <select name="loai_quan_he" class="input" required>
+          {% for q in loai_quan_he %}
+          <option value="{{ q }}">{{ q }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label">Họ tên</label>
+        <input name="ho_ten" type="text" class="input" placeholder="Họ và tên" />
+      </div>
+      <div>
+        <label class="label">CCCD nhân thân</label>
+        <input name="cccd_nhan_than" type="text" class="input font-mono" placeholder="CCCD (nếu có)"
+               hx-get="/nhap-lieu/api/autofill"
+               hx-trigger="blur[this.value.length==12||this.value.length==9]"
+               hx-include="[name='cccd_nhan_than']"
+               hx-target="next .autofill-result" />
+        <div class="autofill-result text-xs text-slate-400 mt-1"></div>
+      </div>
+      <div>
+        <label class="label">Ngày sinh</label>
+        <input name="ngay_sinh" type="date" class="input" />
+      </div>
+      <div>
+        <label class="label">Giới tính</label>
+        <select name="gioi_tinh" class="input">
+          <option value="">--</option>
+          {% for g in ['Nam','Nữ','Khác'] %}<option>{{ g }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label">Tỉnh/Thành</label>
+        <select name="dia_chi_tinh" class="input">
+          {% for t in tinh_thanh %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label">Xã/Phường</label>
+        <select name="dia_chi_xa" class="input">
+          <option value="">-- Chọn --</option>
+          {% for x in xa_phuong %}<option>{{ x }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label">Nghề nghiệp</label>
+        <input name="nghe_nghiep" type="text" class="input" />
+      </div>
+      <div class="md:col-span-2">
+        <label class="label">Nơi ở</label>
+        <input name="noi_o" type="text" class="input" />
+      </div>
+      <div class="md:col-span-2">
+        <label class="label">Ghi chú</label>
+        <input name="ghi_chu" type="text" class="input" />
+      </div>
+      <div class="md:col-span-2 flex gap-2 justify-end">
+        <button type="button" @click="open=false" class="btn-ghost text-xs">Hủy</button>
+        <button type="submit" class="btn-primary text-xs">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>

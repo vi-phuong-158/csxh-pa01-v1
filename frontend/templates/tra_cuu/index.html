@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Tra cứu · PA01{% endblock %}
+{% block page_title %}Tra cứu hồ sơ{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.tailwindcss.min.css"/>
+{% endblock %}
+
+{% block content %}
+<div x-data="{mode: 'normal'}" class="space-y-4">
+
+  <!-- Search bar -->
+  <div class="card">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="flex rounded-lg overflow-hidden border border-slate-600 text-sm">
+        <button @click="mode='normal'" :class="mode==='normal' ? 'bg-primary-700 text-white' : 'bg-surface-900 text-slate-400 hover:text-white'" class="px-3 py-1.5 transition-colors">Tìm kiếm thường</button>
+        <button @click="mode='fuzzy'"  :class="mode==='fuzzy'  ? 'bg-primary-700 text-white' : 'bg-surface-900 text-slate-400 hover:text-white'" class="px-3 py-1.5 transition-colors">Tìm kiếm mờ</button>
+      </div>
+    </div>
+
+    <!-- Normal search -->
+    <div x-show="mode==='normal'" class="flex gap-2">
+      <input id="searchInput" type="text" class="input flex-1" placeholder="CCCD hoặc họ tên..." />
+      <button onclick="loadResults()" class="btn-primary">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        Tìm
+      </button>
+    </div>
+
+    <!-- Fuzzy search -->
+    <div x-show="mode==='fuzzy'" class="flex gap-2">
+      <input id="fuzzyInput" type="text" class="input flex-1" placeholder="Nhập tên (tìm kiếm gần đúng)..." />
+      <button onclick="loadFuzzy()" class="btn-primary">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Rà soát
+      </button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results-container">
+    <div class="card text-center text-slate-500 text-sm py-10">Nhập từ khóa để tìm kiếm hồ sơ</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+async function loadResults() {
+  const q = document.getElementById('searchInput').value.trim();
+  const container = document.getElementById('results-container');
+  container.innerHTML = '<div class="card text-center text-slate-400 text-sm py-6">Đang tìm kiếm...</div>';
+
+  const res = await fetch(`/tra-cuu/api/search?q=${encodeURIComponent(q)}&page_size=100`);
+  const data = await res.json();
+  renderResults(data.results, data.total);
+}
+
+async function loadFuzzy() {
+  const q = document.getElementById('fuzzyInput').value.trim();
+  if (!q) return;
+  const container = document.getElementById('results-container');
+  container.innerHTML = '<div class="card text-center text-slate-400 text-sm py-6">Đang rà soát...</div>';
+
+  const res = await fetch(`/tra-cuu/api/fuzzy?q=${encodeURIComponent(q)}`);
+  const data = await res.json();
+  renderResults(data, data.length, true);
+}
+
+function renderResults(rows, total, fuzzy=false) {
+  const container = document.getElementById('results-container');
+  if (!rows.length) {
+    container.innerHTML = '<div class="card text-center text-slate-500 text-sm py-10">Không tìm thấy kết quả</div>';
+    return;
+  }
+  let html = `<div class="card">
+    <p class="text-xs text-slate-400 mb-3">Tìm thấy <strong class="text-slate-200">${total}</strong> kết quả</p>
+    <div class="overflow-x-auto"><table id="resultsTable" class="table-auto w-full text-sm">
+    <thead><tr class="text-left border-b border-slate-700"><th>CCCD</th><th>Họ tên</th><th>Ngày sinh</th><th>Giới tính</th><th>Địa bàn</th><th>Nghề nghiệp</th>${fuzzy ? '<th>Độ khớp</th>' : ''}</tr></thead><tbody>`;
+  for (const r of rows) {
+    html += `<tr class="border-b border-slate-700/50 hover:bg-surface-700/30">
+      <td class="py-2"><a href="/profile/${r.cccd}" class="text-primary-400 hover:underline font-mono text-xs">${r.cccd}</a></td>
+      <td class="font-medium">${r.ho_ten || '—'}</td>
+      <td>${r.ngay_sinh || '—'}</td>
+      <td>${r.gioi_tinh || '—'}</td>
+      <td>${r.dia_chi_xa || '—'}</td>
+      <td>${r.nghe_nghiep || '—'}</td>
+      ${fuzzy ? `<td><span class="badge ${r.score>=95?'badge-green':r.score>=80?'badge-yellow':'badge-gray'}">${r.score}%</span></td>` : ''}
+    </tr>`;
+  }
+  html += '</tbody></table></div></div>';
+  container.innerHTML = html;
+  
+  // Khởi tạo DataTables sau khi chèn HTML
+  $('#resultsTable').DataTable({
+    language: {
+      url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json',
+    },
+    pageLength: 10,
+    bLengthChange: false,
+    info: false,
+    order: fuzzy ? [[6, 'desc']] : [],
+    dom: '<"flex justify-between items-center mb-4"f>rt<"flex justify-between items-center mt-4"p>'
+  });
+}
+
+document.getElementById('searchInput')?.addEventListener('keydown', e => e.key==='Enter' && loadResults());
+document.getElementById('fuzzyInput')?.addEventListener('keydown', e => e.key==='Enter' && loadFuzzy());
+</script>
+{% endblock %}

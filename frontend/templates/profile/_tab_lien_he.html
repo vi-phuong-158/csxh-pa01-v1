@@ -1,0 +1,50 @@
+<div class="space-y-4">
+  {% if profile.lien_he %}
+  <div class="card overflow-x-auto">
+    <table class="table-auto w-full">
+      <thead><tr><th>Loại</th><th>Giá trị</th><th>Ghi chú</th><th></th></tr></thead>
+      <tbody>
+        {% for lh in profile.lien_he %}
+        <tr>
+          <td><span class="badge badge-blue">{{ lh.loai }}</span></td>
+          <td class="font-medium">{{ lh.gia_tri }}</td>
+          <td class="text-slate-400">{{ lh.ghi_chu or '—' }}</td>
+          <td>
+            <button hx-delete="/profile/{{ profile.cccd }}/lien-he/{{ lh.id }}"
+                    hx-target="#tab-content" hx-swap="innerHTML" hx-confirm="Xóa?"
+                    class="text-red-400 hover:text-red-300 text-xs">Xóa</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <div class="card" x-data="{open:false}">
+    <button @click="open=!open" class="btn-secondary text-xs w-full justify-center">+ Thêm liên hệ</button>
+    <form x-show="open" x-cloak
+          hx-post="/profile/{{ profile.cccd }}/lien-he"
+          hx-target="#tab-content" hx-swap="innerHTML"
+          class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div>
+        <label class="label">Loại liên hệ</label>
+        <select name="loai_lien_he" class="input">
+          {% for l in loai_lien_he %}<option>{{ l }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label">Giá trị</label>
+        <input name="gia_tri" type="text" class="input" placeholder="SĐT / Email / URL..." required />
+      </div>
+      <div>
+        <label class="label">Ghi chú</label>
+        <input name="ghi_chu" type="text" class="input" placeholder="Ghi chú (tùy chọn)" />
+      </div>
+      <div class="md:col-span-3 flex gap-2 justify-end">
+        <button type="button" @click="open=false" class="btn-ghost text-xs">Hủy</button>
+        <button type="submit" class="btn-primary text-xs">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
