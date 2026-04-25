@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}VCFE Database{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/output.css" />
-  <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
-  <script src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js" defer></script>
+  {# === Tài nguyên JS load CỤC BỘ (offline) — KHÔNG dùng CDN === #}
+  {# Các file vendor được sinh bởi `python scripts/download_vendor.py` #}
+  {# trên máy có Internet rồi commit vào repo. Trên máy standalone không cần mạng. #}
+  <script src="/static/js/vendor/htmx.min.js" defer></script>
+  <script src="/static/js/vendor/alpine.min.js" defer></script>
   {% block head %}{% endblock %}
 </head>
 <body class="min-h-screen flex">

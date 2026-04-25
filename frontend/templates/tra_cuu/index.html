@@ -2,7 +2,8 @@
 {% block title %}Tra cứu · VCFE{% endblock %}
 {% block page_title %}Tra cứu hồ sơ{% endblock %}
 {% block head %}
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.tailwindcss.min.css"/>
+{# F-01 fix: DataTables CSS từ vendor cục bộ #}
+<link rel="stylesheet" href="/static/css/vendor/dataTables.tailwindcss.min.css"/>
 {% endblock %}
 
 {% block content %}
@@ -44,8 +45,9 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+{# F-01 fix: jQuery + DataTables JS từ vendor cục bộ #}
+<script src="/static/js/vendor/jquery.min.js"></script>
+<script src="/static/js/vendor/jquery.dataTables.min.js"></script>
 <script>
 async function loadResults() {
   const q = document.getElementById('searchInput').value.trim();

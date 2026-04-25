@@ -164,18 +164,33 @@ def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
 
 
 def init_super_admin(db: Session):
+    """
+    Tạo super admin lần đầu khi DB còn trống.
+
+    F-03 fix: KHÔNG fallback `secrets.token_urlsafe(16)` nếu thiếu
+    ADMIN_PASSWORD. Vì:
+      - Random fallback vô tình tạo tài khoản mà NGƯỜI VẬN HÀNH KHÔNG BIẾT
+        password (chỉ ghi vào logger.info — bị nuốt nếu log level WARNING).
+      - Đã có pydantic validator chặn ADMIN_PASSWORD rỗng/yếu nên đến đây
+        password chắc chắn đủ mạnh; nhưng vẫn assert lại như defense-in-depth.
+    """
     count = db.execute(select(func.count(User.id))).scalar_one()
     if count > 0:
         return
 
     from backend.config import settings
-    password = settings.ADMIN_PASSWORD or secrets.token_urlsafe(16)
+    # Defense-in-depth: nếu vì lý do nào đó settings rỗng -> abort cứng
+    if not settings.ADMIN_PASSWORD:
+        raise RuntimeError(
+            "Không thể tạo Super Admin: ADMIN_PASSWORD chưa được cấu hình trong .env"
+        )
+
     db.add(User(
         username=DEFAULT_ADMIN_USERNAME,
-        password_hash=hash_password(password),
+        password_hash=hash_password(settings.ADMIN_PASSWORD),
         ho_ten="Administrator",
         role=ROLE_SUPER_ADMIN,
-        must_change_password=1,
+        must_change_password=1,  # buộc đổi ngay lần đăng nhập đầu
     ))
     db.commit()
     logger.info(f"Đã tạo Super Admin mặc định: {DEFAULT_ADMIN_USERNAME}")
