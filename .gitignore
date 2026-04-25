@@ -52,3 +52,5 @@ dist_*/
 _build_temp/
 *.db-wal
 *.db-shm
+# Environment secrets
+.env
