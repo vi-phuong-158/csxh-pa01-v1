@@ -2,7 +2,7 @@ import atexit
 import logging
 from sqlcipher3 import dbapi2 as sqlite3  # noqa: F401 — must use sqlcipher3, no fallback
 from sqlalchemy import create_engine, event, text
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import sessionmaker, Session
 from backend.config import settings
 
@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 def _get_engine():
     engine = create_engine(
         settings.SQLALCHEMY_DATABASE_URI,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
+        connect_args={"check_same_thread": False, "timeout": 30},
+        poolclass=NullPool,
     )
 
     @event.listens_for(engine, "connect")
