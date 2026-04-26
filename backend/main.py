@@ -28,7 +28,7 @@ from backend.db.session import init_db
 from backend.deps import csrf_protect
 from backend.limiter import limiter
 from backend.routes import (
-    audit_log, auth, bao_cao, danh_ba, dashboard, files, nguon_du_lieu,
+    audit_log, auth, bao_cao, danh_ba, dashboard, events, files, nguon_du_lieu,
     nhap_excel, nhap_lieu, profile, quan_ly_user, ra_soat, tra_cuu,
 )
 from backend.security import issue_csrf_token
@@ -126,6 +126,7 @@ app.include_router(nhap_excel.router)
 app.include_router(danh_ba.router)
 app.include_router(bao_cao.router)
 app.include_router(files.router)
+app.include_router(events.router)
 
 
 @app.get("/")

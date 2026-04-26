@@ -2,112 +2,168 @@
    HEADER COMPONENT — VCFE Database
    Dùng trong: base.html qua {% include "components/header.html" %}
    Biến cần có: request, user
-   
-   🔒 SECURITY (@frontend-security-coder):
-   - Thanh tìm kiếm sử dụng Alpine.js để sanitize input trước khi submit
-   - Chặn các ký tự: < > " ' ; script on* (XSS vectors)
-   - Không cho phép các pattern SQL Injection cơ bản
-   - Input được trim() trước khi xử lý
    ============================================================ #}
-<header class="flex items-center justify-between px-8 z-40 fixed top-0 right-0
+<header class="flex items-center justify-between px-6 z-40 fixed top-0 right-0
                w-[calc(100%-18rem)] h-16 border-b border-white/10 shadow-sm
                glass-panel"
-        x-data="vcfeHeader()">
+        x-data="vcfeHeader()"
+        x-init="loadNotifications()">
 
-  {# ── Left Spacer (to keep title centered) ── #}
-  <div class="w-16"></div>
+  {# ── Left Spacer ── #}
+  <div class="w-12"></div>
 
   {# ── App Title ── #}
-  <div class="hidden md:block font-h3 text-h3 font-bold text-amber-500/90 tracking-tight text-center">
+  <div class="hidden md:block font-bold text-amber-500/90 tracking-tight text-center text-base">
     Cơ sở dữ liệu người Việt Nam có yếu tố nước ngoài
   </div>
 
-  {# ── Right Spacer ── #}
-  <div class="w-16"></div>
+  {# ── Right: Notification Bell ── #}
+  <div class="relative flex items-center">
+    <button @click="togglePanel()"
+            class="relative p-2 text-white/70 hover:text-amber-300 transition-colors focus:outline-none"
+            aria-label="Thông báo sự kiện sắp đến hạn">
+      <span class="material-symbols-outlined text-[24px]">notifications</span>
+      {# Badge đỏ — chỉ hiện khi có thông báo #}
+      <span x-show="count > 0"
+            x-text="count > 9 ? '9+' : count"
+            class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1
+                   bg-red-500 text-white text-[10px] font-bold rounded-full
+                   flex items-center justify-center leading-none shadow-lg
+                   animate-pulse">
+      </span>
+    </button>
+
+    {# ── Dropdown Panel ── #}
+    <div x-show="panelOpen"
+         x-cloak
+         @click.outside="panelOpen = false"
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 scale-95 translate-y-1"
+         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+         x-transition:leave-end="opacity-0 scale-95 translate-y-1"
+         class="absolute right-0 top-full mt-2 w-96 max-h-[480px] overflow-y-auto
+                glass-panel border border-white/10 rounded-xl shadow-2xl z-50">
+
+      {# Header Panel #}
+      <div class="sticky top-0 px-4 py-3 border-b border-white/10 glass-panel flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-amber-400 text-[18px]">event_upcoming</span>
+          <span class="text-sm font-semibold text-white">Sự kiện sắp đến hạn</span>
+          <span x-show="count > 0"
+                x-text="'(' + count + ')'"
+                class="text-xs text-amber-400"></span>
+        </div>
+        <a href="/lich-su-kien"
+           class="text-xs text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1">
+          <span class="material-symbols-outlined text-[14px]">calendar_month</span>
+          Xem lịch
+        </a>
+      </div>
+
+      {# Danh sách thông báo #}
+      <div class="divide-y divide-white/5">
+        <template x-if="loading">
+          <div class="px-4 py-6 text-center text-slate-400 text-sm">
+            <span class="material-symbols-outlined animate-spin text-[20px] block mx-auto mb-2">progress_activity</span>
+            Đang tải...
+          </div>
+        </template>
+
+        <template x-if="!loading && events.length === 0">
+          <div class="px-4 py-8 text-center">
+            <span class="material-symbols-outlined text-green-400 text-[36px] block mx-auto mb-2">check_circle</span>
+            <p class="text-sm text-slate-300">Không có sự kiện nào trong 7 ngày tới</p>
+          </div>
+        </template>
+
+        <template x-for="ev in events" :key="ev.id">
+          <a :href="'/profile/' + ev.cccd + '?tab=qua-trinh'"
+             class="flex items-start gap-3 px-4 py-3 hover:bg-white/5 transition-colors group block">
+            {# Icon trạng thái #}
+            <div class="shrink-0 mt-0.5">
+              <span x-show="ev.is_today"
+                    class="material-symbols-outlined text-red-400 text-[18px]"
+                    style="font-variation-settings:'FILL' 1;">alarm</span>
+              <span x-show="!ev.is_today && ev.days_left <= 3"
+                    class="material-symbols-outlined text-orange-400 text-[18px]"
+                    style="font-variation-settings:'FILL' 1;">warning</span>
+              <span x-show="!ev.is_today && ev.days_left > 3"
+                    class="material-symbols-outlined text-amber-400 text-[18px]"
+                    style="font-variation-settings:'FILL' 1;">event</span>
+            </div>
+
+            {# Thông tin sự kiện #}
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-white truncate group-hover:text-amber-300 transition-colors"
+                 x-text="ev.ho_ten"></p>
+              <p class="text-xs text-slate-300 truncate mt-0.5" x-text="ev.noi_dung"></p>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-xs text-slate-400">Đến: <span class="text-amber-300" x-text="ev.ngay_ket_thuc"></span></span>
+                <span x-show="ev.is_today"
+                      class="text-[10px] bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded-full font-medium">Hôm nay!</span>
+                <span x-show="!ev.is_today"
+                      class="text-[10px] bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded-full"
+                      x-text="'Còn ' + ev.days_left + ' ngày'"></span>
+              </div>
+            </div>
+          </a>
+        </template>
+      </div>
+
+      {# Footer #}
+      <div x-show="events.length > 0"
+           class="sticky bottom-0 px-4 py-2 border-t border-white/10 glass-panel text-center">
+        <a href="/lich-su-kien"
+           class="text-xs text-amber-400 hover:text-amber-300 transition-colors">
+          Xem tất cả trên lịch →
+        </a>
+      </div>
+    </div>
+  </div>
 </header>
 
-{# ── Alpine.js: Search Security Logic ──
-   @frontend-security-coder: Xử lý phía client, không thay thế sanitize phía server.
-   Backend FastAPI phải tự xác thực và escape dữ liệu đầu vào.
-#}
 <script>
 function vcfeHeader() {
   return {
-    query: '',
-    hasError: false,
-    errorMsg: '',
+    count: 0,
+    events: [],
+    panelOpen: false,
+    loading: false,
 
-    // ── Danh sách pattern bị chặn (XSS & SQLi vectors) ──
-    _BLOCKED_PATTERNS: [
-      // XSS vectors
-      /<script/i,
-      /<\/script/i,
-      /<[a-z][\s\S]*>/i,          // bất kỳ HTML tag nào
-      /javascript\s*:/i,
-      /on\w+\s*=/i,               // sự kiện HTML: onclick=, onerror=, ...
-      /data\s*:/i,
-      // SQLi vectors
-      /(\bOR\b|\bAND\b)\s+\d+\s*=\s*\d+/i,
-      /union\s+select/i,
-      /drop\s+table/i,
-      /--\s*$/,                    // SQL comment
-      /;\s*(drop|truncate|delete|insert|update)\s/i,
-    ],
-
-    // ── Ký tự bị cấm tuyệt đối ──
-    _FORBIDDEN_CHARS: /[<>"'`;\\]/g,
-
-    // ── Sanitize realtime khi gõ ──
-    sanitizeInput() {
-      // Loại bỏ ký tự nguy hiểm
-      const cleaned = this.query.replace(this._FORBIDDEN_CHARS, '');
-      if (cleaned !== this.query) {
-        this.query = cleaned;
-        this._showError('Ký tự không hợp lệ đã bị loại bỏ tự động.');
-        return;
-      }
-      this.hasError = false;
-      this.errorMsg = '';
-    },
-
-    // ── Validate trước khi submit ──
-    submitSearch(event) {
-      const q = this.query.trim();
-
-      // Không tìm kiếm chuỗi rỗng
-      if (!q) return;
-
-      // Kiểm tra length
-      if (q.length < 2) {
-        this._showError('Từ khóa phải có ít nhất 2 ký tự.');
-        return;
-      }
-      if (q.length > 120) {
-        this._showError('Từ khóa quá dài (tối đa 120 ký tự).');
-        return;
-      }
-
-      // Kiểm tra pattern nguy hiểm
-      for (const pattern of this._BLOCKED_PATTERNS) {
-        if (pattern.test(q)) {
-          this._showError('Từ khóa chứa nội dung không được phép.');
-          console.warn('[VCFE Security] Blocked search input:', q);
-          return;
+    async loadNotifications() {
+      try {
+        const res = await fetch('/api/events/count');
+        if (res.ok) {
+          const data = await res.json();
+          this.count = data.count || 0;
         }
+      } catch (e) {
+        // Nếu lỗi (chưa đăng nhập, mất kết nối) thì im lặng
       }
-
-      // ── An toàn — submit form ──
-      this.hasError = false;
-      event.target.submit();
     },
 
-    _showError(msg) {
-      this.hasError = true;
-      this.errorMsg = msg;
-      setTimeout(() => {
-        this.hasError = false;
-        this.errorMsg = '';
-      }, 3000);
+    async togglePanel() {
+      this.panelOpen = !this.panelOpen;
+      if (this.panelOpen && this.events.length === 0) {
+        await this.loadEvents();
+      }
+    },
+
+    async loadEvents() {
+      this.loading = true;
+      try {
+        const res = await fetch('/api/events/notifications');
+        if (res.ok) {
+          const data = await res.json();
+          this.events = data.events || [];
+        }
+      } catch (e) {
+        this.events = [];
+      } finally {
+        this.loading = false;
+      }
     },
   };
 }

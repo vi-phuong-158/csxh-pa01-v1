@@ -138,6 +138,8 @@ class QuaTrinhHoatDong(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     cccd: Mapped[str] = mapped_column(ForeignKey("doi_tuong.cccd", ondelete="CASCADE"))
     thoi_gian: Mapped[Optional[str]] = mapped_column(String)
+    ngay_bat_dau: Mapped[Optional[datetime]] = mapped_column(Date, nullable=True, index=True)
+    ngay_ket_thuc: Mapped[Optional[datetime]] = mapped_column(Date, nullable=True, index=True)
     noi_dung: Mapped[Optional[str]] = mapped_column(Text)
     ghi_chu: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

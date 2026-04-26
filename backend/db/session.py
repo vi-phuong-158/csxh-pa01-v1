@@ -162,6 +162,9 @@ def init_db():
 _PENDING_COLUMNS: list[tuple[str, str, str]] = [
     # F-14: gán cán bộ phụ trách hồ sơ
     ("doi_tuong", "nguoi_phu_trach_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL"),
+    # Sự kiện: ngày bắt đầu / kết thúc (để thông báo & lịch)
+    ("qua_trinh_hoat_dong", "ngay_bat_dau", "DATE"),
+    ("qua_trinh_hoat_dong", "ngay_ket_thuc", "DATE"),
 ]
 
 
@@ -179,6 +182,12 @@ def _auto_migrate() -> None:
             logger.info("Auto-migrate: ALTER TABLE %s ADD COLUMN %s", table, col)
             conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}")
             conn.commit()
+        # Đảm bảo index cho cột ngày kết thúc (tăng tốc truy vấn thông báo)
+        conn.exec_driver_sql(
+            "CREATE INDEX IF NOT EXISTS ix_qthd_ngay_ket_thuc "
+            "ON qua_trinh_hoat_dong(ngay_ket_thuc)"
+        )
+        conn.commit()
 
 
 @atexit.register

@@ -1,19 +1,41 @@
 <div class="space-y-4">
   {% if profile.qua_trinh %}
-  <div class="space-y-2">
+  <div class="space-y-3">
     {% for qt in profile.qua_trinh | sort(attribute='thoi_gian', reverse=True) %}
     <div class="card flex items-start gap-3">
-      <div class="shrink-0 text-xs text-slate-500 w-28">{{ qt.thoi_gian or '—' }}</div>
-      <div class="flex-1">
-        <p class="text-sm text-slate-200">{{ qt.noi_dung or '—' }}</p>
+      {# Cột thời gian + badge trạng thái #}
+      <div class="shrink-0 w-36">
+        {% if qt.ngay_bat_dau or qt.ngay_ket_thuc %}
+          <div class="text-xs text-slate-400 leading-tight">
+            {% if qt.ngay_bat_dau %}
+              <span class="block">Từ: <span class="text-slate-200">{{ qt.ngay_bat_dau }}</span></span>
+            {% endif %}
+            {% if qt.ngay_ket_thuc %}
+              <span class="block">Đến: <span class="text-amber-300 font-semibold">{{ qt.ngay_ket_thuc }}</span></span>
+            {% endif %}
+          </div>
+        {% elif qt.thoi_gian %}
+          <div class="text-xs text-slate-400">{{ qt.thoi_gian }}</div>
+        {% else %}
+          <div class="text-xs text-slate-600">—</div>
+        {% endif %}
+      </div>
+
+      {# Nội dung chính #}
+      <div class="flex-1 min-w-0">
+        <p class="text-sm text-slate-200 break-words">{{ qt.noi_dung or '—' }}</p>
         {% if qt.ghi_chu %}<p class="text-xs text-slate-400 mt-0.5">{{ qt.ghi_chu }}</p>{% endif %}
       </div>
+
+      {# Nút xóa #}
       <button hx-delete="/profile/{{ profile.cccd }}/qua-trinh/{{ qt.id }}"
-              hx-target="#dynamic-tab-content" hx-swap="innerHTML" hx-confirm="Xóa?"
-              class="text-red-400 hover:text-red-300 text-xs shrink-0">Xóa</button>
+              hx-target="#dynamic-tab-content" hx-swap="innerHTML" hx-confirm="Xóa sự kiện này?"
+              class="text-red-400 hover:text-red-300 text-xs shrink-0 mt-0.5">Xóa</button>
     </div>
     {% endfor %}
   </div>
+  {% else %}
+  <div class="text-center py-8 text-slate-500 text-sm">Chưa có sự kiện nào được ghi nhận.</div>
   {% endif %}
 
   <div class="card" x-data="{open:false}">
@@ -21,22 +43,42 @@
     <form x-show="open" x-cloak
           hx-post="/profile/{{ profile.cccd }}/qua-trinh"
           hx-target="#dynamic-tab-content" hx-swap="innerHTML"
-          class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-      <div>
-        <label class="label">Thời gian (VD: 2023-06)</label>
-        <input name="thoi_gian" type="text" class="input" placeholder="MM/YYYY hoặc YYYY" />
+          class="mt-4 space-y-3">
+
+      {# Hàng 1: Ngày bắt đầu + Ngày kết thúc #}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="label">📅 Từ ngày <span class="text-slate-500 text-xs">(dd/mm/yyyy)</span></label>
+          <input name="ngay_bat_dau" type="date" class="input"
+                 title="Chọn ngày bắt đầu" />
+        </div>
+        <div>
+          <label class="label">🔔 Đến ngày <span class="text-slate-500 text-xs font-normal">(sẽ thông báo khi đến hạn)</span></label>
+          <input name="ngay_ket_thuc" type="date" class="input"
+                 title="Chọn ngày kết thúc / đến hạn" />
+        </div>
       </div>
-      <div>
-        <label class="label">Ghi chú</label>
-        <input name="ghi_chu" type="text" class="input" />
+
+      {# Hàng 2: Nội dung + Ghi chú #}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="md:col-span-2">
+          <label class="label">Nội dung sự kiện <span class="text-red-400">*</span></label>
+          <textarea name="noi_dung" rows="3" class="input resize-none" required
+                    placeholder="Mô tả nội dung sự kiện..."></textarea>
+        </div>
+        <div>
+          <label class="label">Ghi chú</label>
+          <input name="ghi_chu" type="text" class="input" placeholder="Ghi chú thêm (không bắt buộc)" />
+        </div>
+        <div>
+          <label class="label">Thời gian (mô tả)</label>
+          <input name="thoi_gian" type="text" class="input" placeholder="VD: 2024-06, Q3/2024…" />
+        </div>
       </div>
-      <div class="md:col-span-2">
-        <label class="label">Nội dung</label>
-        <textarea name="noi_dung" rows="3" class="input resize-none" required></textarea>
-      </div>
-      <div class="md:col-span-2 flex gap-2 justify-end">
+
+      <div class="flex gap-2 justify-end pt-1">
         <button type="button" @click="open=false" class="btn-ghost text-xs">Hủy</button>
-        <button type="submit" class="btn-primary text-xs">Lưu</button>
+        <button type="submit" class="btn-primary text-xs">💾 Lưu sự kiện</button>
       </div>
     </form>
   </div>

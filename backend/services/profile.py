@@ -43,7 +43,14 @@ def get_profile_full(db: Session, cccd: str) -> Optional[Dict]:
         "nhan_than": [{"id": x.id, "quan_he": x.loai_quan_he, "ho_ten": x.ho_ten, "cccd": x.cccd_nhan_than, "ngay_sinh": x.ngay_sinh.strftime("%Y-%m-%d") if x.ngay_sinh else "", "gioi_tinh": x.gioi_tinh, "nghe_nghiep": x.nghe_nghiep, "noi_o": x.noi_o, "dia_chi_tinh": x.dia_chi_tinh, "dia_chi_xa": x.dia_chi_xa, "ghi_chu": x.ghi_chu} for x in dt.nhan_than],
         "ho_so_dac_thu": [{"id": x.id, "loai_hinh": x.loai_hinh, "noi_dung": x.noi_dung_chi_tiet, "ghi_chu": x.ghi_chu} for x in dt.ho_so_dac_thu],
         "tai_lieu": [{"id": x.id, "ten_goc": x.ten_file_goc, "duong_dan": x.duong_dan, "loai": x.loai_tai_lieu, "mo_ta": x.mo_ta} for x in dt.tai_lieu],
-        "qua_trinh": [{"id": x.id, "thoi_gian": x.thoi_gian, "noi_dung": x.noi_dung, "ghi_chu": x.ghi_chu} for x in dt.qua_trinh],
+        "qua_trinh": [{
+            "id": x.id,
+            "thoi_gian": x.thoi_gian,
+            "ngay_bat_dau": x.ngay_bat_dau.strftime("%d/%m/%Y") if x.ngay_bat_dau else "",
+            "ngay_ket_thuc": x.ngay_ket_thuc.strftime("%d/%m/%Y") if x.ngay_ket_thuc else "",
+            "noi_dung": x.noi_dung,
+            "ghi_chu": x.ghi_chu,
+        } for x in dt.qua_trinh],
     }
 
 
@@ -219,7 +226,14 @@ def delete_ho_so_dac_thu(db: Session, item_id: int) -> bool:
 
 
 def add_qua_trinh(db: Session, cccd: str, data: Dict) -> Tuple[bool, str]:
-    db.add(QuaTrinhHoatDong(cccd=cccd, thoi_gian=data.get("thoi_gian"), noi_dung=data.get("noi_dung"), ghi_chu=data.get("ghi_chu")))
+    db.add(QuaTrinhHoatDong(
+        cccd=cccd,
+        thoi_gian=data.get("thoi_gian"),
+        ngay_bat_dau=_parse_date_dmy(data.get("ngay_bat_dau")),
+        ngay_ket_thuc=_parse_date_dmy(data.get("ngay_ket_thuc")),
+        noi_dung=data.get("noi_dung"),
+        ghi_chu=data.get("ghi_chu"),
+    ))
     db.commit()
     return True, "Đã thêm quá trình"
 
@@ -255,6 +269,19 @@ def _parse_date(val):
         return datetime.strptime(val, "%Y-%m-%d").date()
     except ValueError:
         return None
+
+
+def _parse_date_dmy(val):
+    """Parse dd/mm/yyyy (form input từ browser date picker)"""
+    if not val:
+        return None
+    # Browser date input trả về yyyy-mm-dd
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(val.strip(), fmt).date()
+        except ValueError:
+            continue
+    return None
 
 
 def _log(db, bang, hanh_dong, khoa, cu, moi, nguoi):
