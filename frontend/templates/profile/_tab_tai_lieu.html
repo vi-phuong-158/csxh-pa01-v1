@@ -7,7 +7,7 @@
         {% for tl in profile.tai_lieu %}
         <tr class="border-b border-slate-700/50 hover:bg-surface-700/30">
           <td class="py-2">
-            <a href="/static/{{ tl.duong_dan }}" target="_blank" class="text-primary-400 hover:underline text-xs flex items-center gap-1">
+            <a href="/api/documents/{{ tl.duong_dan }}" target="_blank" class="text-primary-400 hover:underline text-xs flex items-center gap-1">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
               {{ tl.ten_goc or tl.duong_dan }}
             </a>

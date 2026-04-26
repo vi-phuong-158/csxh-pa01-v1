@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from backend.db.session import get_db
-from backend.routes.auth import require_login
+from backend.deps import require_login
 import backend.services.events as events_svc
 
 router = APIRouter(prefix="", tags=["events"])
@@ -73,9 +73,9 @@ def lich_su_kien(
         events_by_day.setdefault(d, []).append(ev)
 
     return templates.TemplateResponse(
+        request,
         "lich_su_kien/index.html",
         {
-            "request": request,
             "user": user,
             "month": month,
             "year": year,

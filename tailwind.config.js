@@ -76,13 +76,13 @@ module.exports = {
       },
       // === FONT SIZE ===
       fontSize: {
-        'h1':         ['40px', { lineHeight: '1.2',  letterSpacing: '-0.02em', fontWeight: '700' }],
-        'h2':         ['32px', { lineHeight: '1.3',  letterSpacing: '-0.01em', fontWeight: '600' }],
-        'h3':         ['24px', { lineHeight: '1.4',  letterSpacing: '0',       fontWeight: '600' }],
-        'body-lg':    ['18px', { lineHeight: '1.6',  letterSpacing: '0',       fontWeight: '400' }],
-        'body-md':    ['16px', { lineHeight: '1.6',  letterSpacing: '0',       fontWeight: '400' }],
-        'label-caps': ['12px', { lineHeight: '1.2',  letterSpacing: '0.1em',   fontWeight: '700' }],
-        'code':       ['14px', { lineHeight: '1.4',                            fontWeight: '500' }],
+        'h1':         ['40px', { lineHeight: '1.3',  letterSpacing: '-0.02em', fontWeight: '700' }],
+        'h2':         ['32px', { lineHeight: '1.4',  letterSpacing: '-0.01em', fontWeight: '600' }],
+        'h3':         ['24px', { lineHeight: '1.5',  letterSpacing: '0',       fontWeight: '600' }],
+        'body-lg':    ['18px', { lineHeight: '1.7',  letterSpacing: '0',       fontWeight: '400' }],
+        'body-md':    ['16px', { lineHeight: '1.7',  letterSpacing: '0',       fontWeight: '400' }],
+        'label-caps': ['12px', { lineHeight: '1.5',  letterSpacing: '0.1em',   fontWeight: '700' }],
+        'code':       ['14px', { lineHeight: '1.5',                            fontWeight: '500' }],
       },
       // === BORDER RADIUS ===
       borderRadius: {
@@ -95,10 +95,10 @@ module.exports = {
       // === SPACING ===
       spacing: {
         'unit':              '8px',
-        'card-gap':          '20px',
-        'gutter':            '24px',
-        'section-margin':    '48px',
-        'container-padding': '32px',
+        'card-gap':          '24px',
+        'gutter':            '32px',
+        'section-margin':    '64px',
+        'container-padding': '40px',
       },
     },
   },

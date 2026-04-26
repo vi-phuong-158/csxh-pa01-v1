@@ -20,6 +20,7 @@ def tra_cuu_page(request: Request, user: dict = Depends(require_login)):
 @router.get("/api/search")
 def search(
     q: str = Query(""),
+    fields: Optional[str] = None,
     gioi_tinh: Optional[str] = None,
     dia_chi_xa: Optional[str] = None,
     nghe_nghiep: Optional[str] = None,
@@ -28,7 +29,7 @@ def search(
     user: dict = Depends(require_login),
     db: Session = Depends(get_db),
 ):
-    return search_svc.search_profiles(db, q, gioi_tinh, dia_chi_xa, nghe_nghiep, page, page_size)
+    return search_svc.search_profiles(db, q, fields, gioi_tinh, dia_chi_xa, nghe_nghiep, page, page_size)
 
 
 @router.get("/api/fuzzy")

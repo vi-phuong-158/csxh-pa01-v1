@@ -90,7 +90,13 @@ def serve_document(
     # Bonus: nếu là symlink, đã được resolve() đi tới đích thực; nếu đích
     # nằm ngoài upload_root thì đã bị chặn ở bước (5).
 
-    # FileResponse tự lo Content-Type đoán theo extension. Đặt
-    # Content-Disposition=inline để hiển thị trực tiếp (ảnh chân dung).
-    # Nếu cần download bắt buộc, truyền filename="..." sẽ thành attachment.
-    return FileResponse(path=str(target))
+    # FileResponse tự lo Content-Type đoán theo extension.
+    # Thêm content_disposition_type="inline" để ép trình duyệt hiển thị trực tiếp
+    # (với các file trình duyệt đọc được như PDF, JPG, PNG).
+    # Truyền thêm filename để khi người dùng ấn "Lưu/Tải xuống" từ trình duyệt,
+    # file sẽ giữ đúng tên chứ không bị mất đuôi.
+    return FileResponse(
+        path=str(target),
+        filename=filename,
+        content_disposition_type="inline"
+    )

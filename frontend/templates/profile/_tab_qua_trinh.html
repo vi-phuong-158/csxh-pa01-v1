@@ -1,7 +1,7 @@
 <div class="space-y-4">
   {% if profile.qua_trinh %}
   <div class="space-y-3">
-    {% for qt in profile.qua_trinh | sort(attribute='thoi_gian', reverse=True) %}
+    {% for qt in profile.qua_trinh | sort(attribute='id', reverse=True) %}
     <div class="card flex items-start gap-3">
       {# Cột thời gian + badge trạng thái #}
       <div class="shrink-0 w-36">

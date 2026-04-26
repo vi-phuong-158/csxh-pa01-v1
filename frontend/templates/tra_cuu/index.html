@@ -19,12 +19,33 @@
     </div>
 
     <!-- Normal search -->
-    <div x-show="mode==='normal'" class="flex gap-2">
-      <input id="searchInput" type="text" class="input flex-1" placeholder="CCCD hoặc họ tên..." />
-      <button onclick="loadResults()" class="btn-primary">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        Tìm
-      </button>
+    <div x-show="mode==='normal'" class="space-y-3">
+      <div class="flex gap-2">
+        <input id="searchInput" type="text" class="input flex-1" placeholder="CCCD, Họ tên, hoặc SĐT, STK (có thể dán nhiều, cách nhau bằng dấu phẩy)..." />
+        <button onclick="loadResults()" class="btn-primary shrink-0">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          Tìm kiếm
+        </button>
+      </div>
+      <div class="flex items-center gap-5 text-sm text-slate-300 ml-1">
+        <span class="text-slate-500 font-medium text-xs uppercase tracking-wider">Phạm vi tìm:</span>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
+          <input type="checkbox" name="searchField" value="name" checked class="rounded border-slate-600 bg-surface-900 text-primary-500 focus:ring-primary-500 focus:ring-offset-surface-900">
+          <span>Tên</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
+          <input type="checkbox" name="searchField" value="cccd" checked class="rounded border-slate-600 bg-surface-900 text-primary-500 focus:ring-primary-500 focus:ring-offset-surface-900">
+          <span>Số CCCD</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
+          <input type="checkbox" name="searchField" value="phone" checked class="rounded border-slate-600 bg-surface-900 text-primary-500 focus:ring-primary-500 focus:ring-offset-surface-900">
+          <span>Số điện thoại</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
+          <input type="checkbox" name="searchField" value="bank" checked class="rounded border-slate-600 bg-surface-900 text-primary-500 focus:ring-primary-500 focus:ring-offset-surface-900">
+          <span>Tài khoản NH</span>
+        </label>
+      </div>
     </div>
 
     <!-- Fuzzy search -->
@@ -51,10 +72,13 @@
 <script>
 async function loadResults() {
   const q = document.getElementById('searchInput').value.trim();
+  const searchFields = Array.from(document.querySelectorAll('input[name="searchField"]:checked'))
+                            .map(cb => cb.value).join(',');
+                            
   const container = document.getElementById('results-container');
   container.innerHTML = '<div class="card text-center text-slate-400 text-sm py-6">Đang tìm kiếm...</div>';
 
-  const res = await fetch(`/tra-cuu/api/search?q=${encodeURIComponent(q)}&page_size=100`);
+  const res = await fetch(`/tra-cuu/api/search?q=${encodeURIComponent(q)}&fields=${encodeURIComponent(searchFields)}&page_size=100`);
   const data = await res.json();
   renderResults(data.results, data.total);
 }

@@ -54,3 +54,6 @@ _build_temp/
 *.db-shm
 # Environment secrets
 .env
+venv312/
+scratch/
+*.old
