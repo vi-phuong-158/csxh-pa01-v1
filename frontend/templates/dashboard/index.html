@@ -1,102 +1,250 @@
 {% extends "base.html" %}
-{% block title %}Tổng quan · VCFE{% endblock %}
-{% block page_title %}Tổng quan{% endblock %}
+{% block title %}Tổng quan Điều hành · VCFE{% endblock %}
 {% block head %}
-{# F-01 fix: load ECharts từ vendor cục bộ — tuyệt đối không CDN #}
+{# F-01: ECharts load từ vendor cục bộ — tuyệt đối không CDN #}
 <script src="/static/js/vendor/echarts.min.js"></script>
 {% endblock %}
 
 {% block content %}
-<!-- Stats cards -->
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-  <div class="card hover:-translate-y-1 hover:shadow-xl">
-    <p class="text-xs text-slate-500 mb-1">Tổng hồ sơ</p>
-    <p class="text-3xl font-bold text-slate-800">{{ stats.total }}</p>
+
+{# ── Page Header ── #}
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-section-margin gap-4">
+  <div>
+    <h2 class="font-h1 text-h1 text-white leading-tight">Tổng quan Điều hành</h2>
+    <p class="text-primary font-medium text-sm mt-2">
+      Đơn vị quản lý: Phòng An ninh đối ngoại Công an tỉnh Phú Thọ
+    </p>
+    <p class="text-body-md text-on-surface-variant flex items-center gap-2 mt-1">
+      <span class="material-symbols-outlined text-primary text-[16px]">schedule</span>
+      Dữ liệu thời gian thực
+    </p>
   </div>
-  <div class="card hover:-translate-y-1 hover:shadow-xl">
-    <p class="text-xs text-slate-500 mb-1">Nam</p>
-    <p class="text-3xl font-bold text-blue-500">{{ stats.gioi_tinh.get('Nam', 0) }}</p>
-  </div>
-  <div class="card hover:-translate-y-1 hover:shadow-xl">
-    <p class="text-xs text-slate-500 mb-1">Nữ</p>
-    <p class="text-3xl font-bold text-pink-500">{{ stats.gioi_tinh.get('Nữ', 0) }}</p>
-  </div>
-  <div class="card hover:-translate-y-1 hover:shadow-xl">
-    <p class="text-xs text-slate-500 mb-1">Hồ sơ đặc thù</p>
-    <p class="text-3xl font-bold text-amber-500">{{ stats.dac_thu.values() | sum }}</p>
+  <div class="flex gap-3 shrink-0">
+    <a href="/bao-cao"
+       class="glass-card px-5 py-2 rounded-lg flex items-center gap-2 text-primary
+              font-medium hover:bg-white/5 transition-colors text-body-md">
+      <span class="material-symbols-outlined text-[18px]">download</span>
+      Xuất báo cáo
+    </a>
   </div>
 </div>
 
-<!-- Charts row -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-  <div class="card hover:-translate-y-1 hover:shadow-xl">
-    <p class="text-sm font-medium text-slate-700 mb-3">Phân bố nghề nghiệp</p>
-    <div id="chart-nghe-nghiep" class="w-full h-56"></div>
+{# ── Metric Row (4 cards) ── #}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-section-margin">
+
+  {# Card 1: Tổng hồ sơ #}
+  <div class="glass-card rounded-xl p-6 relative overflow-hidden">
+    <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none select-none">
+      <span class="material-symbols-outlined text-[64px]">group</span>
+    </div>
+    <h3 class="font-label-caps text-label-caps text-on-surface-variant mb-2">Tổng số hồ sơ theo dõi</h3>
+    <div class="font-h1 text-h1 text-white mb-2">{{ stats.total | default('—') }}</div>
+    <div class="flex items-center gap-1 text-primary text-sm font-medium">
+      <span class="material-symbols-outlined text-[16px]">trending_up</span>
+      Tổng cộng trong cơ sở dữ liệu
+    </div>
   </div>
-  <div class="card hover:-translate-y-1 hover:shadow-xl">
-    <p class="text-sm font-medium text-slate-700 mb-3">Top địa bàn</p>
-    <div id="chart-dia-ban" class="w-full h-56"></div>
+
+  {# Card 2: Nhân khẩu học Nam/Nữ #}
+  <div class="glass-card-dark rounded-xl p-6">
+    <h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4">Nhân khẩu học (Nam/Nữ)</h3>
+    {% set total = stats.total | default(1) | int %}
+    {% set nam   = stats.gioi_tinh.get('Nam', 0) | int %}
+    {% set nu    = stats.gioi_tinh.get('Nữ', 0)  | int %}
+    {% set pct_nam = ((nam / total) * 100) | round(0) | int if total > 0 else 0 %}
+    {% set pct_nu  = ((nu  / total) * 100) | round(0) | int if total > 0 else 0 %}
+    <div class="space-y-4">
+      <div>
+        <div class="flex justify-between mb-1">
+          <span class="text-body-md text-white">Nam</span>
+          <span class="text-body-md text-primary font-medium">{{ pct_nam }}%</span>
+        </div>
+        <div class="w-full bg-surface-container-highest rounded-full h-2">
+          <div class="bg-primary h-2 rounded-full transition-all duration-700" style="width:{{ pct_nam }}%"></div>
+        </div>
+      </div>
+      <div>
+        <div class="flex justify-between mb-1">
+          <span class="text-body-md text-white">Nữ</span>
+          <span class="text-body-md text-on-surface-variant font-medium">{{ pct_nu }}%</span>
+        </div>
+        <div class="w-full bg-surface-container-highest rounded-full h-2">
+          <div class="bg-on-surface-variant h-2 rounded-full transition-all duration-700" style="width:{{ pct_nu }}%"></div>
+        </div>
+      </div>
+    </div>
   </div>
+
+  {# Card 3: Hồ sơ đặc thù #}
+  <div class="glass-card rounded-xl p-6 relative overflow-hidden">
+    <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none select-none">
+      <span class="material-symbols-outlined text-[64px] text-secondary-container">public</span>
+    </div>
+    <h3 class="font-label-caps text-label-caps text-on-surface-variant mb-2">Hồ sơ đặc thù</h3>
+    <div class="font-h1 text-h1 text-secondary-container mb-2">
+      {{ stats.dac_thu.values() | sum | default('—') }}
+    </div>
+    <div class="flex items-center gap-1 text-secondary-container text-sm font-medium">
+      <span class="material-symbols-outlined text-[16px]">warning</span>
+      Yêu cầu giám sát đặc biệt
+    </div>
+  </div>
+
+  {# Card 4: Cảnh báo 24h — Placeholder tĩnh (có thể nối API alert) #}
+  <div class="glass-card-dark rounded-xl p-6 relative overflow-hidden">
+    <h3 class="font-label-caps text-label-caps text-on-surface-variant mb-2">Cảnh báo gần đây (24h)</h3>
+    <div class="font-h1 text-h1 text-white mb-2">—</div>
+    <div class="flex flex-wrap gap-2 mt-3">
+      <span class="badge badge-alert">Nguy cấp</span>
+      <span class="badge badge-warning">Cần lưu ý</span>
+    </div>
+  </div>
+
 </div>
 
-<!-- Recent records -->
-<div class="card">
-  <p class="text-sm font-medium text-slate-700 mb-3">Hồ sơ mới nhất</p>
+{# ── Charts Row ── #}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter mb-section-margin">
+
+  {# Biểu đồ Phân bố Nghề nghiệp #}
+  <div class="glass-card-dark rounded-xl p-6 border border-white/10 flex flex-col">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="font-h3 text-h3 text-white">Phân bố nghề nghiệp</h3>
+      <a href="/tra-cuu" class="text-on-surface-variant hover:text-white transition-colors text-body-md">
+        Xem chi tiết
+      </a>
+    </div>
+    <div id="chart-nghe-nghiep" class="w-full min-h-[280px] flex-1"></div>
+  </div>
+
+  {# Biểu đồ Top địa bàn #}
+  <div class="glass-card-dark rounded-xl p-6 border border-white/10 flex flex-col">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="font-h3 text-h3 text-white">Top địa bàn</h3>
+      <a href="/tra-cuu" class="text-on-surface-variant hover:text-white transition-colors text-body-md">
+        Xem chi tiết
+      </a>
+    </div>
+    <div id="chart-dia-ban" class="w-full min-h-[280px] flex-1"></div>
+  </div>
+
+</div>
+
+{# ── Recent Records Table ── #}
+<div class="glass-card-dark rounded-xl border border-white/10 overflow-hidden">
+  {# Table Header #}
+  <div class="p-6 border-b border-white/10 flex justify-between items-center bg-surface-container/30">
+    <h3 class="font-h3 text-h3 text-white">Hồ sơ nhập gần đây</h3>
+    <a href="/tra-cuu"
+       class="text-secondary-container text-body-md hover:underline decoration-secondary-container underline-offset-4 transition-all">
+      Xem tất cả
+    </a>
+  </div>
+
+  {# Responsive Table #}
   <div class="overflow-x-auto">
-    <table class="table-auto w-full">
+    <table class="w-full text-left border-collapse">
       <thead>
-        <tr>
-          <th>CCCD</th><th>Họ tên</th><th>Ngày sinh</th><th>Giới tính</th><th>Địa bàn</th><th>Nghề nghiệp</th>
+        <tr class="border-b border-white/10 bg-surface-container/20">
+          <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">CCCD</th>
+          <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">Họ tên</th>
+          <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">Ngày sinh</th>
+          <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">Giới tính</th>
+          <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">Địa bàn</th>
+          <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">Nghề nghiệp</th>
         </tr>
       </thead>
       <tbody>
         {% for r in recent %}
+        <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+          <td class="p-4">
+            <a href="/profile/{{ r.cccd }}"
+               class="font-code text-code text-primary hover:text-primary-fixed transition-colors">
+              {{ r.cccd }}
+            </a>
+          </td>
+          <td class="p-4 text-white font-medium">{{ r.ho_ten or '—' }}</td>
+          <td class="p-4 text-on-surface-variant font-code text-code">{{ r.ngay_sinh or '—' }}</td>
+          <td class="p-4 text-on-surface-variant">{{ r.gioi_tinh or '—' }}</td>
+          <td class="p-4 text-on-surface-variant">{{ r.dia_chi_xa or '—' }}</td>
+          <td class="p-4">
+            <span class="badge badge-active">{{ r.phan_loai_nghe_nghiep or '—' }}</span>
+          </td>
+        </tr>
+        {% else %}
         <tr>
-          <td><a href="/profile/{{ r.cccd }}" class="text-primary-600 hover:text-primary-700 hover:underline font-mono text-xs">{{ r.cccd }}</a></td>
-          <td class="font-medium">{{ r.ho_ten or '—' }}</td>
-          <td>{{ r.ngay_sinh or '—' }}</td>
-          <td>{{ r.gioi_tinh or '—' }}</td>
-          <td>{{ r.dia_chi_xa or '—' }}</td>
-          <td><span class="badge badge-blue">{{ r.nghe_nghiep or '—' }}</span></td>
+          <td colspan="6" class="p-8 text-center text-on-surface-variant">
+            <span class="material-symbols-outlined text-[32px] block mb-2 opacity-30">inbox</span>
+            Chưa có hồ sơ nào trong cơ sở dữ liệu.
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+
 {% endblock %}
 
+{# ── ECharts Scripts ── #}
 {% block scripts %}
 <script>
 const ngheNghiepData = {{ stats.nghe_nghiep | tojson }};
-const diaBanData = {{ stats.dia_ban | tojson }};
+const diaBanData     = {{ stats.dia_ban     | tojson }};
 
-const chartNghe = echarts.init(document.getElementById('chart-nghe-nghiep'), 'dark');
+// ── Bảng màu VCFE cho biểu đồ ──
+const VCFE_COLORS = ['#c3cc8c','#ffdb3c','#c8c7b8','#919283','#4b5320','#47483c','#393934'];
+
+// ── Nghề nghiệp (Donut Chart) ──
+const chartNghe = echarts.init(document.getElementById('chart-nghe-nghiep'), null, { renderer: 'svg' });
 chartNghe.setOption({
   backgroundColor: 'transparent',
-  tooltip: { trigger: 'item' },
+  color: VCFE_COLORS,
+  tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+  legend: {
+    orient: 'vertical', right: '5%', top: 'center',
+    textStyle: { color: '#c8c7b8', fontSize: 12 },
+    icon: 'circle',
+  },
   series: [{
-    type: 'pie', radius: ['40%', '70%'],
-    data: Object.entries(ngheNghiepData).map(([n, v]) => ({name: n, value: v})),
-    label: { color: '#94a3b8', fontSize: 11 },
-  }]
+    type: 'pie',
+    radius: ['42%', '68%'],
+    center: ['35%', '50%'],
+    data: Object.entries(ngheNghiepData).map(([n, v]) => ({ name: n, value: v })),
+    label: { show: false },
+    emphasis: {
+      itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' }
+    },
+  }],
 });
 
-const chartDia = echarts.init(document.getElementById('chart-dia-ban'), 'dark');
+// ── Địa bàn (Horizontal Bar Chart) ──
+const chartDia = echarts.init(document.getElementById('chart-dia-ban'), null, { renderer: 'svg' });
 chartDia.setOption({
   backgroundColor: 'transparent',
-  tooltip: { trigger: 'axis' },
-  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-  xAxis: { type: 'value', axisLabel: { color: '#64748b' } },
+  color: VCFE_COLORS,
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+  grid: { left: '3%', right: '6%', bottom: '3%', top: '3%', containLabel: true },
+  xAxis: { type: 'value', axisLabel: { color: '#919283', fontSize: 11 }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
   yAxis: {
     type: 'category',
     data: Object.keys(diaBanData),
-    axisLabel: { color: '#94a3b8', fontSize: 11 },
+    axisLabel: { color: '#c8c7b8', fontSize: 11 },
+    axisTick: { show: false },
+    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
   },
   series: [{
-    type: 'bar', data: Object.values(diaBanData),
-    itemStyle: { color: '#3b82f6', borderRadius: [0, 4, 4, 0] },
-  }]
+    type: 'bar',
+    data: Object.values(diaBanData),
+    barMaxWidth: 20,
+    itemStyle: {
+      color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+        { offset: 0, color: '#c3cc8c' },
+        { offset: 1, color: '#4b5320' },
+      ]),
+      borderRadius: [0, 4, 4, 0],
+    },
+    emphasis: { itemStyle: { color: '#ffdb3c' } },
+  }],
 });
 
 window.addEventListener('resize', () => { chartNghe.resize(); chartDia.resize(); });

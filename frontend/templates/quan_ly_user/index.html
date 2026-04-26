@@ -45,6 +45,7 @@
   <div class="card">
     <p class="text-sm font-semibold text-white mb-4">Tạo tài khoản mới</p>
     <form action="/quan-ly-user/create" method="post" class="space-y-3">
+      <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}"/>
       <div>
         <label class="label">Username</label>
         <input name="username" type="text" class="input" required />

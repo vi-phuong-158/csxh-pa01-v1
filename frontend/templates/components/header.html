@@ -1,0 +1,114 @@
+{# ============================================================
+   HEADER COMPONENT — VCFE Database
+   Dùng trong: base.html qua {% include "components/header.html" %}
+   Biến cần có: request, user
+   
+   🔒 SECURITY (@frontend-security-coder):
+   - Thanh tìm kiếm sử dụng Alpine.js để sanitize input trước khi submit
+   - Chặn các ký tự: < > " ' ; script on* (XSS vectors)
+   - Không cho phép các pattern SQL Injection cơ bản
+   - Input được trim() trước khi xử lý
+   ============================================================ #}
+<header class="flex items-center justify-between px-8 z-40 fixed top-0 right-0
+               w-[calc(100%-18rem)] h-16 border-b border-white/10 shadow-sm
+               glass-panel"
+        x-data="vcfeHeader()">
+
+  {# ── Left Spacer (to keep title centered) ── #}
+  <div class="w-16"></div>
+
+  {# ── App Title ── #}
+  <div class="hidden md:block font-h3 text-h3 font-bold text-amber-500/90 tracking-tight text-center">
+    Cơ sở dữ liệu người Việt Nam có yếu tố nước ngoài
+  </div>
+
+  {# ── Right Spacer ── #}
+  <div class="w-16"></div>
+</header>
+
+{# ── Alpine.js: Search Security Logic ──
+   @frontend-security-coder: Xử lý phía client, không thay thế sanitize phía server.
+   Backend FastAPI phải tự xác thực và escape dữ liệu đầu vào.
+#}
+<script>
+function vcfeHeader() {
+  return {
+    query: '',
+    hasError: false,
+    errorMsg: '',
+
+    // ── Danh sách pattern bị chặn (XSS & SQLi vectors) ──
+    _BLOCKED_PATTERNS: [
+      // XSS vectors
+      /<script/i,
+      /<\/script/i,
+      /<[a-z][\s\S]*>/i,          // bất kỳ HTML tag nào
+      /javascript\s*:/i,
+      /on\w+\s*=/i,               // sự kiện HTML: onclick=, onerror=, ...
+      /data\s*:/i,
+      // SQLi vectors
+      /(\bOR\b|\bAND\b)\s+\d+\s*=\s*\d+/i,
+      /union\s+select/i,
+      /drop\s+table/i,
+      /--\s*$/,                    // SQL comment
+      /;\s*(drop|truncate|delete|insert|update)\s/i,
+    ],
+
+    // ── Ký tự bị cấm tuyệt đối ──
+    _FORBIDDEN_CHARS: /[<>"'`;\\]/g,
+
+    // ── Sanitize realtime khi gõ ──
+    sanitizeInput() {
+      // Loại bỏ ký tự nguy hiểm
+      const cleaned = this.query.replace(this._FORBIDDEN_CHARS, '');
+      if (cleaned !== this.query) {
+        this.query = cleaned;
+        this._showError('Ký tự không hợp lệ đã bị loại bỏ tự động.');
+        return;
+      }
+      this.hasError = false;
+      this.errorMsg = '';
+    },
+
+    // ── Validate trước khi submit ──
+    submitSearch(event) {
+      const q = this.query.trim();
+
+      // Không tìm kiếm chuỗi rỗng
+      if (!q) return;
+
+      // Kiểm tra length
+      if (q.length < 2) {
+        this._showError('Từ khóa phải có ít nhất 2 ký tự.');
+        return;
+      }
+      if (q.length > 120) {
+        this._showError('Từ khóa quá dài (tối đa 120 ký tự).');
+        return;
+      }
+
+      // Kiểm tra pattern nguy hiểm
+      for (const pattern of this._BLOCKED_PATTERNS) {
+        if (pattern.test(q)) {
+          this._showError('Từ khóa chứa nội dung không được phép.');
+          console.warn('[VCFE Security] Blocked search input:', q);
+          return;
+        }
+      }
+
+      // ── An toàn — submit form ──
+      this.hasError = false;
+      event.target.submit();
+    },
+
+    _showError(msg) {
+      this.hasError = true;
+      this.errorMsg = msg;
+      setTimeout(() => {
+        this.hasError = false;
+        this.errorMsg = '';
+      }, 3000);
+    },
+  };
+}
+</script>

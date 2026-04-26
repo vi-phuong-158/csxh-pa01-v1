@@ -10,7 +10,7 @@
           {% if hsd.ghi_chu %}<p class="text-xs text-slate-400 mt-1">{{ hsd.ghi_chu }}</p>{% endif %}
         </div>
         <button hx-delete="/profile/{{ profile.cccd }}/ho-so-dac-thu/{{ hsd.id }}"
-                hx-target="#tab-content" hx-swap="innerHTML" hx-confirm="Xóa?"
+                hx-target="#dynamic-tab-content" hx-swap="innerHTML" hx-confirm="Xóa?"
                 class="text-red-400 hover:text-red-300 text-xs shrink-0">Xóa</button>
       </div>
     </div>
@@ -22,7 +22,7 @@
     <button @click="open=!open" class="btn-secondary text-xs w-full justify-center">+ Thêm hồ sơ đặc thù</button>
     <form x-show="open" x-cloak
           hx-post="/profile/{{ profile.cccd }}/ho-so-dac-thu"
-          hx-target="#tab-content" hx-swap="innerHTML"
+          hx-target="#dynamic-tab-content" hx-swap="innerHTML"
           class="mt-4 space-y-3">
       <div>
         <label class="label">Loại hình</label>

@@ -1,0 +1,84 @@
+{# ============================================================
+   SIDEBAR COMPONENT — VCFE Database
+   Dùng trong: base.html qua {% include "components/sidebar.html" %}
+   Biến cần có: request (để kiểm tra URL active), user
+   ============================================================ #}
+{% set nav_links = [
+  { 'href': '/dashboard',       'icon': 'dashboard',        'label': 'Bảng điều khiển' },
+  { 'href': '/nhap-lieu',       'icon': 'edit_note',        'label': 'Nhập dữ liệu' },
+  { 'href': '/nhap-excel',      'icon': 'upload_file',      'label': 'Nhập Excel' },
+  { 'href': '/tra-cuu',         'icon': 'search',           'label': 'Tìm kiếm' },
+  { 'href': '/ra-soat',         'icon': 'fact_check',       'label': 'Sàng lọc' },
+  { 'href': '/danh-ba',         'icon': 'contacts',         'label': 'Danh bạ' },
+  { 'href': '/bao-cao',         'icon': 'bar_chart',        'label': 'Báo cáo' },
+] %}
+
+<nav class="fixed left-0 top-0 h-full flex flex-col z-50 w-72 border-r border-white/10
+            shadow-[0_0_20px_rgba(0,0,0,0.5)] glass-panel">
+
+  {# ── Brand Header ── #}
+  <div class="p-8 border-b border-white/10 flex items-center gap-4 shrink-0">
+    <div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center border border-white/20 shrink-0">
+      <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1;">security</span>
+    </div>
+    <div>
+      <h1 class="font-h3 text-h3 text-white uppercase tracking-tighter leading-none">VCFED</h1>
+    </div>
+  </div>
+
+  {# ── Navigation Links ── #}
+  <div class="flex-1 overflow-y-auto py-6 flex flex-col gap-1 px-4">
+    {% for link in nav_links %}
+      {% set is_active = request.url.path.startswith(link.href) %}
+      <a href="{{ link.href }}"
+         class="nav-item {{ 'nav-item-active' if is_active else '' }}"
+         aria-current="{{ 'page' if is_active else 'false' }}">
+        <span class="material-symbols-outlined text-[20px]"
+              style="font-variation-settings:'FILL' {{ '1' if is_active else '0' }};">{{ link.icon }}</span>
+        <span class="text-body-md">{{ link.label }}</span>
+      </a>
+    {% endfor %}
+
+    {# ── Admin-only section ── #}
+    {% if user and user.role == 'super_admin' %}
+    <div class="pt-3 mt-3 border-t border-white/5">
+      <p class="px-4 font-label-caps text-label-caps text-outline uppercase tracking-widest mb-2">Quản trị</p>
+      {% set admin_links = [
+        { 'href': '/quan-ly-user',    'icon': 'manage_accounts', 'label': 'Tài khoản' },
+        { 'href': '/nguon-du-lieu',   'icon': 'database',        'label': 'Nguồn dữ liệu' },
+        { 'href': '/audit-log',       'icon': 'history',         'label': 'Nhật ký kiểm tra' },
+      ] %}
+      {% for link in admin_links %}
+        {% set is_active = request.url.path.startswith(link.href) %}
+        <a href="{{ link.href }}"
+           class="nav-item {{ 'nav-item-active' if is_active else '' }}">
+          <span class="material-symbols-outlined text-[20px]"
+                style="font-variation-settings:'FILL' {{ '1' if is_active else '0' }};">{{ link.icon }}</span>
+          <span class="text-body-md">{{ link.label }}</span>
+        </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── User Profile Area ── #}
+  {% if user %}
+  <div class="p-5 border-t border-white/10 shrink-0 glass-panel mt-auto">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-full bg-primary-container border border-white/20 flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings:'FILL' 1;">person</span>
+      </div>
+      <div class="min-w-0">
+        <p class="text-body-md font-semibold text-white truncate">{{ user.ho_ten }}</p>
+        <p class="font-label-caps text-label-caps text-primary">{{ user.role }}</p>
+      </div>
+      <form action="/auth/logout" method="post" class="ml-auto shrink-0">
+        <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}"/>
+        <button type="submit" class="text-outline hover:text-error transition-colors" title="Đăng xuất">
+          <span class="material-symbols-outlined text-[18px]">logout</span>
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</nav>

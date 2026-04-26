@@ -1,65 +1,122 @@
 <!DOCTYPE html>
 <html lang="vi" class="dark">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Đăng nhập · VCFE Database</title>
   <link rel="stylesheet" href="/static/css/output.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
 </head>
-<body class="bg-surface-900 min-h-screen flex items-center justify-center p-4">
-  <div class="w-full max-w-sm">
+
+<body class="bg-[#13140f] min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+
+  <!-- Rotating Trong Dong Background -->
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] opacity-[0.15] pointer-events-none">
+    <img src="/static/img/trong-dong.png" alt="Trống đồng" class="w-full h-full object-contain animate-[spin_60s_linear_infinite]" />
+  </div>
+
+  <!-- Glass Card -->
+  <div
+    class="w-full max-w-lg p-10 backdrop-blur-[20px] bg-[#13140f]/70 border border-[#4B5320]/30 rounded-[32px] shadow-[0_0_60px_rgba(0,0,0,0.6)] relative z-10">
+
     <!-- Logo -->
-    <div class="text-center mb-8">
-      <div class="inline-flex items-center justify-center w-14 h-14 bg-primary-600 rounded-2xl mb-3">
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-        </svg>
+    <div class="text-center mb-10 relative z-10">
+      <div
+        class="inline-flex items-center justify-center w-24 h-24 bg-[#1c1c17]/60 rounded-[24px] mb-5 border border-[#4B5320]/50 shadow-inner overflow-hidden backdrop-blur-sm">
+        <img src="/static/img/logo.png" alt="Logo" class="w-16 h-16 object-contain">
       </div>
-      <h1 class="text-xl font-bold text-white">VCFE Database</h1>
-      <p class="text-sm text-slate-400 mt-1">Cơ sở dữ liệu về người Việt Nam có yếu tố nước ngoài</p>
+      <h1 class="text-[28px] font-bold text-[#e5e2db] tracking-tight leading-tight">Cơ sở dữ liệu người Việt Nam<br/>có yếu tố nước ngoài</h1>
+      <p class="text-[#c8c7b8] mt-3 text-[15px] font-semibold tracking-wide">VCFE DATABASE</p>
+    </div>
+
+    <!-- Error container (Server error) -->
+    {% if error %}
+    <div
+      class="mb-6 px-4 py-3 bg-[#93000a]/30 border border-[#ffb4ab]/20 rounded-[16px] text-[#ffdad6] text-sm text-center relative z-10">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Error container (Client error) -->
+    <div id="clientError"
+      class="hidden mb-6 px-4 py-3 bg-[#93000a]/30 border border-[#ffb4ab]/20 rounded-[16px] text-[#ffdad6] text-sm text-center relative z-10">
     </div>
 
     <!-- Form -->
-    <div class="card">
-      <h2 class="text-base font-semibold text-white mb-5">Đăng nhập</h2>
+    <form id="loginForm" action="/auth/login" method="post" class="space-y-6 relative z-10">
+      <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}" />
+      <input type="hidden" name="next" value="{{ next }}" />
 
-      {% if error %}
-      <div class="mb-4 px-3 py-2.5 bg-red-900/40 border border-red-700/50 rounded-lg text-sm text-red-300">
-        {{ error }}
+      <div>
+        <label class="block text-[13px] font-bold text-[#c8c7b8] uppercase tracking-[0.1em] mb-2" for="username">Tên
+          đăng nhập </label>
+        <input id="username" name="username" type="text" autocomplete="username"
+          class="w-full px-5 py-4 rounded-[16px] bg-[#0e0e0a]/80 border border-white/10 text-[#e5e2db] text-[16px] outline-none transition-all duration-300 focus:border-[#FFD700] focus:shadow-[0_0_12px_rgba(255,215,0,0.4)]"
+          placeholder="Nhập tên đăng nhập" required autofocus />
       </div>
-      {% endif %}
 
-      <form action="/auth/login" method="post" class="space-y-4">
-        {# F-10: hidden input CSRF cho form HTML thuần (không dùng HTMX) #}
-        <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}"/>
-        <input type="hidden" name="next" value="{{ next }}"/>
+      <div>
+        <label class="block text-[13px] font-bold text-[#c8c7b8] uppercase tracking-[0.1em] mb-2" for="password">Mật
+          khẩu</label>
+        <input id="password" name="password" type="password" autocomplete="current-password"
+          class="w-full px-5 py-4 rounded-[16px] bg-[#0e0e0a]/80 border border-white/10 text-[#e5e2db] text-[16px] outline-none transition-all duration-300 focus:border-[#FFD700] focus:shadow-[0_0_12px_rgba(255,215,0,0.4)]"
+          placeholder="••••••••" required />
+      </div>
 
-        <div>
-          <label class="label" for="username">Tên đăng nhập</label>
-          <input id="username" name="username" type="text" autocomplete="username"
-                 class="input" placeholder="Nhập username" required autofocus />
-        </div>
+      <button type="submit"
+        class="w-full py-4 mt-4 rounded-[16px] bg-gradient-to-r from-[#4B5320] to-[#5a632e] text-[#FFFFFF] font-bold text-[17px] border border-white/5 shadow-lg transition-all duration-300 flex items-center justify-center gap-2 group hover:shadow-[0_0_20px_rgba(75,83,32,0.6)] hover:scale-[1.02] active:scale-[0.98]">
+        Đăng nhập hệ thống
+        <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor"
+          viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
+      </button>
+    </form>
 
-        <div>
-          <label class="label" for="password">Mật khẩu</label>
-          <input id="password" name="password" type="password" autocomplete="current-password"
-                 class="input" placeholder="Nhập mật khẩu" required />
-        </div>
-
-        <button type="submit" class="btn-primary w-full justify-center mt-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-          </svg>
-          Đăng nhập
-        </button>
-      </form>
-    </div>
-
-    <p class="text-center text-xs text-slate-500 mt-6 leading-relaxed">
-      Phiên bản 2.0 · VCFE Internal<br/>
-      <span class="text-slate-600">Đơn vị quản lý: Phòng An ninh đối ngoại Công an tỉnh Phú Thọ</span><br/>
-      <span class="text-slate-600">Thiết kế bởi Đại úy Vi Ngọc Phương - Cán bộ</span>
+    <!-- Footer Credit -->
+    <p class="text-center text-[12px] text-[#919283]/70 mt-10 relative z-10 leading-relaxed">
+      Phiên bản 2.0 · VCFE Internal<br />
+      <span class="text-[#919283]/50">Đơn vị quản lý: Phòng An ninh đối ngoại Công an tỉnh Phú Thọ</span><br />
+      <span class="text-[#919283]/50">Thiết kế bởi Đại úy Vi Ngọc Phương - Cán bộ</span>
     </p>
   </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+      const errorDiv = document.getElementById('clientError');
+      const pass = document.getElementById('password').value;
+      const username = document.getElementById('username').value;
+
+      errorDiv.classList.add('hidden');
+      errorDiv.innerText = '';
+
+      // Validate chiều dài
+      if (pass.length < 8) {
+        e.preventDefault();
+        errorDiv.innerText = 'Mật khẩu phải chứa ít nhất 8 ký tự.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      // Check ký tự đặc biệt có rủi ro mã độc (XSS / SQLi)
+      if (/[<>"';]/.test(pass)) {
+        e.preventDefault();
+        errorDiv.innerText = 'Mật khẩu chứa ký tự không hợp lệ (nguy cơ bảo mật).';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      // Ẩn mật khẩu, không in ra console theo đúng chuẩn Security
+      console.log('Bắt đầu xác thực cho:', username);
+    });
+  </script>
 </body>
+
 </html>

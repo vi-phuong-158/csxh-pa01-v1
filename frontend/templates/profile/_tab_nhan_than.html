@@ -15,7 +15,7 @@
           <td>{{ nt.nghe_nghiep or '—' }}</td>
           <td>
             <button hx-delete="/profile/{{ profile.cccd }}/nhan-than/{{ nt.id }}"
-                    hx-target="#tab-content"
+                    hx-target="#dynamic-tab-content"
                     hx-swap="innerHTML"
                     hx-confirm="Xóa nhân thân này?"
                     class="text-red-400 hover:text-red-300 text-xs">Xóa</button>
@@ -34,7 +34,7 @@
     </button>
     <form x-show="open" x-cloak
           hx-post="/profile/{{ profile.cccd }}/nhan-than"
-          hx-target="#tab-content"
+          hx-target="#dynamic-tab-content"
           hx-swap="innerHTML"
           class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div>

@@ -11,7 +11,7 @@
           <td class="text-slate-400">{{ lh.ghi_chu or '—' }}</td>
           <td>
             <button hx-delete="/profile/{{ profile.cccd }}/lien-he/{{ lh.id }}"
-                    hx-target="#tab-content" hx-swap="innerHTML" hx-confirm="Xóa?"
+                    hx-target="#dynamic-tab-content" hx-swap="innerHTML" hx-confirm="Xóa?"
                     class="text-red-400 hover:text-red-300 text-xs">Xóa</button>
           </td>
         </tr>
@@ -25,7 +25,7 @@
     <button @click="open=!open" class="btn-secondary text-xs w-full justify-center">+ Thêm liên hệ</button>
     <form x-show="open" x-cloak
           hx-post="/profile/{{ profile.cccd }}/lien-he"
-          hx-target="#tab-content" hx-swap="innerHTML"
+          hx-target="#dynamic-tab-content" hx-swap="innerHTML"
           class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
       <div>
         <label class="label">Loại liên hệ</label>

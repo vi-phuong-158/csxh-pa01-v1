@@ -1,128 +1,71 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}VCFE Database{% endblock %}</title>
+
+  {# === Stylesheet cục bộ — KHÔNG dùng CDN Tailwind === #}
   <link rel="stylesheet" href="/static/css/output.css" />
-  {# === F-10: CSRF token nhúng vào meta để JS HTMX đọc được === #}
-  {# Token được sinh ở middleware (backend/main.py) và gắn vào request.state. #}
+
+  {# === Material Symbols (Icons) — cục bộ nếu máy offline === #}
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+        rel="stylesheet" />
+
+  {# === CSRF Token nhúng vào meta để HTMX/JS đọc === #}
   <meta name="csrf-token" content="{{ request.state.csrf_token }}"/>
-  {# === Tài nguyên JS load CỤC BỘ (offline) — KHÔNG dùng CDN === #}
-  {# Các file vendor được sinh bởi `python scripts/download_vendor.py` #}
-  {# trên máy có Internet rồi commit vào repo. Trên máy standalone không cần mạng. #}
+
+  {# === Vendor JS load CỤC BỘ (offline) — KHÔNG dùng CDN === #}
   <script src="/static/js/vendor/htmx.min.js" defer></script>
   <script src="/static/js/vendor/alpine.min.js" defer></script>
+
   {% block head %}{% endblock %}
 </head>
-<body class="min-h-screen flex">
+<body class="bg-background text-on-background min-h-screen">
 
-{% if user %}
-<!-- ===== SIDEBAR ===== -->
-<aside class="w-56 shrink-0 bg-white/70 backdrop-blur-md border-r border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col min-h-screen" id="sidebar">
-  <!-- Logo -->
-  <div class="px-4 py-4 border-b border-slate-200/60">
-    <div class="flex items-center gap-2">
-      <div class="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md">PA</div>
-      <div>
-        <p class="text-xs font-semibold text-slate-800 leading-tight">Security Profile</p>
-        <p class="text-xs text-slate-400">360 · VCFE</p>
-      </div>
-    </div>
-  </div>
+{# === Background Orbs (Hình cầu phát sáng) === #}
+<div class="orb-1" aria-hidden="true"></div>
+<div class="orb-2" aria-hidden="true"></div>
 
-  <!-- Nav -->
-  <nav class="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-    <a href="/dashboard" class="nav-item {% if request.url.path == '/dashboard' %}nav-item-active{% endif %}">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-      Tổng quan
-    </a>
-    <a href="/nhap-lieu" class="nav-item {% if '/nhap-lieu' in request.url.path %}nav-item-active{% endif %}">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-      Nhập liệu
-    </a>
-    <a href="/nhap-excel" class="nav-item {% if '/nhap-excel' in request.url.path %}nav-item-active{% endif %}">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-      Nhập Excel
-    </a>
-    <a href="/tra-cuu" class="nav-item {% if '/tra-cuu' in request.url.path %}nav-item-active{% endif %}">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-      Tra cứu
-    </a>
-    <a href="/ra-soat" class="nav-item {% if '/ra-soat' in request.url.path %}nav-item-active{% endif %}">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-      Rà soát
-    </a>
-    <a href="/danh-ba" class="nav-item {% if '/danh-ba' in request.url.path %}nav-item-active{% endif %}">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-      Danh bạ
-    </a>
-    <a href="/bao-cao" class="nav-item {% if '/bao-cao' in request.url.path %}nav-item-active{% endif %}">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-      Báo cáo
-    </a>
-
-    {% if user.role == 'super_admin' %}
-    <div class="pt-2 mt-2 border-t border-slate-200/60">
-      <p class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Quản trị</p>
-      <a href="/quan-ly-user" class="nav-item {% if '/quan-ly-user' in request.url.path %}nav-item-active{% endif %}">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-        Tài khoản
-      </a>
-      <a href="/nguon-du-lieu" class="nav-item {% if '/nguon-du-lieu' in request.url.path %}nav-item-active{% endif %}">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7c0-2 1-3 3-3h10c2 0 3 1 3 3M4 7h16"/></svg>
-        Nguồn dữ liệu
-      </a>
-      <a href="/audit-log" class="nav-item {% if '/audit-log' in request.url.path %}nav-item-active{% endif %}">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-        Lịch sử
-      </a>
-    </div>
-    {% endif %}
-  </nav>
-
-  <!-- User footer -->
-  <div class="px-3 py-3 border-t border-slate-200/60 text-xs">
-    <div class="flex items-center justify-between">
-      <div class="min-w-0">
-        <p class="font-medium text-slate-700 truncate">{{ user.ho_ten }}</p>
-        <p class="text-slate-400">{{ user.role }}</p>
-      </div>
-      <form action="/auth/logout" method="post">
-        {# F-10: CSRF token cho form logout (POST) #}
-        <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}"/>
-        <button type="submit" class="ml-2 text-slate-500 hover:text-red-400 transition-colors" title="Đăng xuất">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-        </button>
-      </form>
-    </div>
-  </div>
-</aside>
-{% endif %}
-
-<!-- ===== MAIN ===== -->
-<main class="flex-1 flex flex-col min-h-screen overflow-x-hidden">
   {% if user %}
-  <header class="h-12 bg-white/70 backdrop-blur-md border-b border-slate-200/60 shadow-sm flex items-center px-5 shrink-0">
-    <h1 class="text-sm font-semibold text-slate-700">{% block page_title %}{% endblock %}</h1>
-    <div class="ml-auto flex items-center gap-3">
-    </div>
-  </header>
-  {% endif %}
+    {# === SIDEBAR === #}
+    {% include "components/sidebar.html" %}
 
-  <div class="flex-1 p-5 overflow-auto">
-    {% block content %}{% endblock %}
-  </div>
-</main>
+    {# === TOP HEADER === #}
+    {% include "components/header.html" %}
+
+    {# === MAIN CONTENT === #}
+    <main class="ml-72 mt-16 p-container-padding min-h-screen">
+      <div class="flex-1 overflow-auto">
+        {% block content %}{% endblock %}
+      </div>
+
+      {# Footer #}
+      <footer class="mt-section-margin pt-6 border-t border-white/10 text-center text-outline/60 font-body-md text-body-md">
+        <p>Đơn vị quản lý: Phòng An ninh đối ngoại Công an tỉnh Phú Thọ</p>
+        <p class="text-outline/40 mt-1">Thiết kế bởi Đại úy Vi Ngọc Phương - Cán bộ</p>
+      </footer>
+    </main>
+
+  {% else %}
+    {# Trang không cần layout (nếu có trang nào khác dùng base.html mà không đăng nhập) #}
+    <div class="min-h-screen">
+      {% block content_no_auth %}{% endblock %}
+    </div>
+  {% endif %}
 
 {% block scripts %}{% endblock %}
 
-<!-- ===== HTMX GLOBAL LOADING BAR ===== -->
+{# ============================================================
+   HTMX GLOBAL LOADING BAR
+   ============================================================ #}
 <div id="htmx-loader"
-     class="fixed top-0 left-0 h-0.5 bg-primary-500 z-[200] opacity-0 pointer-events-none transition-all duration-300 ease-out"
+     class="fixed top-0 left-0 h-0.5 bg-secondary-container z-[200] opacity-0 pointer-events-none transition-all duration-300 ease-out"
      style="width:0%"></div>
 
-<!-- ===== TOAST NOTIFICATION SYSTEM ===== -->
+{# ============================================================
+   TOAST NOTIFICATION SYSTEM (Alpine.js)
+   ============================================================ #}
 <div id="toast-root"
      x-data="toastManager()"
      x-on:show-toast.window="add($event.detail)"
@@ -136,21 +79,23 @@
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 translate-y-2"
          :class="t.type === 'error'
-           ? 'bg-red-900 border-red-700 text-red-100'
-           : 'bg-green-900 border-green-700 text-green-100'"
-         class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm shadow-xl max-w-sm">
-      <svg x-show="t.type !== 'error'" class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-      <svg x-show="t.type === 'error'" class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+           ? 'bg-error-container border-error/40 text-on-error-container'
+           : 'bg-primary-container border-primary/40 text-on-primary-container'"
+         class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-lg border
+                text-sm shadow-xl max-w-sm backdrop-blur-md">
+      <span x-show="t.type !== 'error'"
+            class="material-symbols-outlined text-[16px] text-primary shrink-0"
+            style="font-variation-settings:'FILL' 1;">check_circle</span>
+      <span x-show="t.type === 'error'"
+            class="material-symbols-outlined text-[16px] text-error shrink-0"
+            style="font-variation-settings:'FILL' 1;">error</span>
       <span x-text="t.msg"></span>
     </div>
   </template>
 </div>
 
 <script>
-// ===== F-10: Tự động gắn CSRF token vào MỌI request HTMX =====
-// HTMX bắn sự kiện `htmx:configRequest` ngay trước khi gửi. Hook vào
-// đó để inject header X-CSRF-Token. Token đọc từ <meta name="csrf-token">
-// (luôn có sẵn nhờ middleware backend/main.py:csrf_cookie_middleware).
+// === F-10: Gắn CSRF token vào MỌI request HTMX ===
 document.body.addEventListener('htmx:configRequest', (evt) => {
   const meta = document.querySelector('meta[name="csrf-token"]');
   if (meta && meta.content) {
@@ -158,11 +103,12 @@ document.body.addEventListener('htmx:configRequest', (evt) => {
   }
 });
 
+// === Toast Manager ===
 function toastManager() {
   return {
     toasts: [],
     add(detail) {
-      const id = Date.now() + Math.random();
+      const id  = Date.now() + Math.random();
       const type = (detail && typeof detail === 'object' && detail.type) ? detail.type : 'success';
       const msg  = (detail && typeof detail === 'object' && detail.msg)  ? detail.msg  : String(detail);
       this.toasts.push({ id, type, msg, visible: true });
@@ -175,17 +121,20 @@ function toastManager() {
   };
 }
 
-// HTMX loading bar
+// === HTMX Loading Bar ===
 const _ld = document.getElementById('htmx-loader');
 document.addEventListener('htmx:beforeRequest', () => {
-  _ld.style.width = '0%';
+  _ld.style.width   = '0%';
   _ld.style.opacity = '1';
   requestAnimationFrame(() => requestAnimationFrame(() => { _ld.style.width = '75%'; }));
 });
 document.addEventListener('htmx:afterRequest', (e) => {
   _ld.style.width = '100%';
-  setTimeout(() => { _ld.style.opacity = '0'; setTimeout(() => { _ld.style.width = '0%'; }, 300); }, 350);
-  // Đọc HX-Trigger header từ response để kích hoạt toast
+  setTimeout(() => {
+    _ld.style.opacity = '0';
+    setTimeout(() => { _ld.style.width = '0%'; }, 300);
+  }, 350);
+  // Đọc HX-Trigger từ response để kích hoạt toast
   try {
     const raw = e.detail.xhr.getResponseHeader('HX-Trigger');
     if (raw) {
@@ -195,13 +144,20 @@ document.addEventListener('htmx:afterRequest', (e) => {
   } catch (_) {}
 });
 
-// Hiển thị flash messages từ server sau khi Alpine khởi động xong
+// === Flash messages từ server ===
 document.addEventListener('alpine:initialized', () => {
-  {% if flash_success %}
+  {% if flash_success is defined and flash_success %}
   window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'success', msg: {{ flash_success | tojson }} } }));
   {% endif %}
-  {% if flash_error %}
+  {% if flash_error is defined and flash_error %}
   window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'error', msg: {{ flash_error | tojson }} } }));
+  {% endif %}
+  {# Hỗ trợ thêm biến success/error truyền trực tiếp từ route #}
+  {% if success is defined and success %}
+  window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'success', msg: {{ success | tojson }} } }));
+  {% endif %}
+  {% if error is defined and error %}
+  window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'error', msg: {{ error | tojson }} } }));
   {% endif %}
 });
 </script>

@@ -13,6 +13,7 @@
     {% endif %}
 
     <form action="/nhap-lieu/start" method="post" class="space-y-4">
+      <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}"/>
       <div>
         <label class="label">Số CCCD <span class="text-red-400">*</span></label>
         <input name="cccd" type="text" class="input font-mono text-lg tracking-widest"

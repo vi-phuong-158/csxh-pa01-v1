@@ -63,7 +63,7 @@
     {% for id, label in tabs %}
     <button @click="activeTab='{{ id }}';
       {% if id != 'basic' %}
-      htmx.ajax('GET', '/profile/{{ profile.cccd }}/tab/{{ id }}', '#tab-content')
+      htmx.ajax('GET', '/profile/{{ profile.cccd }}/tab/{{ id }}', '#dynamic-tab-content')
       {% endif %}"
       :class="activeTab==='{{ id }}' ? 'tab-btn-active' : ''"
       class="tab-btn">{{ label }}</button>
@@ -71,12 +71,16 @@
   </div>
 
   <!-- Tab content -->
-  <div id="tab-content">
+  <div>
     <!-- Basic tab rendered server-side directly -->
-    <div x-show="activeTab==='basic'">
+    <div x-show="activeTab === 'basic'">
       {% include "profile/_tab_basic.html" %}
     </div>
+    
     <!-- Other tabs loaded via HTMX on click -->
+    <div x-show="activeTab !== 'basic'" id="dynamic-tab-content">
+      <!-- Dynamic content will be injected here -->
+    </div>
   </div>
 </div>
 
