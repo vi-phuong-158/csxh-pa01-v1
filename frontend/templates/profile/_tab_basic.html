@@ -1,4 +1,5 @@
-<form hx-post="/profile/{{ profile.cccd }}/update"
+<form id="basic-tab-form"
+      hx-post="/profile/{{ profile.cccd }}/update"
       hx-target="#save-msg"
       hx-swap="innerHTML"
       class="card space-y-4">
@@ -42,12 +43,12 @@
     </div>
     <div>
       <label class="label">Xã/Phường</label>
-      <select name="dia_chi_xa" class="input">
-        <option value="">-- Chọn --</option>
+      <input name="dia_chi_xa" list="list-xa-phuong" class="input" placeholder="Gõ để tìm kiếm..." value="{{ profile.dia_chi_xa or '' }}" />
+      <datalist id="list-xa-phuong">
         {% for x in xa_phuong %}
-        <option value="{{ x }}" {% if profile.dia_chi_xa == x %}selected{% endif %}>{{ x }}</option>
+        <option value="{{ x }}">
         {% endfor %}
-      </select>
+      </datalist>
     </div>
     <div>
       <label class="label">Phân loại nghề nghiệp</label>

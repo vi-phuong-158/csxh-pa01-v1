@@ -26,10 +26,25 @@
   <div class="border-b border-slate-700 flex overflow-x-auto">
     {% set tabs = [('basic','Thông tin cơ bản'),('nhan-than','Nhân thân'),('lien-he','Liên hệ'),('tai-chinh','Tài chính'),('phuong-tien','Phương tiện'),('ho-so-dac-thu','Hồ sơ đặc thù'),('qua-trinh','Quá trình')] %}
     {% for id, label in tabs %}
-    <button @click="activeTab='{{ id }}';
+    <button type="button"
       {% if id != 'basic' %}
-      htmx.ajax('GET', '/profile/{{ profile.cccd }}/tab/{{ id }}', '#tab-content')
-      {% endif %}"
+      hx-get="/profile/{{ profile.cccd }}/tab/{{ id }}"
+      hx-target="#dynamic-tab-content"
+      hx-swap="innerHTML"
+      {% endif %}
+      @click="
+        if (activeTab === 'basic' && '{{ id }}' !== 'basic') {
+          const basicForm = document.querySelector('#basic-tab-form');
+          if (basicForm) {
+            if (!basicForm.checkValidity()) {
+              basicForm.reportValidity();
+              return; // Stop switching tab if basic form is invalid
+            }
+            htmx.trigger(basicForm, 'submit');
+          }
+        }
+        activeTab='{{ id }}';
+      "
       :class="activeTab==='{{ id }}' ? 'tab-btn-active' : ''"
       class="tab-btn">{{ label }}</button>
     {% endfor %}

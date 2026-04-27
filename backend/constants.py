@@ -199,28 +199,19 @@ LOAI_HINH_DAC_THU = {
     "Xac_Minh": "Đã từng được xác minh",
 }
 
-# Danh sách quốc gia chuẩn hóa (các quốc gia thường gặp)
+# Danh sách quốc gia chuẩn hóa (đầy đủ hơn)
 DANH_SACH_QUOC_GIA = [
-    # Đông Á
-    "Trung Quốc", "Hàn Quốc", "Nhật Bản", "Đài Loan", "Hồng Kông", "Macao",
-    # Đông Nam Á
-    "Thái Lan", "Lào", "Campuchia", "Myanmar", "Malaysia", "Singapore",
-    "Indonesia", "Philippines", "Brunei", "Đông Timor",
-    # Nam Á
-    "Ấn Độ", "Pakistan", "Bangladesh", "Nepal", "Sri Lanka",
-    # Trung Đông
-    "UAE", "Ả Rập Xê Út", "Qatar", "Kuwait", "Israel", "Thổ Nhĩ Kỳ",
-    # Châu Âu
-    "Nga", "Đức", "Pháp", "Anh", "Ý", "Tây Ban Nha", "Hà Lan", "Bỉ",
-    "Thụy Sĩ", "Áo", "Ba Lan", "Séc", "Hungary", "Ukraine", "Romania",
-    # Châu Mỹ
-    "Mỹ", "Canada", "Brazil", "Argentina", "Mexico", "Chile",
-    # Châu Úc
-    "Úc", "New Zealand",
-    # Châu Phi
-    "Nam Phi", "Ai Cập", "Nigeria", "Kenya",
-    # Khác
-    "Khác"
+    "Việt Nam", "Trung Quốc", "Hàn Quốc", "Nhật Bản", "Đài Loan", "Mỹ", "Pháp", 
+    "Anh", "Đức", "Nga", "Lào", "Campuchia", "Thái Lan", "Malaysia", 
+    "Singapore", "Indonesia", "Philippines", "Úc", "Canada", "Ý", "Tây Ban Nha",
+    "Hà Lan", "Bỉ", "Thụy Sĩ", "Áo", "Thụy Điển", "Na Uy", "Đan Mạch", "Phần Lan",
+    "Ba Lan", "Séc", "Hungary", "Slovakia", "Hy Lạp", "Bồ Đào Nha", "Rumani",
+    "Bungari", "Ukraine", "Belarus", "Thổ Nhĩ Kỳ", "Israel", "Ả Rập Xê Út",
+    "UAE", "Qatar", "Kuwait", "Oman", "Ấn Độ", "Pakistan", "Bangladesh",
+    "Sri Lanka", "Kazakhstan", "Uzbekistan", "Mông Cổ", "Triều Tiên",
+    "Myanmar", "Brunei", "Đông Timor", "New Zealand", "Brazil", "Argentina",
+    "Mexico", "Chile", "Colombia", "Peru", "Nam Phi", "Ai Cập", "Nigeria",
+    "Kenya", "Ma-rốc", "Algeria", "Khác"
 ]
 
 # Các loại hình tổ chức nước ngoài
@@ -301,8 +292,3 @@ class Messages:
     NO_DATA = "💡 Chưa có dữ liệu."
     PLEASE_SAVE_PERSONAL_FIRST = "⚠️ Vui lòng nhập và lưu thông tin cá nhân trước (Tab 1)"
 
-DANH_SACH_QUOC_GIA = [
-    "Trung Quốc", "Hàn Quốc", "Nhật Bản", "Đài Loan", "Mỹ", "Pháp", 
-    "Anh", "Đức", "Nga", "Lào", "Campuchia", "Thái Lan", "Malaysia", 
-    "Singapore", "Indonesia", "Philippines", "Úc", "Canada", "Khác"
-]

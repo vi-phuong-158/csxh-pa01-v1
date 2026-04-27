@@ -17,6 +17,6 @@ echo.
 
 call venv312\Scripts\activate.bat 2>nul || call venv\Scripts\activate.bat 2>nul
 
-uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+python run_server.py --port 8000
 
 pause

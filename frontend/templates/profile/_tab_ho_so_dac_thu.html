@@ -39,9 +39,7 @@
         <div><label class="label">Họ tên đối tác</label><input name="hn_ten" type="text" class="input" /></div>
         <div>
           <label class="label">Quốc tịch</label>
-          <select name="hn_qt" class="input">
-            {% for qg in danh_sach_quoc_gia %}<option value="{{ qg }}">{{ qg }}</option>{% endfor %}
-          </select>
+          <input name="hn_qt" list="list-quoc-gia" class="input" placeholder="Tìm quốc tịch..." />
         </div>
         <div><label class="label">Số hộ chiếu</label><input name="hn_hc" type="text" class="input font-mono uppercase" /></div>
         <div>
@@ -75,9 +73,7 @@
         </div>
         <div>
           <label class="label">Quốc gia</label>
-          <select name="ht_qg" class="input">
-            {% for qg in danh_sach_quoc_gia %}<option value="{{ qg }}">{{ qg }}</option>{% endfor %}
-          </select>
+          <input name="ht_qg" list="list-quoc-gia" class="input" placeholder="Tìm quốc gia..." />
         </div>
         <div><label class="label">Thời gian đi</label><input name="ht_tgd" type="text" class="input" /></div>
         <div><label class="label">Thời gian về</label><input name="ht_tgv" type="text" class="input" /></div>
@@ -87,9 +83,7 @@
       <div x-show="loai_hinh === 'Vi_Pham_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
         <div>
           <label class="label">Quốc gia vi phạm</label>
-          <select name="vp_qg" class="input">
-            {% for qg in danh_sach_quoc_gia %}<option value="{{ qg }}">{{ qg }}</option>{% endfor %}
-          </select>
+          <input name="vp_qg" list="list-quoc-gia" class="input" placeholder="Tìm quốc gia..." />
         </div>
         <div><label class="label">Cơ quan bắt giữ</label><input name="vp_cq" type="text" class="input" /></div>
         <div><label class="label">Ngày vi phạm (DD/MM/YYYY)</label><input name="vp_tg" type="text" class="input" placeholder="Ví dụ: 01/01/2023" /></div>
@@ -128,4 +122,10 @@
       </div>
     </form>
   </div>
+  <!-- Shared Datalist for Countries -->
+  <datalist id="list-quoc-gia">
+    {% for qg in danh_sach_quoc_gia %}
+    <option value="{{ qg }}">
+    {% endfor %}
+  </datalist>
 </div>

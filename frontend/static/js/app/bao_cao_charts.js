@@ -29,9 +29,11 @@ function buildParams() {
   const tu  = el('tu-ngay')?.value;
   const den = el('den-ngay')?.value;
   const pl  = el('phan-loai')?.value;
+  const dt  = el('loai-dac-thu')?.value;
   if (tu)  p.set('tu_ngay',   tu);
   if (den) p.set('den_ngay',  den);
   if (pl)  p.set('phan_loai', pl);
+  if (dt)  p.set('loai_hs_dac_thu', dt);
   return p;
 }
 
@@ -243,7 +245,7 @@ function initBarChart() {
 // ── Boot ───────────────────────────────────────────────────────────────────
 
 function resetFilters() {
-  const ids = ['tu-ngay', 'den-ngay', 'phan-loai'];
+  const ids = ['tu-ngay', 'den-ngay', 'phan-loai', 'loai-dac-thu'];
   ids.forEach(id => { const n = el(id); if (n) n.value = ''; });
   loadStats();
 }

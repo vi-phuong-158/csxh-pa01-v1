@@ -42,7 +42,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div>
         <label class="label" for="tu-ngay">Từ ngày</label>
         <input id="tu-ngay" type="date" class="input" onchange="loadStats()" />
@@ -57,6 +57,16 @@
           <option value="">— Tất cả phân loại —</option>
           {% for opt in phan_loai_options %}
           <option value="{{ opt }}">{{ opt }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label" for="loai-dac-thu">Hồ sơ đặc thù</label>
+        <select id="loai-dac-thu" class="input" onchange="loadStats()">
+          <option value="">— Tất cả (Không lọc) —</option>
+          <option value="ALL">Chỉ lấy có hồ sơ đặc thù (Bất kỳ)</option>
+          {% for k, v in loai_hinh_dac_thu.items() %}
+          <option value="{{ k }}">{{ v }}</option>
           {% endfor %}
         </select>
       </div>

@@ -64,30 +64,21 @@ def _resolve_db_passphrase(no_env: bool, no_prompt: bool) -> str:
     Trả về passphrase đã được xác định, hoặc exit nếu không lấy được.
     """
     # (a) Env runtime — luôn ưu tiên cao nhất, không phụ thuộc cờ.
-    pwd = os.environ.get("QLNNN_DB_PASSPHRASE", "")
+    pwd = os.environ.get("DB_PASSWORD", "")
     if pwd:
-        logger.info("DB_PASSPHRASE đọc từ biến môi trường runtime.")
+        logger.info("DB_PASSWORD đọc từ biến môi trường runtime.")
         return pwd
 
     # (b) File .env — bỏ qua nếu có cờ --no-env.
     if not no_env:
-        # Import muộn để tận dụng logic đọc file đã có sẵn ở config.
-        from backend.config import _read_env_file_value, ENV_DB_PASSPHRASE, ENV_FILE_PATH
-        pwd = _read_env_file_value(ENV_DB_PASSPHRASE)
-        if pwd:
-            logger.info(f"DB_PASSPHRASE đọc từ file: {ENV_FILE_PATH}")
-            # Cảnh báo quyền file (chỉ trên Linux/Unix; Windows có cơ chế ACL riêng).
-            try:
-                if hasattr(os, "stat") and ENV_FILE_PATH.exists():
-                    mode = ENV_FILE_PATH.stat().st_mode & 0o777
-                    if os.name != "nt" and mode & 0o077:
-                        logger.warning(
-                            f"⚠ File .env có quyền {oct(mode)} — group/other có thể đọc. "
-                            f"Khuyến nghị: chmod 600 {ENV_FILE_PATH}"
-                        )
-            except Exception:
-                pass
-            return pwd
+        from dotenv import dotenv_values
+        env_path = os.path.join(os.getcwd(), ".env")
+        if os.path.exists(env_path):
+            env_vars = dotenv_values(env_path)
+            pwd = env_vars.get("DB_PASSWORD", "")
+            if pwd:
+                logger.info(f"DB_PASSWORD đọc từ file: {env_path}")
+                return pwd
 
     # (c) Hỏi tương tác — bỏ qua nếu có cờ --no-prompt.
     if no_prompt:
@@ -106,40 +97,55 @@ def main() -> None:
     pwd = _resolve_db_passphrase(no_env=no_env, no_prompt=no_prompt)
 
     # Đẩy vào env để các tầng config.py / database.py / auth_service.py đều thấy.
-    os.environ["QLNNN_DB_PASSPHRASE"] = pwd
+    os.environ["DB_PASSWORD"] = pwd
     pwd = None  # noqa: F841 — xóa biến local để giảm dấu vết RAM.
 
     # 2. Verify (mở thử DB). Phải import SAU khi env đã set.
-    from backend.database import verify_or_init_db_key
-    from backend.create_tables import init_db
-    from backend.auth_service import init_super_admin_if_needed
+    from backend.db.session import SessionLocal, init_db
+    from backend.services.auth import init_super_admin
 
     try:
-        status = verify_or_init_db_key()
-    except RuntimeError as e:
-        sys.exit(f"[Bootstrap] {e}")
-    logger.info(f"DB key OK ({status}). Khởi tạo schema...")
+        # Việc khởi tạo SessionLocal sẽ trigger việc verify key trong session.py
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+    except Exception as e:
+        sys.exit(f"[Bootstrap] Lỗi xác thực CSDL: {e}")
+    logger.info("DB key OK. Khởi tạo schema...")
 
     # 3. Tạo schema (idempotent).
     init_db()
 
     # 4. Khởi tạo Super Admin nếu là lần đầu.
-    init_super_admin_if_needed()
+    db = SessionLocal()
+    try:
+        init_super_admin(db)
+    finally:
+        db.close()
 
     # 5. Khởi động uvicorn.
-    logger.info("Khởi động Uvicorn tại http://127.0.0.1:9000 ...")
+    port = 8000
+    if "--port" in sys.argv:
+        try:
+            idx = sys.argv.index("--port")
+            port = int(sys.argv[idx + 1])
+        except (ValueError, IndexError):
+            pass
+
+    logger.info(f"Khởi động Uvicorn tại http://127.0.0.1:{port} ...")
     import uvicorn
-    from backend.main import app  # import object thay vì chuỗi — bắt buộc khi đóng gói PyInstaller
+    from backend.main import app
     uvicorn.run(
         app,
         host="127.0.0.1",
-        port=9000,
-        reload=False,        # Vá H1: tuyệt đối KHÔNG reload trong production.
-        workers=1,           # SQLite single-writer.
+        port=port,
+        reload=False,
+        workers=1,
         log_level="info",
-        server_header=False, # Không lộ phiên bản uvicorn.
+        server_header=False,
     )
 
 
 if __name__ == "__main__":
+    from sqlalchemy import text # Thêm import text
     main()

@@ -165,5 +165,21 @@ document.addEventListener('alpine:initialized', () => {
 });
 </script>
 
+  {# Global Datalist for Smart Search #}
+  <datalist id="list-xa-phuong">
+    {% if xa_phuong %}
+      {% for x in xa_phuong %}
+      <option value="{{ x }}">
+      {% endfor %}
+    {% endif %}
+  </datalist>
+  <datalist id="list-ngan-hang">
+    {% if ngan_hang %}
+      {% for n in ngan_hang %}
+      <option value="{{ n }}">
+      {% endfor %}
+    {% endif %}
+  </datalist>
+
 </body>
 </html>

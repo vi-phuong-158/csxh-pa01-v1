@@ -77,10 +77,7 @@
       </div>
       <div>
         <label class="label">Xã/Phường</label>
-        <select name="dia_chi_xa" class="input">
-          <option value="">-- Chọn --</option>
-          {% for x in xa_phuong %}<option>{{ x }}</option>{% endfor %}
-        </select>
+        <input name="dia_chi_xa" list="list-xa-phuong" class="input" placeholder="Gõ để tìm kiếm..." />
       </div>
       <div>
         <label class="label">Nghề nghiệp</label>

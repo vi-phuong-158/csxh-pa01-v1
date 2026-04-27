@@ -1,6 +1,6 @@
 # File: backend/routes/bao_cao.py
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 from typing import Optional
 
@@ -10,10 +10,10 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
-from backend.constants import PHAN_LOAI_NGHE_NGHIEP
+from backend.constants import PHAN_LOAI_NGHE_NGHIEP, LOAI_HINH_DAC_THU
 from backend.db.session import get_db
 from backend.deps import require_login
-from backend.models.models import DoiTuong, LienHe, TaiChinh
+from backend.models.models import DoiTuong, LienHe, TaiChinh, HoSoDacThu
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,7 @@ def _query_stats(
     dt_from: Optional[datetime],
     dt_to: Optional[datetime],
     phan_loai: Optional[str],
+    loai_hs_dac_thu: Optional[str] = None,
 ) -> dict:
     def base_filter():
         conds = [DoiTuong.is_draft == False]
@@ -49,6 +50,11 @@ def _query_stats(
             conds.append(DoiTuong.created_at <= dt_to)
         if phan_loai:
             conds.append(DoiTuong.phan_loai_nghe_nghiep == phan_loai)
+        if loai_hs_dac_thu:
+            if loai_hs_dac_thu == "ALL":
+                conds.append(DoiTuong.cccd.in_(select(HoSoDacThu.cccd).scalar_subquery()))
+            else:
+                conds.append(DoiTuong.cccd.in_(select(HoSoDacThu.cccd).where(HoSoDacThu.loai_hinh == loai_hs_dac_thu).scalar_subquery()))
         return and_(*conds)
 
     total = db.execute(
@@ -135,7 +141,7 @@ def _query_stats(
     }
 
 
-def _build_xlsx(stats: dict, filter_lines: list, generated_at: datetime) -> BytesIO:
+def _build_xlsx(stats: dict, filter_lines: list, generated_at: datetime, detailed_records: list = None) -> BytesIO:
     from openpyxl import Workbook
     from openpyxl.formatting.rule import DataBarRule
     from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -335,6 +341,66 @@ def _build_xlsx(stats: dict, filter_lines: list, generated_at: datetime) -> Byte
         ws4.freeze_panes = "A3"
         ws4.auto_filter.ref = f"A2:C{2 + len(by_dia_ban)}"
 
+    # ═══════════════════════════════════════════════════════════════════════════
+    # SHEET 5 — Danh sách chi tiết
+    # ═══════════════════════════════════════════════════════════════════════════
+    if detailed_records is not None:
+        ws5 = wb.create_sheet("Danh sách chi tiết")
+        ws5.sheet_view.showGridLines = False
+
+        _title_row(ws5, 1, 11, "DANH SÁCH CHI TIẾT ĐỐI TƯỢNG")
+        
+        headers = [
+            "STT", "CCCD", "Họ tên", "Ngày sinh", "Giới tính", 
+            "Địa chỉ (Xã - Tỉnh)", "Phân loại NNg", 
+            "Chi tiết nghề nghiệp", "Số điện thoại", "Loại HS Đặc thù", "Ghi chú"
+        ]
+        _col_headers(ws5, 2, headers, widths=[6, 16, 25, 12, 10, 25, 18, 25, 16, 25, 25])
+        
+        from backend.constants import LOAI_HINH_DAC_THU
+        
+        for i, dt in enumerate(detailed_records, 1):
+            r = i + 2
+            fill = ALT_FILL if i % 2 == 0 else None
+            
+            ngay_sinh_str = dt.ngay_sinh.strftime('%d/%m/%Y') if dt.ngay_sinh else ""
+            xa = dt.dia_chi_xa or ""
+            tinh = dt.dia_chi_tinh or ""
+            dia_chi = f"{xa} - {tinh}".strip(" -")
+            
+            sdts = [lh.gia_tri for lh in dt.lien_he if lh.loai_lien_he == "SĐT" and lh.gia_tri]
+            sdt_str = ", ".join(sdts)
+            
+            hs_dt = []
+            for hs in dt.ho_so_dac_thu:
+                loai_str = LOAI_HINH_DAC_THU.get(hs.loai_hinh, hs.loai_hinh)
+                hs_dt.append(loai_str)
+            hs_dt_str = ", ".join(hs_dt)
+            
+            vals = [
+                i,
+                dt.cccd,
+                dt.ho_ten or "",
+                ngay_sinh_str,
+                dt.gioi_tinh or "",
+                dia_chi,
+                dt.phan_loai_nghe_nghiep or "",
+                dt.chi_tiet_nghe_nghiep or "",
+                sdt_str,
+                hs_dt_str,
+                dt.ghi_chu_chung or ""
+            ]
+            
+            aligns = [CENTER, CENTER, LEFT, CENTER, CENTER, LEFT, LEFT, LEFT, CENTER, LEFT, LEFT]
+            
+            for col_idx, v in enumerate(vals, 1):
+                a = aligns[col_idx - 1]
+                _c(ws5, r, col_idx, v, font=DATA_FONT, fill=fill, align=a, border=BORDER)
+                
+        if detailed_records:
+            ws5.freeze_panes = "A3"
+            ws5.auto_filter.ref = f"A2:K{2 + len(detailed_records)}"
+
     # ── Serialize ─────────────────────────────────────────────────────────────
     buf = BytesIO()
     wb.save(buf)
@@ -349,7 +415,12 @@ def bao_cao_page(request: Request, user: dict = Depends(require_login)):
     return templates.TemplateResponse(
         request,
         "bao_cao/index.html",
-        {"user": user, "phan_loai_options": PHAN_LOAI_NGHE_NGHIEP},
+        {
+            "request": request,
+            "user": user, 
+            "phan_loai_options": PHAN_LOAI_NGHE_NGHIEP,
+            "loai_hinh_dac_thu": LOAI_HINH_DAC_THU
+        },
     )
 
 
@@ -358,12 +429,13 @@ def api_thong_ke(
     tu_ngay: Optional[str] = Query(None, description="YYYY-MM-DD"),
     den_ngay: Optional[str] = Query(None, description="YYYY-MM-DD"),
     phan_loai: Optional[str] = Query(None),
+    loai_hs_dac_thu: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     user: dict = Depends(require_login),
 ):
     try:
         dt_from, dt_to = _parse_dates(tu_ngay, den_ngay)
-        return _query_stats(db, dt_from, dt_to, phan_loai)
+        return _query_stats(db, dt_from, dt_to, phan_loai, loai_hs_dac_thu)
     except HTTPException:
         raise
     except Exception as exc:
@@ -376,12 +448,13 @@ def export_xlsx(
     tu_ngay: Optional[str] = Query(None, description="YYYY-MM-DD"),
     den_ngay: Optional[str] = Query(None, description="YYYY-MM-DD"),
     phan_loai: Optional[str] = Query(None),
+    loai_hs_dac_thu: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     user: dict = Depends(require_login),
 ):
     try:
         dt_from, dt_to = _parse_dates(tu_ngay, den_ngay)
-        stats = _query_stats(db, dt_from, dt_to, phan_loai)
+        stats = _query_stats(db, dt_from, dt_to, phan_loai, loai_hs_dac_thu)
 
         filter_lines: list[str] = []
         if tu_ngay:
@@ -394,11 +467,40 @@ def export_xlsx(
             )
         if phan_loai:
             filter_lines.append(f"Phân loại: {phan_loai}")
+        if loai_hs_dac_thu:
+            if loai_hs_dac_thu == "ALL":
+                filter_lines.append("Hồ sơ đặc thù: Có")
+            else:
+                loai_hinh_str = LOAI_HINH_DAC_THU.get(loai_hs_dac_thu, loai_hs_dac_thu)
+                filter_lines.append(f"Hồ sơ đặc thù: {loai_hinh_str}")
+
         if not filter_lines:
             filter_lines = ["Toàn bộ dữ liệu (không lọc)"]
 
+        # ── Lấy danh sách chi tiết ─────────────────────────────────────────────
+        conds = [DoiTuong.is_draft == False]
+        if dt_from:
+            conds.append(DoiTuong.created_at >= dt_from)
+        if dt_to:
+            conds.append(DoiTuong.created_at <= dt_to)
+        if phan_loai:
+            conds.append(DoiTuong.phan_loai_nghe_nghiep == phan_loai)
+        if loai_hs_dac_thu:
+            if loai_hs_dac_thu == "ALL":
+                conds.append(DoiTuong.cccd.in_(select(HoSoDacThu.cccd)))
+            else:
+                conds.append(DoiTuong.cccd.in_(select(HoSoDacThu.cccd).where(HoSoDacThu.loai_hinh == loai_hs_dac_thu)))
+
+        from sqlalchemy.orm import joinedload
+        query = select(DoiTuong).where(and_(*conds)).options(
+            joinedload(DoiTuong.lien_he),
+            joinedload(DoiTuong.ho_so_dac_thu)
+        ).order_by(DoiTuong.created_at.desc())
+        
+        detailed_records = db.execute(query).unique().scalars().all()
+
         now = datetime.now()
-        buf = _build_xlsx(stats, filter_lines, now)
+        buf = _build_xlsx(stats, filter_lines, now, detailed_records)
 
         filename = f"bao-cao-thong-ke-{now.strftime('%Y%m%d-%H%M')}.xlsx"
         return StreamingResponse(
