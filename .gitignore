@@ -50,6 +50,9 @@ Ke-hoach-*.docx
 
 dist_*/
 _build_temp/
+.build_cache/
+packaging/.build_cache/
+QLNNN/
 *.db-wal
 *.db-shm
 # Environment secrets
