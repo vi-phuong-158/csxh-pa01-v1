@@ -10,10 +10,10 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
-from backend.constants import PHAN_LOAI_NGHE_NGHIEP
+from backend.constants import PHAN_LOAI_NGHE_NGHIEP, LOAI_HINH_DAC_THU, DANH_SACH_QUOC_GIA
 from backend.db.session import get_db
 from backend.deps import require_login
-from backend.models.models import DoiTuong, LienHe, TaiChinh
+from backend.models.models import DoiTuong, LienHe, TaiChinh, HoSoDacThu
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,8 @@ def _query_stats(
     dt_from: Optional[datetime],
     dt_to: Optional[datetime],
     phan_loai: Optional[str],
+    ho_so_dac_thu: Optional[str] = None,
+    quoc_gia: Optional[str] = None,
 ) -> dict:
     def base_filter():
         conds = [DoiTuong.is_draft == False]
@@ -49,6 +51,15 @@ def _query_stats(
             conds.append(DoiTuong.created_at <= dt_to)
         if phan_loai:
             conds.append(DoiTuong.phan_loai_nghe_nghiep == phan_loai)
+        if ho_so_dac_thu or quoc_gia:
+            hsdt_conds = []
+            if ho_so_dac_thu:
+                hsdt_conds.append(HoSoDacThu.loai_hinh == ho_so_dac_thu)
+            if quoc_gia:
+                hsdt_conds.append(HoSoDacThu.noi_dung_chi_tiet.like(f"%{quoc_gia}%"))
+            conds.append(DoiTuong.cccd.in_(
+                select(HoSoDacThu.cccd).where(and_(*hsdt_conds))
+            ))
         return and_(*conds)
 
     total = db.execute(
@@ -349,7 +360,12 @@ def bao_cao_page(request: Request, user: dict = Depends(require_login)):
     return templates.TemplateResponse(
         request,
         "bao_cao/index.html",
-        {"user": user, "phan_loai_options": PHAN_LOAI_NGHE_NGHIEP},
+        {
+            "user": user,
+            "phan_loai_options": PHAN_LOAI_NGHE_NGHIEP,
+            "loai_hinh_dac_thu": LOAI_HINH_DAC_THU,
+            "danh_sach_quoc_gia": DANH_SACH_QUOC_GIA,
+        },
     )
 
 
@@ -358,12 +374,14 @@ def api_thong_ke(
     tu_ngay: Optional[str] = Query(None, description="YYYY-MM-DD"),
     den_ngay: Optional[str] = Query(None, description="YYYY-MM-DD"),
     phan_loai: Optional[str] = Query(None),
+    ho_so_dac_thu: Optional[str] = Query(None),
+    quoc_gia: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     user: dict = Depends(require_login),
 ):
     try:
         dt_from, dt_to = _parse_dates(tu_ngay, den_ngay)
-        return _query_stats(db, dt_from, dt_to, phan_loai)
+        return _query_stats(db, dt_from, dt_to, phan_loai, ho_so_dac_thu, quoc_gia)
     except HTTPException:
         raise
     except Exception as exc:
@@ -376,12 +394,14 @@ def export_xlsx(
     tu_ngay: Optional[str] = Query(None, description="YYYY-MM-DD"),
     den_ngay: Optional[str] = Query(None, description="YYYY-MM-DD"),
     phan_loai: Optional[str] = Query(None),
+    ho_so_dac_thu: Optional[str] = Query(None),
+    quoc_gia: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     user: dict = Depends(require_login),
 ):
     try:
         dt_from, dt_to = _parse_dates(tu_ngay, den_ngay)
-        stats = _query_stats(db, dt_from, dt_to, phan_loai)
+        stats = _query_stats(db, dt_from, dt_to, phan_loai, ho_so_dac_thu, quoc_gia)
 
         filter_lines: list[str] = []
         if tu_ngay:
@@ -394,6 +414,10 @@ def export_xlsx(
             )
         if phan_loai:
             filter_lines.append(f"Phân loại: {phan_loai}")
+        if ho_so_dac_thu:
+            filter_lines.append(f"Hồ sơ đặc thù: {LOAI_HINH_DAC_THU.get(ho_so_dac_thu, ho_so_dac_thu)}")
+        if quoc_gia:
+            filter_lines.append(f"Quốc gia: {quoc_gia}")
         if not filter_lines:
             filter_lines = ["Toàn bộ dữ liệu (không lọc)"]
 

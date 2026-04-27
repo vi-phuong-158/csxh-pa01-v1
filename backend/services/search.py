@@ -43,21 +43,24 @@ def search_profiles(
                 from backend.utils.fuzzy_matching import remove_vietnamese_diacritics
                 query_normalized = remove_vietnamese_diacritics(query).lower()
                 
-                # Fetch all names
-                all_names_query = select(DoiTuong.cccd, DoiTuong.ho_ten).where(DoiTuong.is_draft == False)
-                all_names = db.execute(all_names_query).all()
+                # Fetch searchable text fields
+                all_texts_query = select(
+                    DoiTuong.cccd, DoiTuong.ho_ten, DoiTuong.dia_chi_xa, DoiTuong.dia_chi_tinh
+                ).where(DoiTuong.is_draft == False)
+                all_texts = db.execute(all_texts_query).all()
                 
                 matched_cccds = []
-                for cccd, name in all_names:
-                    if name and query_normalized in remove_vietnamese_diacritics(name).lower():
+                for row in all_texts:
+                    cccd = row[0]
+                    # Combine all texts into one searchable string
+                    combined_text = " ".join([str(x) for x in row[1:] if x])
+                    if query_normalized in remove_vietnamese_diacritics(combined_text).lower():
                         matched_cccds.append(cccd)
                         
                 if matched_cccds:
                     # chunk it to prevent SQLite "too many SQL variables" error (max 999)
-                    if len(matched_cccds) > 900:
-                        or_conditions.append(DoiTuong.cccd.in_(matched_cccds[:900]))
-                    else:
-                        or_conditions.append(DoiTuong.cccd.in_(matched_cccds))
+                    for i in range(0, len(matched_cccds), 900):
+                        or_conditions.append(DoiTuong.cccd.in_(matched_cccds[i:i+900]))
             except ImportError:
                 pass
             
@@ -129,32 +132,3 @@ def search_profiles(
     }
 
 
-def fuzzy_search(db: Session, ho_ten: str, threshold: int = 80) -> List[Dict]:
-    try:
-        from backend.utils.fuzzy_matching import find_similar_names
-    except ImportError:
-        return []
-
-    all_rows = db.execute(
-        select(DoiTuong.cccd, DoiTuong.ho_ten).where(
-            DoiTuong.is_draft == False, DoiTuong.ho_ten.isnot(None)
-        )
-    ).all()
-
-    cccd_list = [row[0] for row in all_rows]
-    name_list = [row[1] for row in all_rows]
-    raw_matches = find_similar_names(ho_ten, name_list, threshold=threshold)
-
-    results = []
-    for m in raw_matches:
-        cccd = cccd_list[m["index"]]
-        dt = db.get(DoiTuong, cccd)
-        if dt:
-            results.append({
-                "cccd": dt.cccd,
-                "ho_ten": dt.ho_ten,
-                "ngay_sinh": dt.ngay_sinh.strftime("%d/%m/%Y") if dt.ngay_sinh else "",
-                "dia_chi_xa": dt.dia_chi_xa or "",
-                "score": m["score"],
-            })
-    return results

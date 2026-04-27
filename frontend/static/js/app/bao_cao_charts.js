@@ -29,9 +29,13 @@ function buildParams() {
   const tu  = el('tu-ngay')?.value;
   const den = el('den-ngay')?.value;
   const pl  = el('phan-loai')?.value;
+  const hs  = el('ho-so-dac-thu')?.value;
+  const qg  = el('quoc-gia')?.value;
   if (tu)  p.set('tu_ngay',   tu);
   if (den) p.set('den_ngay',  den);
   if (pl)  p.set('phan_loai', pl);
+  if (hs)  p.set('ho_so_dac_thu', hs);
+  if (qg)  p.set('quoc_gia', qg);
   return p;
 }
 
@@ -243,7 +247,7 @@ function initBarChart() {
 // ── Boot ───────────────────────────────────────────────────────────────────
 
 function resetFilters() {
-  const ids = ['tu-ngay', 'den-ngay', 'phan-loai'];
+  const ids = ['tu-ngay', 'den-ngay', 'phan-loai', 'ho-so-dac-thu', 'quoc-gia'];
   ids.forEach(id => { const n = el(id); if (n) n.value = ''; });
   loadStats();
 }

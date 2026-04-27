@@ -1,4 +1,5 @@
 <form hx-post="/profile/{{ profile.cccd }}/update"
+      hx-trigger="change delay:1s, submit"
       hx-target="#save-msg"
       hx-swap="innerHTML"
       class="card space-y-4">
@@ -34,29 +35,30 @@
     </div>
     <div>
       <label class="label">Tỉnh/Thành</label>
-      <select name="dia_chi_tinh" class="input">
+      <input name="dia_chi_tinh" list="tinh_thanh_list" class="input" value="{{ profile.dia_chi_tinh or '' }}" placeholder="-- Chọn hoặc tìm kiếm --">
+      <datalist id="tinh_thanh_list">
         {% for t in tinh_thanh %}
-        <option value="{{ t }}" {% if profile.dia_chi_tinh == t %}selected{% endif %}>{{ t }}</option>
+        <option value="{{ t }}"></option>
         {% endfor %}
-      </select>
+      </datalist>
     </div>
     <div>
       <label class="label">Xã/Phường</label>
-      <select name="dia_chi_xa" class="input">
-        <option value="">-- Chọn --</option>
+      <input name="dia_chi_xa" list="xa_phuong_list" class="input" value="{{ profile.dia_chi_xa or '' }}" placeholder="-- Chọn hoặc tìm kiếm --">
+      <datalist id="xa_phuong_list">
         {% for x in xa_phuong %}
-        <option value="{{ x }}" {% if profile.dia_chi_xa == x %}selected{% endif %}>{{ x }}</option>
+        <option value="{{ x }}"></option>
         {% endfor %}
-      </select>
+      </datalist>
     </div>
     <div>
       <label class="label">Phân loại nghề nghiệp</label>
-      <select name="phan_loai_nghe_nghiep" class="input">
-        <option value="">-- Chọn --</option>
+      <input name="phan_loai_nghe_nghiep" list="phan_loai_nghe_nghiep_list" class="input" value="{{ profile.phan_loai_nghe_nghiep or '' }}" placeholder="-- Chọn hoặc tìm kiếm --">
+      <datalist id="phan_loai_nghe_nghiep_list">
         {% for n in phan_loai_nghe_nghiep %}
-        <option value="{{ n }}" {% if profile.phan_loai_nghe_nghiep == n %}selected{% endif %}>{{ n }}</option>
+        <option value="{{ n }}"></option>
         {% endfor %}
-      </select>
+      </datalist>
     </div>
     <div>
       <label class="label">Chi tiết nghề nghiệp</label>

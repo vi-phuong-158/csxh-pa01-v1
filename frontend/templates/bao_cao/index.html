@@ -42,7 +42,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
       <div>
         <label class="label" for="tu-ngay">Từ ngày</label>
         <input id="tu-ngay" type="date" class="input" onchange="loadStats()" />
@@ -54,11 +54,29 @@
       <div>
         <label class="label" for="phan-loai">Phân loại nghề nghiệp</label>
         <select id="phan-loai" class="input" onchange="loadStats()">
-          <option value="">— Tất cả phân loại —</option>
+          <option value="">— Tất cả —</option>
           {% for opt in phan_loai_options %}
           <option value="{{ opt }}">{{ opt }}</option>
           {% endfor %}
         </select>
+      </div>
+      <div>
+        <label class="label" for="ho-so-dac-thu">Hồ sơ đặc thù</label>
+        <select id="ho-so-dac-thu" class="input" onchange="loadStats()">
+          <option value="">— Tất cả —</option>
+          {% for key, val in loai_hinh_dac_thu.items() %}
+          <option value="{{ key }}">{{ val }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label" for="quoc-gia">Quốc gia</label>
+        <input id="quoc-gia" list="quoc_gia_list" class="input" placeholder="— Tất cả —" onchange="loadStats()" />
+        <datalist id="quoc_gia_list">
+          {% for qg in danh_sach_quoc_gia %}
+          <option value="{{ qg }}"></option>
+          {% endfor %}
+        </datalist>
       </div>
     </div>
 

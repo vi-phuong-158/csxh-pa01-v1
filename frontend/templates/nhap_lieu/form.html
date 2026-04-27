@@ -28,21 +28,25 @@
     {% for id, label in tabs %}
     <button @click="activeTab='{{ id }}';
       {% if id != 'basic' %}
-      htmx.ajax('GET', '/profile/{{ profile.cccd }}/tab/{{ id }}', '#tab-content')
+      htmx.ajax('GET', '/profile/{{ profile.cccd }}/tab/{{ id }}', '#dynamic-tab-content')
       {% endif %}"
       :class="activeTab==='{{ id }}' ? 'tab-btn-active' : ''"
       class="tab-btn">{{ label }}</button>
     {% endfor %}
   </div>
 
-  <div id="tab-content">
+  <div id="tab-wrapper" class="relative">
+    {# Tab Thông tin cơ bản: Giữ nguyên trong DOM, chỉ ẩn/hiện để tránh mất dữ liệu chưa lưu #}
     <div x-show="activeTab==='basic'">
       {% include "profile/_tab_basic.html" %}
     </div>
 
-    <!-- Other tabs loaded via HTMX on click -->
+    {# Các tab khác: Load động vào đây #}
     <div x-show="activeTab !== 'basic'" id="dynamic-tab-content">
-      <!-- Dynamic content will be injected here -->
+      <div class="p-8 text-center text-slate-500">
+        <div class="loading-spinner mb-2"></div>
+        Đang tải nội dung...
+      </div>
     </div>
   </div>
 </div>

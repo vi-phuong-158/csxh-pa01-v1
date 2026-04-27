@@ -88,8 +88,14 @@ def commit(
 ):
     ok, msg = profile_svc.commit_draft(db, cccd)
     if not ok:
-        return {"ok": False, "message": msg}
-    return RedirectResponse(f"/profile/{cccd}", status_code=302)
+        # Nếu lỗi (thiếu họ tên...), trả về thông báo để HTMX hiển thị (cần target)
+        return HTMLResponse(f'<script>alert("{msg}")</script>')
+    
+    # F-10: Redirect về trang hồ sơ chính thức sau khi commit thành công.
+    # Dùng HX-Redirect để HTMX ép trình duyệt chuyển trang toàn bộ.
+    response = Response(status_code=204) # No content
+    response.headers["HX-Redirect"] = f"/profile/{cccd}"
+    return response
 
 
 @router.delete("/{cccd}")

@@ -30,9 +30,10 @@
           class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div>
         <label class="label">Ngân hàng</label>
-        <select name="ngan_hang" class="input">
-          {% for nb in ngan_hang %}<option>{{ nb }}</option>{% endfor %}
-        </select>
+        <input name="ngan_hang" list="ngan_hang_list" class="input" placeholder="-- Chọn hoặc tìm kiếm --">
+        <datalist id="ngan_hang_list">
+          {% for nb in ngan_hang %}<option value="{{ nb }}"></option>{% endfor %}
+        </datalist>
       </div>
       <div>
         <label class="label">Số tài khoản</label>

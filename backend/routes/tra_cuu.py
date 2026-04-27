@@ -31,12 +31,3 @@ def search(
 ):
     return search_svc.search_profiles(db, q, fields, gioi_tinh, dia_chi_xa, nghe_nghiep, page, page_size)
 
-
-@router.get("/api/fuzzy")
-def fuzzy(
-    q: str = Query(""),
-    threshold: int = 80,
-    user: dict = Depends(require_login),
-    db: Session = Depends(get_db),
-):
-    return search_svc.fuzzy_search(db, q, threshold)

@@ -1,40 +1,31 @@
+import sys
+import subprocess
 from pathlib import Path
 
-try:
-    from PIL import Image
-except ImportError:
-    import subprocess, sys
-    print("[!] Pillow not found. Installing...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
-    from PIL import Image
+def install_pillow():
+    try:
+        import PIL
+    except ImportError:
+        print("Đang cài đặt thư viện Pillow để xử lý ảnh...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
 
-ROOT = Path(__file__).parent.parent.resolve()
-SRC  = ROOT / "assets" / "logo.png"
-DEST = ROOT / "assets" / "logo.ico"
-ICO_SIZES = [(16,16), (24,24), (32,32), (48,48), (64,64), (128,128), (256,256)]
+install_pillow()
 
-def convert():
-    if not SRC.exists():
-        print(f"[x] Not found: {SRC}")
-        print("    Please put logo.png in assets/ folder")
-        return
+from PIL import Image
 
-    print(f"[>] Converting: {SRC.name} -> {DEST.name}")
-    img = Image.open(SRC).convert("RGBA")
-
-    images = []
-    for size in ICO_SIZES:
-        resized = img.resize(size, Image.LANCZOS)
-        images.append(resized)
-
-    images[0].save(
-        DEST,
-        format="ICO",
-        sizes=ICO_SIZES,
-        append_images=images[1:]
-    )
-    print(f"[v] Created: {DEST}")
-    print(f"    Sizes: {[f'{s[0]}x{s[1]}' for s in ICO_SIZES]}")
+def convert_png_to_ico(png_path, ico_path):
+    img = Image.open(png_path)
+    # Resize and save as ICO with multiple sizes to prevent blurring
+    icon_sizes = [(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
+    img.save(ico_path, format="ICO", sizes=icon_sizes)
 
 if __name__ == "__main__":
-    convert()
+    base_dir = Path(__file__).resolve().parent.parent
+    png_file = base_dir / "assets" / "logo.png"
+    ico_file = base_dir / "assets" / "logo.ico"
+    
+    if not png_file.exists():
+        print(f"Không tìm thấy file: {png_file}")
+        sys.exit(1)
+        
+    convert_png_to_ico(png_file, ico_file)

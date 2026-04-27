@@ -199,30 +199,6 @@ LOAI_HINH_DAC_THU = {
     "Xac_Minh": "Đã từng được xác minh",
 }
 
-# Danh sách quốc gia chuẩn hóa (các quốc gia thường gặp)
-DANH_SACH_QUOC_GIA = [
-    # Đông Á
-    "Trung Quốc", "Hàn Quốc", "Nhật Bản", "Đài Loan", "Hồng Kông", "Macao",
-    # Đông Nam Á
-    "Thái Lan", "Lào", "Campuchia", "Myanmar", "Malaysia", "Singapore",
-    "Indonesia", "Philippines", "Brunei", "Đông Timor",
-    # Nam Á
-    "Ấn Độ", "Pakistan", "Bangladesh", "Nepal", "Sri Lanka",
-    # Trung Đông
-    "UAE", "Ả Rập Xê Út", "Qatar", "Kuwait", "Israel", "Thổ Nhĩ Kỳ",
-    # Châu Âu
-    "Nga", "Đức", "Pháp", "Anh", "Ý", "Tây Ban Nha", "Hà Lan", "Bỉ",
-    "Thụy Sĩ", "Áo", "Ba Lan", "Séc", "Hungary", "Ukraine", "Romania",
-    # Châu Mỹ
-    "Mỹ", "Canada", "Brazil", "Argentina", "Mexico", "Chile",
-    # Châu Úc
-    "Úc", "New Zealand",
-    # Châu Phi
-    "Nam Phi", "Ai Cập", "Nigeria", "Kenya",
-    # Khác
-    "Khác"
-]
-
 # Các loại hình tổ chức nước ngoài
 LOAI_HINH_TO_CHUC_NN = ["FDI", "NGO", "Đại sứ quán",
                         "Lãnh sự quán", "Tổ chức quốc tế", "Khác"]
@@ -302,7 +278,5 @@ class Messages:
     PLEASE_SAVE_PERSONAL_FIRST = "⚠️ Vui lòng nhập và lưu thông tin cá nhân trước (Tab 1)"
 
 DANH_SACH_QUOC_GIA = [
-    "Trung Quốc", "Hàn Quốc", "Nhật Bản", "Đài Loan", "Mỹ", "Pháp", 
-    "Anh", "Đức", "Nga", "Lào", "Campuchia", "Thái Lan", "Malaysia", 
-    "Singapore", "Indonesia", "Philippines", "Úc", "Canada", "Khác"
+    "Ac-mê-ni-a", "Ai Cập", "Ai-rơ-len", "Ai-xơ-len", "An-ba-ni", "An-giê-ri", "An-ti-goa và Bác-bu-đa", "An-đô-ra", "Ap-ga-ni-xtan", "Ba Lan", "Ba-ha-ma", "Ba-ren", "Bra-xin", "Bru-nây", "Bu-tan", "Bun-ga-ri", "Bác-ba-đốt", "Bê-la-rút", "Bê-li-xê", "Bê-nanh", "Bô-li-vi-a", "Bô-xni-a và Héc-xê-gô-vi-na", "Băng-la-đét", "Bỉ", "Bốt-xoa-na", "Bồ Đào Nha", "Bờ Biển Ngà", "CH Hàn Quốc", "CH Hồi giáo I-ran", "CH Liên bang Đức", "CH Trung Phi", "CH Đô-mi-ni-ca", "CHDCND Lào", "CHDCND Triều Tiên", "Ca-dắc-xtan", "Ca-mơ-run", "Ca-na-da", "Ca-ta", "Chi-lê", "Crô-a-ti-a", "Cu Ba", "Các Tiểu vương quốc Ả Rập Thống nhất", "Cáp-ve", "Cô-lôm-bi-a", "Cô-mô-rô", "Cô-oét", "Công dân các địa phận thuộc Vương quốc liên hiệp Anh", "Công-gô (CH)", "Công-gô (CHDC)", "Căm-pu-chia", "Cư-rơ-gư-xtan", "Cốt-ri-ca", "Cộng hoà Séc", "Dim-ba-bu-ê", "Dăm-bi-a", "E-xtô-ni-a", "En Xal-va-đo", "Ga-bông", "Ga-na", "Gi-bu-ti", "Giam-mai-ca", "Goa-tê-ma-la", "Gru-di-a", "Grê-na-đa", "Gui-nê", "Gui-nê Bích-xao", "Guy-a-na", "Găm-bi-a", "Hai-ti", "Hoa Kỳ", "Hung-ga-ri", "Hy Lạp", "Hà Lan", "Hôn-đu-rát", "Hồng Kông (Trung Quốc)", "I-rắc", "I-ta-li-a", "I-xra-en", "In-đô-nê-xi-a", "Joc-đan", "Ki-ri-ba-ti", "Kê-ni-a", "Li-bi", "Li-bê-ri-a", "Li-băng", "Liên bang Nga", "Luyx-xâm-bua", "Lát-vi-a", "Lích-ten-xtên", "Lít-va", "Lô-xô-tô", "Ma lai", "Ma-cao (Trung Quốc)", "Ma-la-uy", "Ma-li", "Ma-rốc", "Ma-đa-gát-xca", "Man-ta", "Man-đi-vơ", "Mi-an-ma", "Mi-crô-nê-xi-a", "Mê-xi-cô", "Mô-dăm-bích", "Mô-na-cô", "Mô-ri-ta-ni", "Mô-ri-xơ", "Môn-tê-nê-grô", "Môn-đô-va", "Mông Cổ", "Na Uy", "Nam Phi", "Nam Xu-đăng", "Nam-mi-bi-a", "Người được Liên hiệp Anh bảo hộ", "Nhật Bản", "Ni-ca-ra-goa", "Ni-giê", "Ni-giê-ri-a", "Niu Di-lân", "Nâu-ru", "Nê-pan", "Pa-ki-xtan", "Pa-lau", "Pa-lét-tin", "Pa-na-ma", "Pa-pua Niu Gui-nê", "Pa-ra-goay", "Phi-líp-pin", "Pháp", "Phần Lan", "Pê-ru", "Quần đảo Man-vi-na", "Quần đảo Mác-san", "Quần đảo Xô-lô-môn", "Ru-an-đa", "Ru-ma-ni", "Ta-gi-ki-xtan", "Tan-da-ni-a", "Thuỵ Sĩ", "Thuỵ Điển", "Thái Lan", "Thổ Nhĩ Kỳ", "Tri-ni-đát và Tô-ba-gô", "Trung Quốc", "Trung Quốc (Đài Loan)", "Tu-va-lu", "Tuy-ni-di", "Tuốc-mê-ni-xtan", "Tây Ban Nha", "Tô-gô", "Tông-ga", "U-crai-na", "U-dơ-bê-ki-xtan", "U-gan-da", "U-ru-goay", "Va-nu-a-tu", "Va-ti-căng", "Việt Nam", "Vê-nê-xu-ê-la", "Vương quốc Anh và Bắc Ai len", "Xa-mô-a", "Xan Ma-ri-nô", "Xanh Kít và Nê-vi", "Xanh Lu-xi-a", "Xanh Vin-xen và Grê-na-din", "Xao Tô-mê và Prin-xi-pê", "Xi-ê-ra Nê-ôn", "Xin-ga-po", "Xlô-va-ki-a", "Xlô-ven-ni-a", "Xoa-di-len", "Xri-Lan-ca", "Xu-ri-nam", "Xu-đăng", "Xây-sen", "Xéc-bi-a", "Xê-nê-gan", "Xô-ma-li", "Y-ê-men", "Ác-hen-ti-na", "Áo", "Ê-cu-a-đo", "Ê-ri-tơ-ri-a", "Ê-ti-ô-pi-a", "Ô-man", "Ô-xtrây-li-a", "Ăng-gô-la", "Đan Mạch", "Đô-mi-ni-ca", "Đông Ti-mo", "Đảo Síp", "Ả-rập Xê-út", "Ấn Độ"
 ]

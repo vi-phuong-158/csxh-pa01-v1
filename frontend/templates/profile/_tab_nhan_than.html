@@ -69,18 +69,16 @@
           {% for g in ['Nam','Nữ','Khác'] %}<option>{{ g }}</option>{% endfor %}
         </select>
       </div>
-      <div>
-        <label class="label">Tỉnh/Thành</label>
-        <select name="dia_chi_tinh" class="input">
-          {% for t in tinh_thanh %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
-        </select>
-      </div>
+        <input name="dia_chi_tinh" list="nt_tinh_thanh_list" class="input" placeholder="-- Chọn hoặc tìm kiếm --">
+        <datalist id="nt_tinh_thanh_list">
+          {% for t in tinh_thanh %}<option value="{{ t }}"></option>{% endfor %}
+        </datalist>
       <div>
         <label class="label">Xã/Phường</label>
-        <select name="dia_chi_xa" class="input">
-          <option value="">-- Chọn --</option>
-          {% for x in xa_phuong %}<option>{{ x }}</option>{% endfor %}
-        </select>
+        <input name="dia_chi_xa" list="nt_xa_phuong_list" class="input" placeholder="-- Chọn hoặc tìm kiếm --">
+        <datalist id="nt_xa_phuong_list">
+          {% for x in xa_phuong %}<option value="{{ x }}"></option>{% endfor %}
+        </datalist>
       </div>
       <div>
         <label class="label">Nghề nghiệp</label>
