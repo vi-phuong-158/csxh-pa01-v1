@@ -5,7 +5,7 @@
     <div class="card border-l-4 border-yellow-500">
       <div class="flex items-start justify-between gap-3">
         <div>
-          <span class="badge badge-yellow mb-2">{{ hsd.loai_hinh }}</span>
+          <span class="badge badge-yellow mb-2">{{ loai_hinh_dac_thu.get(hsd.loai_hinh, hsd.loai_hinh) }}</span>
           <p class="text-sm text-slate-200 whitespace-pre-wrap">{{ hsd.noi_dung or '—' }}</p>
           {% if hsd.ghi_chu %}<p class="text-xs text-slate-400 mt-1">{{ hsd.ghi_chu }}</p>{% endif %}
         </div>
@@ -18,7 +18,7 @@
   </div>
   {% endif %}
 
-  <div class="card" x-data="{open:false}">
+  <div class="card" x-data="{open:false, loai_hinh: ''}">
     <button @click="open=!open" class="btn-secondary text-xs w-full justify-center">+ Thêm hồ sơ đặc thù</button>
     <form x-show="open" x-cloak
           hx-post="/profile/{{ profile.cccd }}/ho-so-dac-thu"
@@ -26,16 +26,100 @@
           class="mt-4 space-y-3">
       <div>
         <label class="label">Loại hình</label>
-        <select name="loai_hinh" class="input" required>
-          {% for lh in loai_hinh_dac_thu %}<option>{{ lh }}</option>{% endfor %}
+        <select name="loai_hinh" x-model="loai_hinh" class="input" required>
+          <option value="">-- Chọn loại hình --</option>
+          {% for key, val in loai_hinh_dac_thu.items() %}
+          <option value="{{ key }}">{{ val }}</option>
+          {% endfor %}
         </select>
       </div>
-      <div>
-        <label class="label">Nội dung chi tiết</label>
-        <textarea name="noi_dung_chi_tiet" rows="4" class="input resize-none"></textarea>
+
+      <!-- Dynamic fields based on loai_hinh -->
+      <div x-show="loai_hinh === 'Hon_Nhan_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
+        <div><label class="label">Họ tên đối tác</label><input name="hn_ten" type="text" class="input" /></div>
+        <div>
+          <label class="label">Quốc tịch</label>
+          <select name="hn_qt" class="input">
+            {% for qg in danh_sach_quoc_gia %}<option value="{{ qg }}">{{ qg }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label class="label">Số hộ chiếu</label><input name="hn_hc" type="text" class="input font-mono uppercase" /></div>
+        <div>
+          <label class="label">Tình trạng</label>
+          <select name="hn_tt" class="input">
+            <option value="Kết hôn hợp pháp">Kết hôn hợp pháp</option>
+            <option value="Sinh sống như vợ chồng">Sinh sống như vợ chồng</option>
+            <option value="Đã ly hôn">Đã ly hôn</option>
+            <option value="Đã qua đời">Đã qua đời</option>
+          </select>
+        </div>
       </div>
+
+      <div x-show="loai_hinh === 'Lam_Viec_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
+        <div class="md:col-span-2"><label class="label">Tên tổ chức NGO/FDI</label><input name="lv_tc" type="text" class="input" /></div>
+        <div><label class="label">Chức vụ</label><input name="lv_cv" type="text" class="input" /></div>
+        <div><label class="label">Thời gian làm việc</label><input name="lv_tg" type="text" class="input" /></div>
+        <div class="md:col-span-2"><label class="label">Địa điểm làm việc</label><input name="lv_dd" type="text" class="input" /></div>
+      </div>
+
+      <div x-show="loai_hinh === 'Hoc_Tap_Cong_Tac_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
+        <div>
+          <label class="label">Diện đi</label>
+          <select name="ht_dien" class="input">
+            <option value="Du học tự túc">Du học tự túc</option>
+            <option value="Du học ngân sách">Du học ngân sách</option>
+            <option value="Công tác">Công tác</option>
+            <option value="Xuất khẩu lao động">Xuất khẩu lao động</option>
+            <option value="Khác">Khác</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">Quốc gia</label>
+          <select name="ht_qg" class="input">
+            {% for qg in danh_sach_quoc_gia %}<option value="{{ qg }}">{{ qg }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label class="label">Thời gian đi</label><input name="ht_tgd" type="text" class="input" /></div>
+        <div><label class="label">Thời gian về</label><input name="ht_tgv" type="text" class="input" /></div>
+        <div class="md:col-span-2"><label class="label">Nghề nghiệp sau khi về</label><input name="ht_nghe" type="text" class="input" /></div>
+      </div>
+
+      <div x-show="loai_hinh === 'Vi_Pham_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
+        <div>
+          <label class="label">Quốc gia vi phạm</label>
+          <select name="vp_qg" class="input">
+            {% for qg in danh_sach_quoc_gia %}<option value="{{ qg }}">{{ qg }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label class="label">Cơ quan bắt giữ</label><input name="vp_cq" type="text" class="input" /></div>
+        <div><label class="label">Ngày vi phạm (DD/MM/YYYY)</label><input name="vp_tg" type="text" class="input" placeholder="Ví dụ: 01/01/2023" /></div>
+        <div><label class="label">Hình thức xử lý</label><input name="vp_ht" type="text" class="input" /></div>
+        <div class="md:col-span-2"><label class="label">Nội dung vi phạm</label><textarea name="vp_nd" rows="2" class="input resize-none"></textarea></div>
+      </div>
+
+      <div x-show="loai_hinh === 'Xac_Minh'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
+        <div><label class="label">Cơ quan xác minh</label><input name="xm_cq" type="text" class="input" /></div>
+        <div><label class="label">Ngày xác minh (DD/MM/YYYY)</label><input name="xm_tg" type="text" class="input" placeholder="Ví dụ: 01/01/2023" /></div>
+        <div class="md:col-span-2">
+          <label class="label">Kết quả</label>
+          <select name="xm_kq" class="input">
+            <option value="Đủ điều kiện">Đủ điều kiện</option>
+            <option value="Không đủ điều kiện">Không đủ điều kiện</option>
+            <option value="Đang xác minh">Đang xác minh</option>
+            <option value="Khác">Khác</option>
+          </select>
+        </div>
+        <div class="md:col-span-2"><label class="label">Nội dung xác minh</label><textarea name="xm_nd" rows="2" class="input resize-none"></textarea></div>
+      </div>
+      
+      <!-- Fallback text area for other types or custom input -->
+      <div x-show="loai_hinh === ''">
+        <label class="label">Nội dung chi tiết (nhập tự do)</label>
+        <textarea name="noi_dung_chi_tiet" rows="4" class="input resize-none" placeholder="Nhập thông tin chi tiết nếu có..."></textarea>
+      </div>
+
       <div>
-        <label class="label">Ghi chú</label>
+        <label class="label">Ghi chú thêm</label>
         <input name="ghi_chu" type="text" class="input" />
       </div>
       <div class="flex gap-2 justify-end">

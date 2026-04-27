@@ -28,7 +28,7 @@ from sqlalchemy.orm import Session
 from backend.config import settings
 from backend.constants import (
     LOAI_HINH_DAC_THU, LOAI_LIEN_HE, LOAI_QUAN_HE, LOAI_TAI_LIEU,
-    LOAI_XE, NGAN_HANG, PHAN_LOAI_NGHE_NGHIEP, TINH_THANH, XA_PHUONG,
+    LOAI_XE, NGAN_HANG, PHAN_LOAI_NGHE_NGHIEP, TINH_THANH, XA_PHUONG, DANH_SACH_QUOC_GIA
 )
 from backend.db.session import get_db
 from backend.deps import require_admin, require_login, require_profile_access
@@ -52,6 +52,7 @@ _CTX_OPTS = {
     "loai_xe": LOAI_XE,
     "loai_tai_lieu": LOAI_TAI_LIEU,
     "phan_loai_nghe_nghiep": PHAN_LOAI_NGHE_NGHIEP,
+    "danh_sach_quoc_gia": DANH_SACH_QUOC_GIA,
 }
 
 # F-08: ngưỡng dung lượng tối đa cho 1 file upload (5 MB theo yêu cầu).

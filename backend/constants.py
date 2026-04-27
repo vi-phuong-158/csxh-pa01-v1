@@ -300,3 +300,9 @@ class Messages:
     # Info
     NO_DATA = "💡 Chưa có dữ liệu."
     PLEASE_SAVE_PERSONAL_FIRST = "⚠️ Vui lòng nhập và lưu thông tin cá nhân trước (Tab 1)"
+
+DANH_SACH_QUOC_GIA = [
+    "Trung Quốc", "Hàn Quốc", "Nhật Bản", "Đài Loan", "Mỹ", "Pháp", 
+    "Anh", "Đức", "Nga", "Lào", "Campuchia", "Thái Lan", "Malaysia", 
+    "Singapore", "Indonesia", "Philippines", "Úc", "Canada", "Khác"
+]

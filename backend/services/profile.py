@@ -72,7 +72,10 @@ def update_basic_info(db: Session, cccd: str, data: Dict, nguoi: str = "") -> Tu
     for field in ["ho_ten", "gioi_tinh", "dia_chi_tinh", "dia_chi_xa",
                   "phan_loai_nghe_nghiep", "chi_tiet_nghe_nghiep", "ghi_chu_chung"]:
         if field in data:
-            setattr(dt, field, data[field] or None)
+            val = data[field] or None
+            if field == "ho_ten" and val:
+                val = val.upper()
+            setattr(dt, field, val)
     if "ngay_sinh" in data and data["ngay_sinh"]:
         try:
             dt.ngay_sinh = datetime.strptime(data["ngay_sinh"], "%Y-%m-%d").date()
@@ -211,7 +214,48 @@ def delete_phuong_tien(db: Session, item_id: int) -> bool:
 
 
 def add_ho_so_dac_thu(db: Session, cccd: str, data: Dict) -> Tuple[bool, str]:
-    db.add(HoSoDacThu(cccd=cccd, loai_hinh=data.get("loai_hinh", ""), noi_dung_chi_tiet=data.get("noi_dung_chi_tiet"), ghi_chu=data.get("ghi_chu")))
+    loai_hinh = data.get("loai_hinh", "")
+    noi_dung = data.get("noi_dung_chi_tiet", "")
+    
+    if loai_hinh == "Hon_Nhan_NN":
+        parts = []
+        if data.get("hn_ten"): parts.append(f"Họ tên đối tác: {data.get('hn_ten')}")
+        if data.get("hn_qt"): parts.append(f"Quốc tịch: {data.get('hn_qt')}")
+        if data.get("hn_hc"): parts.append(f"Số hộ chiếu: {data.get('hn_hc')}")
+        if data.get("hn_tt"): parts.append(f"Tình trạng: {data.get('hn_tt')}")
+        if parts: noi_dung = "\n".join(parts)
+    elif loai_hinh == "Lam_Viec_NN":
+        parts = []
+        if data.get("lv_tc"): parts.append(f"Tên tổ chức NGO/FDI: {data.get('lv_tc')}")
+        if data.get("lv_cv"): parts.append(f"Chức vụ: {data.get('lv_cv')}")
+        if data.get("lv_tg"): parts.append(f"Thời gian: {data.get('lv_tg')}")
+        if data.get("lv_dd"): parts.append(f"Địa điểm: {data.get('lv_dd')}")
+        if parts: noi_dung = "\n".join(parts)
+    elif loai_hinh == "Hoc_Tap_Cong_Tac_NN":
+        parts = []
+        if data.get("ht_dien"): parts.append(f"Diện đi: {data.get('ht_dien')}")
+        if data.get("ht_qg"): parts.append(f"Quốc gia: {data.get('ht_qg')}")
+        if data.get("ht_tgd"): parts.append(f"Thời gian đi: {data.get('ht_tgd')}")
+        if data.get("ht_tgv"): parts.append(f"Thời gian về: {data.get('ht_tgv')}")
+        if data.get("ht_nghe"): parts.append(f"Nghề nghiệp sau khi về: {data.get('ht_nghe')}")
+        if parts: noi_dung = "\n".join(parts)
+    elif loai_hinh == "Vi_Pham_NN":
+        parts = []
+        if data.get("vp_qg"): parts.append(f"Quốc gia vi phạm: {data.get('vp_qg')}")
+        if data.get("vp_cq"): parts.append(f"Cơ quan bắt giữ: {data.get('vp_cq')}")
+        if data.get("vp_tg"): parts.append(f"Ngày vi phạm: {data.get('vp_tg')}")
+        if data.get("vp_ht"): parts.append(f"Hình thức xử lý: {data.get('vp_ht')}")
+        if data.get("vp_nd"): parts.append(f"Nội dung vi phạm: {data.get('vp_nd')}")
+        if parts: noi_dung = "\n".join(parts)
+    elif loai_hinh == "Xac_Minh":
+        parts = []
+        if data.get("xm_cq"): parts.append(f"Cơ quan xác minh: {data.get('xm_cq')}")
+        if data.get("xm_tg"): parts.append(f"Ngày xác minh: {data.get('xm_tg')}")
+        if data.get("xm_kq"): parts.append(f"Kết quả: {data.get('xm_kq')}")
+        if data.get("xm_nd"): parts.append(f"Nội dung xác minh: {data.get('xm_nd')}")
+        if parts: noi_dung = "\n".join(parts)
+
+    db.add(HoSoDacThu(cccd=cccd, loai_hinh=loai_hinh, noi_dung_chi_tiet=noi_dung, ghi_chu=data.get("ghi_chu")))
     db.commit()
     return True, "Đã thêm hồ sơ đặc thù"
 
