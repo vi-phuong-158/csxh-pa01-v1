@@ -8,7 +8,7 @@ CHƯƠNG I: TỔNG QUAN
 I. Cơ sở lý luận
 Sáng kiến được xây dựng dựa trên việc quán triệt sâu sắc và hưởng ứng tích cực các chủ trương, đường lối của Đảng, Nhà nước và ngành Công an về chuyển đổi số và hiện đại hóa lực lượng, tiêu biểu là:
 Cơ sở pháp lý: Căn cứ Nghị quyết số 57-NQ/TW ngày 22/12/2024 của Bộ Chính trị về đột phá phát triển khoa học, công nghệ, đổi mới sáng tạo và chuyển đổi số quốc gia; Kế hoạch số 342/KH-CAT-PV01 của Công an tỉnh Phú Thọ về triển khai hoạt động sáng kiến, cải tiến kỹ thuật.
-Cơ sở thực tiễn: Thực tế công tác quản lý đối tượng thuộc diện quản lý chuyên sâu (CSXH), đối tượng có yếu tố nước ngoài tại Công an cơ sở còn nhiều bất cập: hồ sơ rời rạc, không có tính liên kết, khó tra cứu khi có yêu cầu.
+Cơ sở thực tiễn: Thực tế công tác quản lý đối tượng thuộc diện quản lý chuyên sâu (CSXH), người nước ngoài tại Công an cơ sở còn nhiều bất cập: hồ sơ rời rạc, không có tính liên kết, khó tra cứu khi có yêu cầu.
 II. Phương pháp tiếp cận tạo ra sáng kiến
 Sáng kiến được hình thành từ sự kết hợp của các phương pháp:
 - Phương pháp khảo sát thực tiễn (CA phường Phong Châu đảm nhiệm): Đánh giá trực tiếp quy trình quản lý nghiệp vụ, xác định các khó khăn, bất cập về tra cứu, lập báo cáo và bảo mật dữ liệu.

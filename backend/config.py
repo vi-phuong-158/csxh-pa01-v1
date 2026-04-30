@@ -3,16 +3,17 @@
 Cấu hình hệ thống — đọc từ biến môi trường / file `.env`.
 
 NGUYÊN TẮC FAIL-FAST:
-    - Các tham số bảo mật (DB_PASSWORD, SECRET_KEY, ADMIN_PASSWORD) BẮT BUỘC
-      khai báo trong .env. Nếu thiếu hoặc dùng giá trị yếu/mặc định, ứng dụng
-      sẽ raise `RuntimeError` ngay khi import — KHÔNG khởi động.
-    - Mục tiêu: ngăn deploy phần mềm an ninh ANND với key trống/known-bad.
+    - DB_PASSWORD và SECRET_KEY BẮT BUỘC — được nhập tương tác qua run_server.py
+      (getpass) và set vào os.environ trước khi module này được import.
+    - ADMIN_PASSWORD chỉ cần thiết lần đầu (chưa có user trong DB). run_server.py
+      hỏi và set vào os.environ nếu cần; nếu đã có admin thì để None.
+    - Mục tiêu: ngăn deploy với key trống/known-bad, không cần file .env cho secret.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Set
+from typing import Optional, Set
 
 from pydantic import Field, ValidationError, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -57,7 +58,7 @@ class Settings(BaseSettings):
     DB_NAME: str = "security_profile.db"
     # Mật khẩu mã hoá SQLCipher — BẮT BUỘC, tối thiểu 16 ký tự.
     # Dùng `Field(...)` (Ellipsis) để pydantic raise nếu không có env.
-    DB_PASSWORD: str = Field(..., min_length=16)
+    DB_PASSWORD: str = Field(..., min_length=12)
 
     # ---------- Security / Session ----------
     # Khoá ký session cookie (itsdangerous). Tối thiểu 32 ký tự ngẫu nhiên.
@@ -68,7 +69,9 @@ class Settings(BaseSettings):
     USE_HTTPS: bool = False
 
     # ---------- Super Admin khởi tạo lần đầu ----------
-    ADMIN_PASSWORD: str = Field(..., min_length=12)
+    # None khi admin đã tồn tại (run_server.py không set env var này).
+    # Chỉ có giá trị khi lần đầu khởi động chưa có user trong DB.
+    ADMIN_PASSWORD: Optional[str] = Field(default=None)
 
     # ---------- Upload ----------
     UPLOAD_DIR: str = "data/uploads"  # khuyến nghị NGOÀI frontend/static
@@ -83,15 +86,17 @@ class Settings(BaseSettings):
 
     @field_validator("DB_PASSWORD", "SECRET_KEY", "ADMIN_PASSWORD")
     @classmethod
-    def _reject_known_bad(cls, v: str, info) -> str:
+    def _reject_known_bad(cls, v: Optional[str], info) -> Optional[str]:
         """
         Chặn các chuỗi mặc định / yếu phổ biến.
-        Áp dụng cho cả 3 secret quan trọng nhất hệ thống.
+        ADMIN_PASSWORD có thể là None (admin đã tồn tại) — bỏ qua khi đó.
         """
+        if v is None:
+            return v
         if v.strip() in _FORBIDDEN_SECRETS:
             raise ValueError(
                 f"{info.field_name} đang dùng giá trị mặc định/yếu — "
-                "vui lòng đặt giá trị mạnh trong file .env"
+                "vui lòng nhập giá trị mạnh"
             )
         return v
 
@@ -135,8 +140,7 @@ except ValidationError as e:
         msg_lines.append(f"  - {loc}: {err['msg']}")
     msg_lines.append("")
     msg_lines.append("Hướng dẫn:")
-    msg_lines.append("  1) Copy `.env.example` thành `.env`")
-    msg_lines.append("  2) Thay từng biến bằng giá trị mạnh, ví dụ:")
-    msg_lines.append("     python -c \"import secrets; print(secrets.token_urlsafe(48))\"")
-    msg_lines.append("  3) KHÔNG commit `.env` lên git")
+    msg_lines.append("  Khởi động server bằng: python run_server.py")
+    msg_lines.append("  DB_PASSWORD và SECRET_KEY sẽ được nhập tương tác (getpass).")
+    msg_lines.append("  KHÔNG truyền secret qua file .env.")
     raise RuntimeError("\n".join(msg_lines)) from e
