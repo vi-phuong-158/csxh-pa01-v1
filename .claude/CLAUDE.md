@@ -1,166 +1,112 @@
-THÔNG TIN DỰ ÁN (PROJECT OVERVIEW)
+BỘ NÃO ĐIỀU PHỐI DỰ ÁN VCFE DATABASE
 
-Tên dự án: VCFE Database (Cơ sở dữ liệu về người Việt Nam có yếu tố nước ngoài)
+Trạng thái: Đã hoàn thành Refactor & Đóng gói. Chuyển sang giai đoạn Bảo trì & Nâng cấp.
 
-Mục tiêu: Refactor kiến trúc từ Monolith Streamlit sang mô hình Frontend-Backend phân tách (Server-rendered HTML + FastAPI).
+1. TỔNG QUAN DỰ ÁN (PROJECT OVERVIEW)
 
-Trạng thái: Chuyển đổi mã nguồn cũ. Nhánh làm việc hiện tại: claude/refactor-frontend-backend-split-fOOba.
+Tên dự án: VCFE Database (Cơ sở dữ liệu về người Việt Nam có yếu tố nước ngoài - PA01 Phú Thọ).
 
-Triết lý kiến trúc (Phương án A): Sử dụng FastAPI làm Backend API & Render Jinja2 Templates. Frontend sử dụng HTML thuần, Tailwind CSS, kết hợp HTMX để tương tác động (SPA-like) và Alpine.js cho UI state nhỏ. Tuyệt đối KHÔNG dùng các framework Frontend nặng (React/Vue).
+Môi trường hoạt động: 100% Offline / Localhost / LAN. Chạy qua file đóng gói .exe (PyInstaller).
 
-TECH STACK CHUẨN (MANDATORY)
+Kiến trúc: Frontend-Backend phân tách nhưng chạy chung một tiến trình Uvicorn.
 
-Backend: FastAPI, Uvicorn, Jinja2, Pydantic, python-multipart, itsdangerous.
+Triết lý UX/UI: Sang trọng, nghiêm trang. Sử dụng phong cách Glassmorphism (Kính mờ) kết hợp dải màu Xanh Công an (Emerald/Teal).
 
-Database: SQLAlchemy 2.x (ORM), sqlcipher3-binary (thay thế sqlite3 tiêu chuẩn để mã hóa file).
+2. TECH STACK (CÔNG NGHỆ BẮT BUỘC)
 
-Frontend: Tailwind CSS (qua CLI build), HTMX, Alpine.js.
+Backend: FastAPI, Uvicorn, Jinja2, Pydantic, pandas hoặc openpyxl (xử lý file Excel).
 
-Thư viện UI: ECharts.js (Biểu đồ), DataTables.js (Bảng dữ liệu).
+Database: sqlcipher3-binary (Tuyệt đối quan trọng: Mã hóa AES-256 toàn bộ file DB), SQLAlchemy 2.x (ORM).
 
-Caching & Utils: cachetools (thay thế @st.cache), python-dotenv.
+Frontend: HTML thuần, Tailwind CSS (qua CLI build), HTMX (Xử lý SPA, Partial reload), Alpine.js (Xử lý State UI, Modal, Tabs).
 
-QUY TẮC SỐNG CÒN CHO AI (AI GUARDRAILS - PHẢI TUÂN THỦ 100%)
+Đóng gói (Packaging): PyInstaller (qua file build_app.bat và launcher.py).
 
-1. Xóa bỏ hoàn toàn Streamlit (Eradicate Streamlit)
+3. 🚨 QUY TẮC SỐNG CÒN CHO AI (MANDATORY GUARDRAILS) 🚨
 
-AI không được phép sử dụng bất kỳ hàm st.* nào trong backend mới (services, utils, db).
+AI đọc kỹ các quy tắc này trước khi chạm vào bất kỳ file nào. Vi phạm sẽ làm hỏng hệ thống.
 
-Thay thế @st.cache_data và @st.cache_resource bằng cachetools.TTLCache hoặc functools.lru_cache.
+[SEC-1] BẢO MẬT DATABASE & SQLCIPHER:
 
-Thay thế st.secrets bằng pydantic-settings và file .env.
+KHÔNG BAO GIỜ import sqlite3 tiêu chuẩn. BẮT BUỘC dùng: from sqlcipher3 import dbapi2 as sqlite3.
 
-Thay thế st.session_state bằng cơ chế Server Session (FastAPI Session/Cookie) hoặc lưu trạng thái "Draft" vào Database.
+KHÔNG ĐƯỢC xóa lệnh PRAGMA key=....
 
-2. Bảo mật Database & SQLCipher
+Để tránh lỗi "Database is locked" khi xử lý bất đồng bộ, luôn dùng NullPool với connect_args={"timeout": 30} cho SQLAlchemy engine.
 
-Cốt lõi: Mã nguồn cũ dùng sqlite3 tiêu chuẩn khiến PRAGMA key không hoạt động. Bắt buộc thay đổi import từ sqlite3 sang from sqlcipher3 import dbapi2 as sqlite3.
+[ENV-1] MÔI TRƯỜNG OFFLINE (LOCALHOST):
 
-Duy trì câu lệnh PRAGMA key=... để đảm bảo file DB được mã hóa toàn bộ.
+Ứng dụng chạy trên http://127.0.0.1:8000. KHÔNG thiết lập secure=True cho Cookie đăng nhập (vì không có HTTPS), nếu không chức năng Login sẽ chết.
 
-3. Kiến trúc thư mục mục tiêu (Target Structure)
+Bỏ qua các cảnh báo bảo mật về CSRF hay Rate Limiting dành cho Cloud, vì đây là hệ thống Local/LAN nội bộ khép kín.
 
-Mọi file tạo mới hoặc di chuyển phải tuân thủ cấu trúc sau:
+[UI-1] QUY TẮC FRONTEND & UX:
+
+Không Framework JS Nặng: Tuyệt đối KHÔNG dùng React, Vue hay viết JS thuần fetch API. Mọi thao tác gọi API phải dùng HTMX (hx-get, hx-post, hx-swap).
+
+Thông báo (Toast): Luôn dùng HX-Trigger từ Backend để kích hoạt Toast Notification phía Frontend qua Alpine.js. KHÔNG dùng alert().
+
+Xác nhận (Confirm): Mọi thao tác Xóa phải dùng Modal của Alpine.js, KHÔNG dùng confirm() mặc định của trình duyệt.
+
+Giao diện Kính mờ: Giữ nguyên các class nền tảng: bg-gradient-to-br from-emerald-50 via-white to-teal-50, component dùng bg-white/70 backdrop-blur-md.
+
+[PKG-1] ĐÓNG GÓI PYINSTALLER:
+
+Mọi đường dẫn đọc/ghi file (như .env, .db, thư mục uploads/) phải dùng đường dẫn tuyệt đối dựa trên vị trí thực thi thực tế, không dùng đường dẫn tạm của PyInstaller (sys._MEIPASS).
+
+4. CẤU TRÚC THƯ MỤC CỐT LÕI (DIRECTORY STRUCTURE)
+
+Bám sát cấu trúc sau khi thêm tính năng:
 
 csxh-pa01-v1/
 ├── backend/
-│   ├── main.py (FastAPI app, mount static)
-│   ├── config.py (Pydantic settings)
-│   ├── deps.py (Dependencies: user, db, admin)
-│   ├── security.py (Session, CSRF)
-│   ├── routes/ (auth.py, dashboard.py, nhap_lieu.py,...)
-│   ├── services/ (Logic nghiệp vụ tách khỏi UI)
-│   ├── db/ (session.py, base.py)
-│   ├── models/ (models.py giữ nguyên)
-│   ├── schemas/ (Pydantic request/response)
-│   └── utils/ (text_utils.py, fuzzy_matching.py,...)
+│   ├── main.py        # Entry point FastAPI, cấu hình CORS, tĩnh
+│   ├── config.py      # Đọc biến môi trường từ .env
+│   ├── routes/        # Chứa API Endpoints (auth, profile, dashboard...)
+│   ├── services/      # Logic nghiệp vụ (CRUD, tính toán, import Excel)
+│   ├── db/            # session.py (SQLCipher NullPool), base.py
+│   ├── models/        # SQLAlchemy Models (Schema DB)
+│   └── schemas/       # Pydantic schemas (Request/Response)
 ├── frontend/
-│   ├── templates/ (Jinja2: base.html, _partials/, auth/,...)
-│   └── static/ (css/input.css, js/htmx, img/, uploads/)
+│   ├── templates/     # HTML Jinja2 (base.html, _partials/...)
+│   └── static/        # css/input.css, js/ (htmx, alpine, echarts)
+├── launcher.py        # Script chạy server & tự mở trình duyệt
+├── build_app.bat      # Script đóng gói ra file .exe
 ├── tailwind.config.js
-├── requirements.txt
-└── .env
+└── requirements.txt
 
 
-4. Quy tắc Frontend (HTMX & Tailwind)
 
-Không viết CSS tùy chỉnh trừ khi thực sự cần thiết. Dùng 100% utility classes của Tailwind.
+5. QUY TRÌNH NÂNG CẤP TÍNH NĂNG (WORKFLOW)
 
-Các thao tác submit form, load tab, xóa item phải dùng HTMX (hx-get, hx-post, hx-target, hx-swap) thay vì viết Javascript fetch thuần.
+Khi User yêu cầu thêm tính năng mới, AI phải thực hiện theo vòng lặp sau:
 
-Dùng Alpine.js (x-data, x-show, x-model) cho các thao tác ẩn hiện modal, tab, dropdown phía client.
+Plan (Lập kế hoạch): Đọc kỹ Database Models xem đã có bảng dữ liệu chưa. In ra kế hoạch triển khai (Cần sửa route nào, template nào) và chờ User đồng ý.
 
-LỘ TRÌNH THỰC THI (WORKFLOW & PHASES)
+Backend First: Viết/Sửa schemas -> Viết services -> Viết routes. Đảm bảo trả về HTML Partial (cho HTMX) hoặc JSON (cho ECharts).
 
-AI phải thực hiện tuần tự các bước dưới đây. Bắt buộc: Sau mỗi Phase, AI phải dừng lại, báo cáo kết quả và đợi người dùng xác nhận (Y/N) trước khi qua Phase tiếp theo.
+Frontend Second: Viết giao diện HTML, gán các class Tailwind Kính mờ, tích hợp thẻ hx-* của HTMX và x-data của Alpine.js.
 
-Phase 0: Setup môi trường (Chuẩn bị)
+CSS Build Reminder: Luôn nhắc User phải tự chạy lệnh npx tailwindcss -i ./frontend/static/css/input.css -o ./frontend/static/css/output.css nếu có thêm class Tailwind mới.
 
-Tạo file .env.example chứa DB_PASSWORD, SECRET_KEY, ADMIN_PASSWORD.
+Verify (Tự kiểm tra): Soát lại xem có vi phạm quy tắc [SEC-1] và [ENV-1] không trước khi báo cáo hoàn thành.
 
-Cập nhật requirements.txt: Xóa streamlit, streamlit-echarts. Thêm fastapi, uvicorn, jinja2, python-multipart, itsdangerous, cachetools, sqlcipher3-binary, pydantic-settings.
+6. LỘ TRÌNH PHÁT TRIỂN TIẾP THEO (ROADMAP)
 
-Khởi tạo tailwind.config.js và tạo frontend/static/css/input.css. Thêm script build Tailwind vào package.json (nếu cần) hoặc hướng dẫn người dùng chạy npx.
+Các tính năng đang được ưu tiên triển khai:
 
-Phase 1: Dọn dẹp Tầng Data & Service (Tách rễ Streamlit)
+Mục tiêu HIỆN TẠI: Phát triển tính năng Nhập liệu từ file Excel (Bulk Import)
 
-Hợp nhất logic của database.py và app/db/session.py vào backend/db/session.py.
+Backend: Xây dựng endpoint nhận file multipart/form-data. Sử dụng pandas hoặc openpyxl để parse dữ liệu.
 
-QUAN TRỌNG: Sửa lại kết nối dùng from sqlcipher3 import dbapi2 as sqlite3 và thiết lập PRAGMA key.
+Database Safety: Phải xử lý insert theo từng "chunk" (ví dụ: 50-100 dòng một lần commit) để tránh lỗi "Database is locked".
 
-Di chuyển services.py, app/services/* vào backend/services/.
+Frontend: Giao diện Upload File (kéo thả) với Tailwind, có Progress Bar (nếu có thể) và thông báo bằng Toast (Thành công bao nhiêu dòng, lỗi dòng nào).
 
-Di chuyển utils/* vào backend/utils/.
+Tính năng tiếp theo: Danh bạ Tra cứu SĐT và Số tài khoản Ngân hàng toàn cục (Tận dụng cơ chế Delay Search của HTMX: hx-trigger="keyup changed delay:500ms").
 
-Quét toàn bộ backend/services/ và backend/utils/: Xóa mọi import streamlit as st, thay thế @st.cache_* bằng cachetools.
+Tính năng tương lai 1: Báo cáo Thống kê chuyên sâu (Dùng ECharts.js, lọc biểu đồ theo thời gian thực không reload trang).
 
-Chạy thử các lệnh import python thuần để đảm bảo không còn dính dáng tới Streamlit.
-
-Phase 2: Khung FastAPI & Authentication
-
-Tạo backend/config.py đọc .env.
-
-Tạo backend/main.py (FastAPI app, mount /static, setup Jinja2).
-
-Tạo backend/security.py và backend/deps.py (quản lý Cookie/Session đăng nhập, JWT hoặc signed cookie).
-
-Tạo backend/routes/auth.py (Login, Logout).
-
-Xây dựng Frontend: frontend/templates/base.html (Layout chung với Tailwind) và frontend/templates/auth/login.html.
-AI Checkpoint: Người dùng có thể chạy uvicorn backend.main:app và xem trang Đăng nhập trên trình duyệt.
-
-Phase 3: Xây dựng Dashboard
-
-Tạo backend/routes/dashboard.py trả về số liệu tổng quan.
-
-Tạo frontend/templates/dashboard/index.html.
-
-Tích hợp ECharts.js vào HTML, dùng Alpine.js hoặc Vanilla JS để fetch data từ API nội bộ hoặc render thẳng từ Jinja2.
-
-Phase 4: Tra cứu & Rà soát (Chỉ đọc)
-
-Tạo backend/routes/tra_cuu.py và backend/routes/ra_soat.py.
-
-Thiết kế giao diện tra_cuu/index.html tích hợp DataTables.js để phân trang/sort phía client.
-
-Chuyển đổi logic Fuzzy matching từ Utils sang endpoint phục vụ chức năng Rà soát bằng file Excel.
-
-Phase 5: Giao diện Profile (View/Edit)
-
-Tạo backend/routes/profile.py.
-
-Thiết kế profile/index.html với cấu trúc Tabs (dùng Tailwind & Alpine.js).
-
-Các tab phụ (Nhân thân, Liên hệ, Tài chính...) được load động bằng HTMX (hx-get).
-
-Xử lý logic Upload File (Avatar, Tài liệu) qua endpoint multipart/form-data.
-
-Phase 6: Chức năng Nhập liệu (Phức tạp nhất)
-
-Lược bỏ cơ chế st.session_state staging cũ.
-
-Thiết kế theo pattern "Draft & Commit": Khi bắt đầu nhập, tạo một bản ghi DoiTuong với cờ is_draft=True trong Database.
-
-Giao diện nhap_lieu/index.html chia làm nhiều Tab. Các thao tác thêm Nhân thân/Phương tiện/v.v... sẽ lưu thẳng vào Database liên kết với bản ghi Draft.
-
-Khi ấn "Hoàn tất", update cờ is_draft=False.
-
-Phase 7: Bulk Import, Audit Log, User & Data Sources
-
-Tạo các routes và templates tương ứng cho Quản lý User (Chỉ Admin).
-
-Xây dựng trang hiển thị Audit Log (bảng phân trang).
-
-Xây dựng chức năng Import Excel hàng loạt (Tái sử dụng logic cũ).
-
-Phase 8 & 9: Hardening, Dọn dẹp & Test
-
-Thêm CSRF token cho các form POST.
-
-Cấu hình Rate Limit (Slowapi) cho endpoint Login.
-
-Dọn dẹp các file .py của Streamlit cũ (app.py, thư mục views/ cũ).
-
-Viết script chạy ứng dụng đơn giản (thay thế run_app.py).
+Tính năng tương lai 2: Xuất báo cáo ra định dạng Excel/Word tự động từ dữ liệu tìm kiếm.
 
 [KẾT THÚC CLAUDE.md]

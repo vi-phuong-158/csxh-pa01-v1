@@ -75,13 +75,31 @@
             {% if day in events_by_day %}
               {% for ev in events_by_day[day] %}
               <a href="/profile/{{ ev.cccd }}?tab=qua-trinh"
-                 class="block px-2 py-1 rounded-md text-[11px] leading-tight shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md
-                        {% if ev.status == 'overdue' %}bg-red-500 text-white hover:bg-red-400
+                 class="block px-2 py-1.5 rounded-md text-[11px] leading-snug shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md
+                        {% if ev.status == 'overdue' %}bg-red-500/90 text-white hover:bg-red-400
                         {% elif ev.status == 'upcoming' %}bg-amber-500 text-amber-950 hover:bg-amber-400
                         {% else %}bg-slate-700 text-slate-200 hover:bg-slate-600{% endif %}"
-                 title="{{ ev.ho_ten }} — {{ ev.noi_dung }}">
-                <div class="font-medium truncate flex items-center gap-1">
-                  {{ ev.ho_ten | truncate(16, True, '…') }}
+                 title="{{ ev.ho_ten }}&#10;{{ ev.noi_dung }}&#10;Đến: {{ ev.ngay_ket_thuc_str }}">
+                {# Tên người #}
+                <div class="font-semibold truncate">{{ ev.ho_ten | truncate(18, True, '…') }}</div>
+                {# Nội dung sự kiện #}
+                {% if ev.noi_dung %}
+                <div class="truncate mt-0.5 text-[10px]
+                            {% if ev.status == 'overdue' %}opacity-90{% else %}opacity-75{% endif %}">
+                  {{ ev.noi_dung | truncate(24, True, '…') }}
+                </div>
+                {% endif %}
+                {# Ngày kết thúc + badge trạng thái #}
+                <div class="flex items-center justify-between mt-1
+                            {% if ev.status == 'overdue' %}opacity-90{% else %}opacity-65{% endif %}">
+                  <span class="text-[10px]">{{ ev.ngay_ket_thuc_str }}</span>
+                  {% if ev.status == 'overdue' %}
+                  <span class="text-[9px] font-bold tracking-wide bg-white/20 px-1 rounded">Quá hạn</span>
+                  {% elif ev.days_left == 0 %}
+                  <span class="text-[9px] font-bold tracking-wide">Hôm nay</span>
+                  {% elif ev.days_left <= 3 %}
+                  <span class="text-[9px] font-bold">Còn {{ ev.days_left }}N</span>
+                  {% endif %}
                 </div>
               </a>
               {% endfor %}

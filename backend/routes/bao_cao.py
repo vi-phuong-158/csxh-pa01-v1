@@ -13,7 +13,10 @@ from sqlalchemy.orm import Session
 from backend.constants import PHAN_LOAI_NGHE_NGHIEP, LOAI_HINH_DAC_THU
 from backend.db.session import get_db
 from backend.deps import require_login
-from backend.models.models import DoiTuong, LienHe, TaiChinh, HoSoDacThu
+from backend.models.models import (
+    DoiTuong, LienHe, TaiChinh, HoSoDacThu,
+    NhanThan, PhuongTien, QuaTrinhHoatDong,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -172,6 +175,7 @@ def _build_xlsx(stats: dict, filter_lines: list, generated_at: datetime, detaile
     DATA_FONT  = Font(color="1E293B", size=10, name="Calibri")
     ALT_FILL   = PatternFill(fill_type="solid", fgColor="F8FAFC")
     NUM_FONT   = Font(bold=True, color="1E40AF", size=11, name="Calibri")
+    LINK_FONT  = Font(color="1D4ED8", size=10, name="Calibri", underline="single")
 
     # ── Helper utilities ──────────────────────────────────────────────────────
     def _c(ws, row, col, value=None, *, font=None, fill=None, align=None,
@@ -342,64 +346,244 @@ def _build_xlsx(stats: dict, filter_lines: list, generated_at: datetime, detaile
         ws4.auto_filter.ref = f"A2:C{2 + len(by_dia_ban)}"
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # SHEET 5 — Danh sách chi tiết
+    # SHEET 5 — Thông tin cơ bản (mở rộng từ 11 → 17 cột)
     # ═══════════════════════════════════════════════════════════════════════════
     if detailed_records is not None:
-        ws5 = wb.create_sheet("Danh sách chi tiết")
+        ws5 = wb.create_sheet("Thông tin cơ bản")
         ws5.sheet_view.showGridLines = False
 
-        _title_row(ws5, 1, 11, "DANH SÁCH CHI TIẾT ĐỐI TƯỢNG")
-        
-        headers = [
-            "STT", "CCCD", "Họ tên", "Ngày sinh", "Giới tính", 
-            "Địa chỉ (Xã - Tỉnh)", "Phân loại NNg", 
-            "Chi tiết nghề nghiệp", "Số điện thoại", "Loại HS Đặc thù", "Ghi chú"
+        _title_row(ws5, 1, 17, "DANH SÁCH CHI TIẾT ĐỐI TƯỢNG — THÔNG TIN CƠ BẢN")
+
+        headers5 = [
+            "STT", "CCCD", "Họ tên", "Ngày sinh", "Giới tính",
+            "Địa chỉ xã", "Địa chỉ tỉnh", "Phân loại NNg",
+            "Chi tiết nghề nghiệp", "Số điện thoại", "Email",
+            "Liên hệ khác", "Tài khoản ngân hàng", "Phương tiện",
+            "Hồ sơ đặc thù", "Ghi chú", "Ngày tạo hồ sơ",
         ]
-        _col_headers(ws5, 2, headers, widths=[6, 16, 25, 12, 10, 25, 18, 25, 16, 25, 25])
-        
-        from backend.constants import LOAI_HINH_DAC_THU
-        
+        _col_headers(ws5, 2, headers5, widths=[
+            6, 16, 25, 12, 10, 22, 16, 18,
+            25, 18, 22,
+            28, 28, 22,
+            25, 25, 14,
+        ])
+
         for i, dt in enumerate(detailed_records, 1):
             r = i + 2
             fill = ALT_FILL if i % 2 == 0 else None
-            
-            ngay_sinh_str = dt.ngay_sinh.strftime('%d/%m/%Y') if dt.ngay_sinh else ""
-            xa = dt.dia_chi_xa or ""
-            tinh = dt.dia_chi_tinh or ""
-            dia_chi = f"{xa} - {tinh}".strip(" -")
-            
+
+            ngay_sinh_str = dt.ngay_sinh.strftime("%d/%m/%Y") if dt.ngay_sinh else ""
+            created_str = dt.created_at.strftime("%d/%m/%Y") if dt.created_at else ""
+
             sdts = [lh.gia_tri for lh in dt.lien_he if lh.loai_lien_he == "SĐT" and lh.gia_tri]
-            sdt_str = ", ".join(sdts)
-            
-            hs_dt = []
-            for hs in dt.ho_so_dac_thu:
-                loai_str = LOAI_HINH_DAC_THU.get(hs.loai_hinh, hs.loai_hinh)
-                hs_dt.append(loai_str)
-            hs_dt_str = ", ".join(hs_dt)
-            
-            vals = [
+            emails = [lh.gia_tri for lh in dt.lien_he if lh.loai_lien_he == "Email" and lh.gia_tri]
+            others = [
+                f"{lh.loai_lien_he}: {lh.gia_tri}"
+                for lh in dt.lien_he
+                if lh.loai_lien_he not in ("SĐT", "Email") and lh.gia_tri
+            ]
+            tk_list = [
+                f"{tc.ngan_hang or ''} - {tc.so_tai_khoan or ''}".strip(" -")
+                for tc in dt.tai_chinh if tc.so_tai_khoan
+            ]
+            xe_list = [
+                f"{pt.loai_xe or ''} - {pt.bien_kiem_soat or ''}".strip(" -")
+                for pt in dt.phuong_tien if pt.bien_kiem_soat or pt.loai_xe
+            ]
+            hs_list = [
+                LOAI_HINH_DAC_THU.get(hs.loai_hinh, hs.loai_hinh)
+                for hs in dt.ho_so_dac_thu
+            ]
+
+            vals5 = [
                 i,
                 dt.cccd,
                 dt.ho_ten or "",
                 ngay_sinh_str,
                 dt.gioi_tinh or "",
-                dia_chi,
+                dt.dia_chi_xa or "",
+                dt.dia_chi_tinh or "",
                 dt.phan_loai_nghe_nghiep or "",
                 dt.chi_tiet_nghe_nghiep or "",
-                sdt_str,
-                hs_dt_str,
-                dt.ghi_chu_chung or ""
+                "; ".join(sdts),
+                "; ".join(emails),
+                "; ".join(others),
+                "; ".join(tk_list),
+                "; ".join(xe_list),
+                "; ".join(hs_list),
+                dt.ghi_chu_chung or "",
+                created_str,
             ]
-            
-            aligns = [CENTER, CENTER, LEFT, CENTER, CENTER, LEFT, LEFT, LEFT, CENTER, LEFT, LEFT]
-            
-            for col_idx, v in enumerate(vals, 1):
-                a = aligns[col_idx - 1]
-                _c(ws5, r, col_idx, v, font=DATA_FONT, fill=fill, align=a, border=BORDER)
-                
+            aligns5 = [
+                CENTER, CENTER, LEFT, CENTER, CENTER, LEFT, LEFT, LEFT,
+                LEFT, CENTER, LEFT,
+                LEFT, LEFT, LEFT,
+                LEFT, LEFT, CENTER,
+            ]
+            for col_idx, v in enumerate(vals5, 1):
+                _c(ws5, r, col_idx, v, font=DATA_FONT, fill=fill,
+                   align=aligns5[col_idx - 1], border=BORDER)
+
         if detailed_records:
             ws5.freeze_panes = "A3"
-            ws5.auto_filter.ref = f"A2:K{2 + len(detailed_records)}"
+            ws5.auto_filter.ref = f"A2:Q{2 + len(detailed_records)}"
+
+    # Mapping cccd → row trong Sheet 5 (dùng để tạo hyperlink từ sheet phụ)
+    cccd_to_row5: dict = {
+        dt.cccd: idx + 2
+        for idx, dt in enumerate(detailed_records or [], 1)
+    }
+
+    def _cccd_link(ws, row, cccd, ho_ten):
+        """Ghi ô CCCD có hyperlink về Sheet 5, và ô Họ tên kế bên."""
+        fill = ALT_FILL if row % 2 == 0 else None
+        target_row = cccd_to_row5.get(cccd)
+        cell = ws.cell(row=row, column=2, value=cccd)
+        cell.font   = LINK_FONT
+        cell.fill   = fill or PatternFill()
+        cell.alignment = CENTER
+        cell.border = BORDER
+        if target_row:
+            cell.hyperlink = f"#'Thông tin cơ bản'!B{target_row}"
+        _c(ws, row, 3, ho_ten, font=DATA_FONT, fill=fill, align=LEFT, border=BORDER)
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # SHEET 6 — Nhân thân
+    # ═══════════════════════════════════════════════════════════════════════════
+    if detailed_records:
+        nhan_than_rows = [
+            (dt, nt) for dt in detailed_records for nt in dt.nhan_than
+        ]
+        if nhan_than_rows:
+            ws6 = wb.create_sheet("Nhân thân")
+            ws6.sheet_view.showGridLines = False
+            _title_row(ws6, 1, 12, "DANH SÁCH NHÂN THÂN")
+            _col_headers(ws6, 2, [
+                "STT", "CCCD chủ hồ sơ", "Họ tên chủ hồ sơ",
+                "Quan hệ", "Họ tên nhân thân", "CCCD nhân thân",
+                "Ngày sinh", "Giới tính", "Nghề nghiệp",
+                "Nơi ở", "Địa chỉ tỉnh", "Ghi chú",
+            ], widths=[6, 16, 25, 14, 25, 16, 12, 10, 20, 28, 16, 25])
+            for i, (dt, nt) in enumerate(nhan_than_rows, 1):
+                r = i + 2
+                fill = ALT_FILL if i % 2 == 0 else None
+                ns = nt.ngay_sinh.strftime("%d/%m/%Y") if nt.ngay_sinh else ""
+                _c(ws6, r, 1, i, font=DATA_FONT, fill=fill, align=CENTER, border=BORDER)
+                _cccd_link(ws6, r, dt.cccd, dt.ho_ten or "")
+                rest = [
+                    nt.loai_quan_he or "", nt.ho_ten or "", nt.cccd_nhan_than or "",
+                    ns, nt.gioi_tinh or "", nt.nghe_nghiep or "",
+                    nt.noi_o or "", nt.dia_chi_tinh or "", nt.ghi_chu or "",
+                ]
+                al_rest = [LEFT, LEFT, CENTER, CENTER, CENTER, LEFT, LEFT, LEFT, LEFT]
+                for ci, v in enumerate(rest, 4):
+                    _c(ws6, r, ci, v, font=DATA_FONT, fill=fill, align=al_rest[ci - 4], border=BORDER)
+            ws6.freeze_panes = "A3"
+            ws6.auto_filter.ref = f"A2:L{2 + len(nhan_than_rows)}"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # SHEET 7 — Phương tiện
+    # ═══════════════════════════════════════════════════════════════════════════
+    if detailed_records:
+        pt_rows = [(dt, pt) for dt in detailed_records for pt in dt.phuong_tien]
+        if pt_rows:
+            ws7 = wb.create_sheet("Phương tiện")
+            ws7.sheet_view.showGridLines = False
+            _title_row(ws7, 1, 7, "DANH SÁCH PHƯƠNG TIỆN")
+            _col_headers(ws7, 2, [
+                "STT", "CCCD chủ hồ sơ", "Họ tên chủ hồ sơ",
+                "Loại xe", "Biển kiểm soát", "Tên phương tiện", "Ghi chú",
+            ], widths=[6, 16, 25, 16, 16, 25, 25])
+            for i, (dt, pt) in enumerate(pt_rows, 1):
+                r = i + 2
+                fill = ALT_FILL if i % 2 == 0 else None
+                _c(ws7, r, 1, i, font=DATA_FONT, fill=fill, align=CENTER, border=BORDER)
+                _cccd_link(ws7, r, dt.cccd, dt.ho_ten or "")
+                rest = [pt.loai_xe or "", pt.bien_kiem_soat or "", pt.ten_phuong_tien or "", pt.ghi_chu or ""]
+                al_rest = [LEFT, CENTER, LEFT, LEFT]
+                for ci, v in enumerate(rest, 4):
+                    _c(ws7, r, ci, v, font=DATA_FONT, fill=fill, align=al_rest[ci - 4], border=BORDER)
+            ws7.freeze_panes = "A3"
+            ws7.auto_filter.ref = f"A2:G{2 + len(pt_rows)}"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # SHEET 8 — Tài khoản ngân hàng
+    # ═══════════════════════════════════════════════════════════════════════════
+    if detailed_records:
+        tc_rows = [(dt, tc) for dt in detailed_records for tc in dt.tai_chinh]
+        if tc_rows:
+            ws8 = wb.create_sheet("Tài khoản ngân hàng")
+            ws8.sheet_view.showGridLines = False
+            _title_row(ws8, 1, 7, "DANH SÁCH TÀI KHOẢN NGÂN HÀNG")
+            _col_headers(ws8, 2, [
+                "STT", "CCCD chủ hồ sơ", "Họ tên chủ hồ sơ",
+                "Ngân hàng", "Số tài khoản", "Chủ tài khoản", "Ghi chú",
+            ], widths=[6, 16, 25, 22, 20, 25, 25])
+            for i, (dt, tc) in enumerate(tc_rows, 1):
+                r = i + 2
+                fill = ALT_FILL if i % 2 == 0 else None
+                _c(ws8, r, 1, i, font=DATA_FONT, fill=fill, align=CENTER, border=BORDER)
+                _cccd_link(ws8, r, dt.cccd, dt.ho_ten or "")
+                rest = [tc.ngan_hang or "", tc.so_tai_khoan or "", tc.chu_tai_khoan or "", tc.ghi_chu or ""]
+                al_rest = [LEFT, CENTER, LEFT, LEFT]
+                for ci, v in enumerate(rest, 4):
+                    _c(ws8, r, ci, v, font=DATA_FONT, fill=fill, align=al_rest[ci - 4], border=BORDER)
+            ws8.freeze_panes = "A3"
+            ws8.auto_filter.ref = f"A2:G{2 + len(tc_rows)}"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # SHEET 9 — Quá trình hoạt động
+    # ═══════════════════════════════════════════════════════════════════════════
+    if detailed_records:
+        qt_rows = [(dt, qt) for dt in detailed_records for qt in dt.qua_trinh]
+        if qt_rows:
+            ws9 = wb.create_sheet("Quá trình hoạt động")
+            ws9.sheet_view.showGridLines = False
+            _title_row(ws9, 1, 8, "QUÁ TRÌNH HOẠT ĐỘNG")
+            _col_headers(ws9, 2, [
+                "STT", "CCCD chủ hồ sơ", "Họ tên chủ hồ sơ",
+                "Thời gian", "Ngày bắt đầu", "Ngày kết thúc",
+                "Nội dung", "Ghi chú",
+            ], widths=[6, 16, 25, 16, 14, 14, 40, 25])
+            for i, (dt, qt) in enumerate(qt_rows, 1):
+                r = i + 2
+                fill = ALT_FILL if i % 2 == 0 else None
+                bat_dau = qt.ngay_bat_dau.strftime("%d/%m/%Y") if qt.ngay_bat_dau else ""
+                ket_thuc = qt.ngay_ket_thuc.strftime("%d/%m/%Y") if qt.ngay_ket_thuc else ""
+                _c(ws9, r, 1, i, font=DATA_FONT, fill=fill, align=CENTER, border=BORDER)
+                _cccd_link(ws9, r, dt.cccd, dt.ho_ten or "")
+                rest = [qt.thoi_gian or "", bat_dau, ket_thuc, qt.noi_dung or "", qt.ghi_chu or ""]
+                al_rest = [LEFT, CENTER, CENTER, LEFT, LEFT]
+                for ci, v in enumerate(rest, 4):
+                    _c(ws9, r, ci, v, font=DATA_FONT, fill=fill, align=al_rest[ci - 4], border=BORDER)
+            ws9.freeze_panes = "A3"
+            ws9.auto_filter.ref = f"A2:H{2 + len(qt_rows)}"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # SHEET 10 — Hồ sơ đặc thù
+    # ═══════════════════════════════════════════════════════════════════════════
+    if detailed_records:
+        hs_rows = [(dt, hs) for dt in detailed_records for hs in dt.ho_so_dac_thu]
+        if hs_rows:
+            ws10 = wb.create_sheet("Hồ sơ đặc thù")
+            ws10.sheet_view.showGridLines = False
+            _title_row(ws10, 1, 6, "HỒ SƠ ĐẶC THÙ")
+            _col_headers(ws10, 2, [
+                "STT", "CCCD chủ hồ sơ", "Họ tên chủ hồ sơ",
+                "Loại hình", "Nội dung chi tiết", "Ghi chú",
+            ], widths=[6, 16, 25, 28, 40, 25])
+            for i, (dt, hs) in enumerate(hs_rows, 1):
+                r = i + 2
+                fill = ALT_FILL if i % 2 == 0 else None
+                loai_str = LOAI_HINH_DAC_THU.get(hs.loai_hinh, hs.loai_hinh or "")
+                _c(ws10, r, 1, i, font=DATA_FONT, fill=fill, align=CENTER, border=BORDER)
+                _cccd_link(ws10, r, dt.cccd, dt.ho_ten or "")
+                rest = [loai_str, hs.noi_dung_chi_tiet or "", hs.ghi_chu or ""]
+                al_rest = [LEFT, LEFT, LEFT]
+                for ci, v in enumerate(rest, 4):
+                    _c(ws10, r, ci, v, font=DATA_FONT, fill=fill, align=al_rest[ci - 4], border=BORDER)
+            ws10.freeze_panes = "A3"
+            ws10.auto_filter.ref = f"A2:F{2 + len(hs_rows)}"
 
     # ── Serialize ─────────────────────────────────────────────────────────────
     buf = BytesIO()
@@ -494,7 +678,11 @@ def export_xlsx(
         from sqlalchemy.orm import joinedload
         query = select(DoiTuong).where(and_(*conds)).options(
             joinedload(DoiTuong.lien_he),
-            joinedload(DoiTuong.ho_so_dac_thu)
+            joinedload(DoiTuong.ho_so_dac_thu),
+            joinedload(DoiTuong.nhan_than),
+            joinedload(DoiTuong.phuong_tien),
+            joinedload(DoiTuong.tai_chinh),
+            joinedload(DoiTuong.qua_trinh),
         ).order_by(DoiTuong.created_at.desc())
         
         detailed_records = db.execute(query).unique().scalars().all()

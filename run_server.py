@@ -66,12 +66,23 @@ def _admin_exists(db_path: Path, db_password: str) -> bool:
         safe_key = db_password.replace("'", "''")
         cur.execute(f"PRAGMA key='{safe_key}';")
         cur.execute("PRAGMA cipher_compatibility = 4;")
+        # Query thử để xác thực key
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return False  # Bảng users chưa tồn tại -> DB mới hoặc chưa khởi tạo
+
         cur.execute("SELECT COUNT(*) FROM users")
         count = cur.fetchone()[0]
         conn.close()
         return count > 0
-    except Exception:
-        # DB chưa tồn tại hoặc chưa có bảng users — coi như chưa có admin
+    except Exception as e:
+        # Nếu lỗi là "file is not a database" -> Sai mật khẩu SQLCipher
+        if "file is not a database" in str(e).lower():
+            print("\n  [LỖI] Mật khẩu cơ sở dữ liệu không đúng (không thể giải mã file).")
+            sys.exit(1)
+        # Các lỗi khác (ví dụ file bị khóa) coi như chưa có admin hoặc lỗi hệ thống
         return False
 
 

@@ -108,8 +108,8 @@ def _get_engine():
                 # Không log raw key; chỉ thông báo nguyên nhân
                 logger.error("Mở SQLCipher thất bại: DB_PASSWORD không khớp với file DB hiện có.")
                 raise RuntimeError(
-                    "Không mở được database — DB_PASSWORD trong .env không khớp "
-                    "với mật khẩu đã dùng khi tạo file DB. Kiểm tra lại .env "
+                    "Không mở được database — Mật khẩu cơ sở dữ liệu đã cung cấp không khớp "
+                    "với mật khẩu đã dùng khi tạo file DB. Vui lòng kiểm tra lại mật khẩu "
                     "hoặc khôi phục file DB từ backup phù hợp."
                 ) from e
 
