@@ -1,9 +1,9 @@
-#define AppName      "VCFE Database"
-#define AppNameShort "VCFE"
-#define AppVersion   "2.0.0"
+#define AppName      "VCFED Database"
+#define AppNameShort "VCFED"
+#define AppVersion   "2.0"
 #define AppPublisher "PA01"
-#define AppExeName   "VCFE.exe"
-#define SourceDir    "..\dist\VCFE"
+#define AppExeName   "VCFED.exe"
+#define SourceDir    "..\dist\VCFED"
 
 [Setup]
 AppId={{4f96a524-b684-412e-900b-32fd016608cd}

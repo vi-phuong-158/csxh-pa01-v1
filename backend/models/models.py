@@ -22,6 +22,11 @@ class DoiTuong(Base):
     phan_loai_nghe_nghiep: Mapped[Optional[str]] = mapped_column(String, index=True)
     chi_tiet_nghe_nghiep: Mapped[Optional[str]] = mapped_column(String)
     ghi_chu_chung: Mapped[Optional[str]] = mapped_column(Text)
+    dan_toc: Mapped[Optional[str]] = mapped_column(String)
+    ton_giao: Mapped[Optional[str]] = mapped_column(String)
+    que_quan: Mapped[Optional[str]] = mapped_column(String)
+    noi_o_hien_nay: Mapped[Optional[str]] = mapped_column(String)
+    quoc_tich: Mapped[Optional[str]] = mapped_column(String)
     is_draft: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     # F-14: cán bộ phụ trách hồ sơ. NULL = chưa phân công (mọi user xem được).
     # Đã có FK -> users.id; ondelete=SET NULL để khi xoá user, hồ sơ chỉ
@@ -94,6 +99,9 @@ class NhanThan(Base):
     cccd_nhan_than: Mapped[Optional[str]] = mapped_column(String)
     ngay_sinh: Mapped[Optional[datetime]] = mapped_column(Date)
     gioi_tinh: Mapped[Optional[str]] = mapped_column(String, default="")
+    dan_toc: Mapped[Optional[str]] = mapped_column(String)
+    ton_giao: Mapped[Optional[str]] = mapped_column(String)
+    quoc_tich: Mapped[Optional[str]] = mapped_column(String)
     dia_chi_tinh: Mapped[Optional[str]] = mapped_column(String, default="")
     dia_chi_xa: Mapped[Optional[str]] = mapped_column(String, default="")
     nghe_nghiep: Mapped[Optional[str]] = mapped_column(String)

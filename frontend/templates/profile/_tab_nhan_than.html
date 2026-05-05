@@ -8,7 +8,14 @@
         {% for nt in profile.nhan_than %}
         <tr id="nt-{{ nt.id }}">
           <td><span class="badge badge-blue">{{ nt.quan_he }}</span></td>
-          <td class="font-medium">{{ nt.ho_ten or '—' }}</td>
+          <td class="font-medium">
+            {{ nt.ho_ten or '—' }}
+            <div class="flex flex-wrap gap-1 mt-1">
+              {% if nt.dan_toc %}<span class="badge badge-gray text-xs">{{ nt.dan_toc }}</span>{% endif %}
+              {% if nt.ton_giao and nt.ton_giao != 'Không' %}<span class="badge badge-gray text-xs">{{ nt.ton_giao }}</span>{% endif %}
+              {% if nt.quoc_tich and nt.quoc_tich != 'Việt Nam' %}<span class="badge badge-blue text-xs font-semibold">{{ nt.quoc_tich }}</span>{% endif %}
+            </div>
+          </td>
           <td class="font-mono text-xs">{{ nt.cccd or '—' }}</td>
           <td>{{ nt.ngay_sinh or '—' }}</td>
           <td>{{ nt.dia_chi_xa or '' }}{% if nt.dia_chi_tinh %} / {{ nt.dia_chi_tinh }}{% endif %}</td>
@@ -40,6 +47,7 @@
       <div>
         <label class="label">Quan hệ <span class="text-red-400">*</span></label>
         <select name="loai_quan_he" class="input" required>
+          <option value="">-- Chọn quan hệ --</option>
           {% for q in loai_quan_he %}
           <option value="{{ q }}">{{ q }}</option>
           {% endfor %}
@@ -68,6 +76,33 @@
           <option value="">--</option>
           {% for g in ['Nam','Nữ','Khác'] %}<option>{{ g }}</option>{% endfor %}
         </select>
+      </div>
+      <div>
+        <label class="label">Dân tộc</label>
+        <select name="dan_toc" class="input">
+          <option value="">-- Chọn --</option>
+          {% for dt_item in dan_toc %}
+          <option value="{{ dt_item }}">{{ dt_item }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label">Tôn giáo</label>
+        <select name="ton_giao" class="input">
+          <option value="">-- Chọn --</option>
+          {% for tg_item in ton_giao %}
+          <option value="{{ tg_item }}">{{ tg_item }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label">Quốc tịch</label>
+        <input name="quoc_tich" list="list-quoc-gia-nt" class="input" placeholder="Tìm quốc tịch..." />
+        <datalist id="list-quoc-gia-nt">
+          {% for qg in danh_sach_quoc_gia %}
+          <option value="{{ qg }}">
+          {% endfor %}
+        </datalist>
       </div>
       <div>
         <label class="label">Tỉnh/Thành</label>

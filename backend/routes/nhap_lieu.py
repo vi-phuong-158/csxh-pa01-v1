@@ -9,7 +9,7 @@ from backend.services import profile as profile_svc
 from backend.constants import (
     TINH_THANH, XA_PHUONG, LOAI_LIEN_HE, LOAI_QUAN_HE,
     LOAI_HINH_DAC_THU, NGAN_HANG, LOAI_XE, LOAI_TAI_LIEU,
-    PHAN_LOAI_NGHE_NGHIEP, DANH_SACH_QUOC_GIA
+    PHAN_LOAI_NGHE_NGHIEP, DANH_SACH_QUOC_GIA, DAN_TOC, TON_GIAO,
 )
 
 router = APIRouter(prefix="/nhap-lieu", tags=["nhap-lieu"])
@@ -26,6 +26,8 @@ _CTX_OPTS = {
     "loai_tai_lieu": LOAI_TAI_LIEU,
     "phan_loai_nghe_nghiep": PHAN_LOAI_NGHE_NGHIEP,
     "danh_sach_quoc_gia": DANH_SACH_QUOC_GIA,
+    "dan_toc": DAN_TOC,
+    "ton_giao": TON_GIAO,
 }
 
 

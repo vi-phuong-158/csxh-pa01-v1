@@ -165,6 +165,15 @@ _PENDING_COLUMNS: list[tuple[str, str, str]] = [
     # Sự kiện: ngày bắt đầu / kết thúc (để thông báo & lịch)
     ("qua_trinh_hoat_dong", "ngay_bat_dau", "DATE"),
     ("qua_trinh_hoat_dong", "ngay_ket_thuc", "DATE"),
+    # Đợt 1: Bổ sung trường thông tin cơ bản & nhân thân
+    ("doi_tuong", "dan_toc",        "TEXT"),
+    ("doi_tuong", "ton_giao",       "TEXT"),
+    ("doi_tuong", "que_quan",       "TEXT"),
+    ("doi_tuong", "noi_o_hien_nay", "TEXT"),
+    ("doi_tuong", "quoc_tich",      "TEXT"),
+    ("nhan_than", "dan_toc",        "TEXT"),
+    ("nhan_than", "ton_giao",       "TEXT"),
+    ("nhan_than", "quoc_tich",      "TEXT"),
 ]
 
 

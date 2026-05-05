@@ -1,4 +1,4 @@
-BỘ NÃO ĐIỀU PHỐI DỰ ÁN VCFE DATABASE
+BỘ NÃO ĐIỀU PHỐI DỰ ÁN VCFED DATABASE
 
 Trạng thái: Đã hoàn thành Refactor & Đóng gói. Chuyển sang giai đoạn Bảo trì & Nâng cấp.
 
@@ -109,4 +109,27 @@ Tính năng tương lai 1: Báo cáo Thống kê chuyên sâu (Dùng ECharts.js,
 
 Tính năng tương lai 2: Xuất báo cáo ra định dạng Excel/Word tự động từ dữ liệu tìm kiếm.
 
+7. NGUYÊN TẮC LẬP TRÌNH CỦA KARPATHY (KARPATHY CODING GUIDELINES)
+ 
+Triết lý để giảm thiểu sai lầm khi lập trình với AI, tập trung vào sự đơn giản và chính xác.
+ 
+[KCG-1] Tư Duy Trước Khi Code (Think Before Coding):
+- Đừng giả định: Luôn làm rõ các giả định. Nếu không chắc chắn, hãy hỏi lại.
+- Minh bạch: Nếu có nhiều cách giải quyết, hãy liệt kê và phân tích đánh đổi (tradeoffs).
+- Đề xuất phương án đơn giản: Nếu có cách đơn giản hơn, hãy đề xuất trước khi bắt tay vào làm.
+ 
+[KCG-2] Ưu Tiên Sự Đơn Giản (Simplicity First):
+- Tối giản: Chỉ viết code tối thiểu cần thiết để giải quyết vấn đề. Không thêm tính năng "dự phòng".
+- Không trừu tượng hóa sớm: Đừng tạo ra các lớp trừu tượng (abstractions) cho code chỉ dùng một lần.
+- Kiểm thử "Senior": Tự đặt câu hỏi: "Một kỹ sư cấp cao có thấy đoạn code này quá phức tạp không?"
+ 
+[KCG-3] Chỉnh Sửa Chính Xác (Surgical Changes):
+- Chỉ chạm vào những gì cần thiết: Không tự ý "cải thiện" code xung quanh, comment hoặc định dạng không liên quan.
+- Đồng bộ style: Tuân thủ tuyệt đối phong cách code hiện có trong file.
+- Dọn dẹp gọn gàng: Chỉ xóa những gì là hệ quả của thay đổi hiện tại.
+ 
+[KCG-4] Thực Thi Theo Mục Tiêu (Goal-Driven Execution):
+- Tiêu chí thành công: Biến nhiệm vụ thành các mục tiêu có thể kiểm chứng (ví dụ: "Viết test lỗi -> Sửa cho pass").
+- Kế hoạch từng bước: Với tác vụ phức tạp, hãy nêu kế hoạch: [Bước] -> Kiểm tra: [Kết quả].
+ 
 [KẾT THÚC CLAUDE.md]

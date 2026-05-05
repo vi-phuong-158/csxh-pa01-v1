@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).parent.parent.resolve()
 DIST_DIR = ROOT / "dist"
 BUILD_DIR = ROOT / "build"
-APP_NAME = "VCFE"
+APP_NAME = "VCFED"
 
 DATA_TO_INCLUDE = [
     (ROOT / "frontend",           "frontend"),

@@ -214,6 +214,24 @@ DANH_SACH_QUOC_GIA = [
     "Kenya", "Ma-rốc", "Algeria", "Khác"
 ]
 
+# 54 dân tộc Việt Nam (theo danh mục chính thức)
+DANH_SACH_DAN_TOC = [
+    "Kinh", "Tày", "Thái", "Mường", "Khmer", "Mông", "Nùng", "Hoa",
+    "Dao", "Gia Rai", "Ê Đê", "Ba Na", "Xơ Đăng", "Sán Chay", "Cơ Ho",
+    "Chăm", "Sán Dìu", "Hrê", "Ra Glai", "Mnông", "Thổ", "Xtiêng",
+    "Khơ Mú", "Bru - Vân Kiều", "Cơ Tu", "Giáy", "Tà Ôi", "Mạ",
+    "Giẻ - Triêng", "Co", "Chơ Ro", "Xinh Mun", "Hà Nhì", "Chu Ru",
+    "Lào", "La Chí", "La Ha", "Phù Lá", "La Hủ", "Lự", "Lô Lô",
+    "Chứt", "Mảng", "Pà Thẻn", "Co Lao", "Cống", "Bố Y", "Si La",
+    "Pu Péo", "Brâu", "Rơ Măm", "Ơ Đu", "Ngái", "Khác",
+]
+
+# Tôn giáo tại Việt Nam (theo Ban Tôn giáo Chính phủ)
+DANH_SACH_TON_GIAO = [
+    "Không", "Phật giáo", "Công giáo", "Tin Lành", "Hồi giáo",
+    "Cao Đài", "Hòa Hảo", "Tịnh độ cư sĩ Phật hội", "Khác",
+]
+
 # Các loại hình tổ chức nước ngoài
 LOAI_HINH_TO_CHUC_NN = ["FDI", "NGO", "Đại sứ quán",
                         "Lãnh sự quán", "Tổ chức quốc tế", "Khác"]
@@ -267,6 +285,8 @@ NGAN_HANG = DANH_SACH_NGAN_HANG
 LOAI_XE = LOAI_XE_OPTIONS
 LOAI_TAI_LIEU = LOAI_TAI_LIEU_OPTIONS
 PHAN_LOAI_NGHE_NGHIEP = PHAN_LOAI_NGHE_NGHIEP_OPTIONS
+DAN_TOC = DANH_SACH_DAN_TOC
+TON_GIAO = DANH_SACH_TON_GIAO
 
 
 # ============================================

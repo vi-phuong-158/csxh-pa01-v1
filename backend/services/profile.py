@@ -34,13 +34,18 @@ def get_profile_full(db: Session, cccd: str) -> Optional[Dict]:
         "phan_loai_nghe_nghiep": dt.phan_loai_nghe_nghiep,
         "chi_tiet_nghe_nghiep": dt.chi_tiet_nghe_nghiep,
         "ghi_chu_chung": dt.ghi_chu_chung,
+        "dan_toc": dt.dan_toc,
+        "ton_giao": dt.ton_giao,
+        "que_quan": dt.que_quan,
+        "noi_o_hien_nay": dt.noi_o_hien_nay,
+        "quoc_tich": dt.quoc_tich,
         "is_draft": dt.is_draft,
         "created_at": dt.created_at.strftime("%d/%m/%Y %H:%M") if dt.created_at else "",
         "updated_at": dt.updated_at.strftime("%d/%m/%Y %H:%M") if dt.updated_at else "",
         "lien_he": [{"id": x.id, "loai": x.loai_lien_he, "gia_tri": x.gia_tri, "ghi_chu": x.ghi_chu} for x in dt.lien_he],
         "tai_chinh": [{"id": x.id, "ngan_hang": x.ngan_hang, "so_tai_khoan": x.so_tai_khoan, "chu": x.chu_tai_khoan, "ghi_chu": x.ghi_chu} for x in dt.tai_chinh],
         "phuong_tien": [{"id": x.id, "loai_xe": x.loai_xe, "bien": x.bien_kiem_soat, "ten": x.ten_phuong_tien, "ghi_chu": x.ghi_chu} for x in dt.phuong_tien],
-        "nhan_than": [{"id": x.id, "quan_he": x.loai_quan_he, "ho_ten": x.ho_ten, "cccd": x.cccd_nhan_than, "ngay_sinh": x.ngay_sinh.strftime("%Y-%m-%d") if x.ngay_sinh else "", "gioi_tinh": x.gioi_tinh, "nghe_nghiep": x.nghe_nghiep, "noi_o": x.noi_o, "dia_chi_tinh": x.dia_chi_tinh, "dia_chi_xa": x.dia_chi_xa, "ghi_chu": x.ghi_chu} for x in dt.nhan_than],
+        "nhan_than": [{"id": x.id, "quan_he": x.loai_quan_he, "ho_ten": x.ho_ten, "cccd": x.cccd_nhan_than, "ngay_sinh": x.ngay_sinh.strftime("%Y-%m-%d") if x.ngay_sinh else "", "gioi_tinh": x.gioi_tinh, "dan_toc": x.dan_toc, "ton_giao": x.ton_giao, "quoc_tich": x.quoc_tich, "nghe_nghiep": x.nghe_nghiep, "noi_o": x.noi_o, "dia_chi_tinh": x.dia_chi_tinh, "dia_chi_xa": x.dia_chi_xa, "ghi_chu": x.ghi_chu} for x in dt.nhan_than],
         "ho_so_dac_thu": [{"id": x.id, "loai_hinh": x.loai_hinh, "noi_dung": x.noi_dung_chi_tiet, "ghi_chu": x.ghi_chu} for x in dt.ho_so_dac_thu],
         "tai_lieu": [{"id": x.id, "ten_goc": x.ten_file_goc, "duong_dan": x.duong_dan, "loai": x.loai_tai_lieu, "mo_ta": x.mo_ta} for x in dt.tai_lieu],
         "qua_trinh": [{
@@ -70,7 +75,8 @@ def update_basic_info(db: Session, cccd: str, data: Dict, nguoi: str = "") -> Tu
         return False, "Không tìm thấy hồ sơ"
     old = {"ho_ten": dt.ho_ten, "ngay_sinh": str(dt.ngay_sinh)}
     for field in ["ho_ten", "gioi_tinh", "dia_chi_tinh", "dia_chi_xa",
-                  "phan_loai_nghe_nghiep", "chi_tiet_nghe_nghiep", "ghi_chu_chung"]:
+                  "phan_loai_nghe_nghiep", "chi_tiet_nghe_nghiep", "ghi_chu_chung",
+                  "dan_toc", "ton_giao", "que_quan", "noi_o_hien_nay", "quoc_tich"]:
         if field in data:
             val = data[field] or None
             if field == "ho_ten" and val:
@@ -149,6 +155,9 @@ def add_nhan_than(db: Session, cccd: str, data: Dict) -> Tuple[bool, str]:
         cccd_nhan_than=data.get("cccd_nhan_than"),
         ngay_sinh=_parse_date(data.get("ngay_sinh")),
         gioi_tinh=data.get("gioi_tinh", ""),
+        dan_toc=data.get("dan_toc"),
+        ton_giao=data.get("ton_giao"),
+        quoc_tich=data.get("quoc_tich"),
         dia_chi_tinh=data.get("dia_chi_tinh", ""),
         dia_chi_xa=data.get("dia_chi_xa", ""),
         nghe_nghiep=data.get("nghe_nghiep"),
@@ -222,7 +231,12 @@ def add_ho_so_dac_thu(db: Session, cccd: str, data: Dict) -> Tuple[bool, str]:
         if data.get("hn_ten"): parts.append(f"Họ tên đối tác: {data.get('hn_ten')}")
         if data.get("hn_qt"): parts.append(f"Quốc tịch: {data.get('hn_qt')}")
         if data.get("hn_hc"): parts.append(f"Số hộ chiếu: {data.get('hn_hc')}")
-        if data.get("hn_tt"): parts.append(f"Tình trạng: {data.get('hn_tt')}")
+        if data.get("hn_tt"):    parts.append(f"Tình trạng: {data.get('hn_tt')}")
+        if data.get("hn_dc_ht"): parts.append(f"Địa chỉ hiện tại: {data.get('hn_dc_ht')}")
+        if data.get("hn_ntr"):   parts.append(f"Nơi thường trú: {data.get('hn_ntr')}")
+        if data.get("hn_nghe"):  parts.append(f"Nghề nghiệp: {data.get('hn_nghe')}")
+        if data.get("hn_nlv"):   parts.append(f"Nơi làm việc: {data.get('hn_nlv')}")
+        if data.get("hn_cv"):    parts.append(f"Chức vụ/vị trí: {data.get('hn_cv')}")
         if parts: noi_dung = "\n".join(parts)
     elif loai_hinh == "Lam_Viec_NN":
         parts = []
@@ -238,19 +252,20 @@ def add_ho_so_dac_thu(db: Session, cccd: str, data: Dict) -> Tuple[bool, str]:
         if data.get("ht_tgd"): parts.append(f"Thời gian đi: {data.get('ht_tgd')}")
         if data.get("ht_tgv"): parts.append(f"Thời gian về: {data.get('ht_tgv')}")
         if data.get("ht_nghe"): parts.append(f"Nghề nghiệp sau khi về: {data.get('ht_nghe')}")
+        if data.get("ht_dc"):   parts.append(f"Địa chỉ cụ thể: {data.get('ht_dc')}")
         if parts: noi_dung = "\n".join(parts)
     elif loai_hinh == "Vi_Pham_NN":
         parts = []
         if data.get("vp_qg"): parts.append(f"Quốc gia vi phạm: {data.get('vp_qg')}")
         if data.get("vp_cq"): parts.append(f"Cơ quan bắt giữ: {data.get('vp_cq')}")
-        if data.get("vp_tg"): parts.append(f"Ngày vi phạm: {data.get('vp_tg')}")
+        if data.get("vp_tg"): parts.append(f"Ngày vi phạm: {_fmt_date_display(data.get('vp_tg'))}")
         if data.get("vp_ht"): parts.append(f"Hình thức xử lý: {data.get('vp_ht')}")
         if data.get("vp_nd"): parts.append(f"Nội dung vi phạm: {data.get('vp_nd')}")
         if parts: noi_dung = "\n".join(parts)
     elif loai_hinh == "Xac_Minh":
         parts = []
         if data.get("xm_cq"): parts.append(f"Cơ quan xác minh: {data.get('xm_cq')}")
-        if data.get("xm_tg"): parts.append(f"Ngày xác minh: {data.get('xm_tg')}")
+        if data.get("xm_tg"): parts.append(f"Ngày xác minh: {_fmt_date_display(data.get('xm_tg'))}")
         if data.get("xm_kq"): parts.append(f"Kết quả: {data.get('xm_kq')}")
         if data.get("xm_nd"): parts.append(f"Nội dung xác minh: {data.get('xm_nd')}")
         if parts: noi_dung = "\n".join(parts)
@@ -305,6 +320,16 @@ def delete_tai_lieu(db: Session, item_id: int) -> bool:
 
 
 # ---------- helpers ----------
+
+def _fmt_date_display(val: str) -> str:
+    """Chuyển YYYY-MM-DD (từ date input) sang DD/MM/YYYY để lưu vào noi_dung."""
+    if not val:
+        return val
+    try:
+        return datetime.strptime(val.strip(), "%Y-%m-%d").strftime("%d/%m/%Y")
+    except ValueError:
+        return val
+
 
 def _parse_date(val):
     if not val:

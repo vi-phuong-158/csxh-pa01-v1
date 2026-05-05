@@ -1,5 +1,5 @@
 """
-run_server.py — Launcher chính cho VCFE Database Server.
+run_server.py — Launcher chính cho VCFED Database Server.
 
 Thay thế cơ chế .env cho các secret bằng nhập tay tương tác:
   - DB_PASSWORD  : nhập qua getpass (ẩn ký tự)
@@ -91,7 +91,7 @@ def main() -> None:
 
     print()
     print("  ╔══════════════════════════════════════════╗")
-    print("  ║         VCFE Database Server             ║")
+    print("  ║         VCFED Database Server            ║")
     print("  ╚══════════════════════════════════════════╝")
     print()
 

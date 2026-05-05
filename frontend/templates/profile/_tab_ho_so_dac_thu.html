@@ -51,6 +51,11 @@
             <option value="Đã qua đời">Đã qua đời</option>
           </select>
         </div>
+        <div class="md:col-span-2"><label class="label">Địa chỉ hiện tại</label><input name="hn_dc_ht" type="text" class="input" placeholder="Địa chỉ đang sinh sống..." /></div>
+        <div class="md:col-span-2"><label class="label">Nơi thường trú</label><input name="hn_ntr" type="text" class="input" placeholder="Địa chỉ thường trú..." /></div>
+        <div><label class="label">Nghề nghiệp</label><input name="hn_nghe" type="text" class="input" /></div>
+        <div><label class="label">Nơi làm việc</label><input name="hn_nlv" type="text" class="input" /></div>
+        <div><label class="label">Chức vụ/Vị trí</label><input name="hn_cv" type="text" class="input" /></div>
       </div>
 
       <div x-show="loai_hinh === 'Lam_Viec_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
@@ -78,6 +83,7 @@
         <div><label class="label">Thời gian đi</label><input name="ht_tgd" type="text" class="input" /></div>
         <div><label class="label">Thời gian về</label><input name="ht_tgv" type="text" class="input" /></div>
         <div class="md:col-span-2"><label class="label">Nghề nghiệp sau khi về</label><input name="ht_nghe" type="text" class="input" /></div>
+        <div class="md:col-span-2"><label class="label">Địa chỉ cụ thể nơi du học/công tác</label><input name="ht_dc" type="text" class="input" placeholder="Tên trường, công ty, địa chỉ cụ thể..." /></div>
       </div>
 
       <div x-show="loai_hinh === 'Vi_Pham_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
@@ -86,14 +92,14 @@
           <input name="vp_qg" list="list-quoc-gia" class="input" placeholder="Tìm quốc gia..." />
         </div>
         <div><label class="label">Cơ quan bắt giữ</label><input name="vp_cq" type="text" class="input" /></div>
-        <div><label class="label">Ngày vi phạm (DD/MM/YYYY)</label><input name="vp_tg" type="text" class="input" placeholder="Ví dụ: 01/01/2023" /></div>
+        <div><label class="label">Ngày vi phạm</label><input name="vp_tg" type="date" class="input" /></div>
         <div><label class="label">Hình thức xử lý</label><input name="vp_ht" type="text" class="input" /></div>
         <div class="md:col-span-2"><label class="label">Nội dung vi phạm</label><textarea name="vp_nd" rows="2" class="input resize-none"></textarea></div>
       </div>
 
       <div x-show="loai_hinh === 'Xac_Minh'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
         <div><label class="label">Cơ quan xác minh</label><input name="xm_cq" type="text" class="input" /></div>
-        <div><label class="label">Ngày xác minh (DD/MM/YYYY)</label><input name="xm_tg" type="text" class="input" placeholder="Ví dụ: 01/01/2023" /></div>
+        <div><label class="label">Ngày xác minh</label><input name="xm_tg" type="date" class="input" /></div>
         <div class="md:col-span-2">
           <label class="label">Kết quả</label>
           <select name="xm_kq" class="input">

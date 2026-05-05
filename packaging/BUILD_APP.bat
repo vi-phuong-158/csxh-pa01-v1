@@ -1,12 +1,12 @@
 @echo off
 chcp 65001 >nul
-title Build - VCFE Database
+title Build - VCFED Database
 
 cd /d "%~dp0\.."
 
 echo.
 echo ============================================================
-echo   DONG GOI VCFE DATABASE v2.0.0
+echo   DONG GOI VCFED DATABASE v2.0
 echo ============================================================
 echo.
 
@@ -62,7 +62,7 @@ if exist "dist\installer\" (
     dir /b "dist\installer\*.exe" 2>nul
     echo   Output: dist\installer\
 ) else (
-    echo   Thu muc app: dist\VCFE\
+    echo   Thu muc app: dist\VCFED\
 )
 echo.
 pause
