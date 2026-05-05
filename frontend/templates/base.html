@@ -150,7 +150,7 @@
     {% if flash_error is defined and flash_error %}
     window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'error', msg: {{ flash_error | tojson }} } }));
     {% endif %}
-    {# Hỗ trợ thêm biến success / error truyền trực tiếp từ route # }
+    {# Hỗ trợ thêm biến success/error truyền trực tiếp từ route #}
     {% if success is defined and success %}
     window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'success', msg: {{ success | tojson }} } }));
     {% endif %}
