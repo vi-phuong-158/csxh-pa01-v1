@@ -433,4 +433,13 @@ def delete_profile(
 ):
     """Chỉ super_admin được xoá. cccd đã validate -> service an toàn rmtree."""
     ok, msg = profile_svc.delete_profile(db, cccd, user["username"])
-    return {"ok": ok, "message": msg}
+    from fastapi import Response
+    if ok:
+        response = Response(status_code=204)
+        response.headers["HX-Redirect"] = "/tra-cuu"
+        return response
+    import json
+    return Response(
+        status_code=204,
+        headers={"HX-Trigger": json.dumps({"showToast": {"type": "error", "msg": msg}})}
+    )

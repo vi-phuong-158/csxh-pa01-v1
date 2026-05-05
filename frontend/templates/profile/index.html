@@ -51,7 +51,8 @@
         Xuất DOCX
       </a>
       {% if user.role == 'super_admin' %}
-      <button onclick="confirmDelete()"
+      <button hx-delete="/profile/{{ profile.cccd }}"
+              hx-confirm="Xóa toàn bộ hồ sơ {{ profile.cccd }}? Không thể hoàn tác!"
               class="btn-danger text-xs">Xóa hồ sơ</button>
       {% endif %}
     </div>
@@ -99,12 +100,4 @@
   </div>
 </div>
 
-<script>
-function confirmDelete() {
-  if (!confirm('Xóa toàn bộ hồ sơ {{ profile.cccd }}? Không thể hoàn tác!')) return;
-  fetch('/profile/{{ profile.cccd }}', { method: 'DELETE' })
-    .then(r => r.json())
-    .then(d => { if (d.ok) window.location = '/tra-cuu'; else alert(d.message); });
-}
-</script>
 {% endblock %}

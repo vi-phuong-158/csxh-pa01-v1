@@ -85,13 +85,25 @@ async def save_basic(
 @router.post("/{cccd}/commit")
 def commit(
     cccd: str,
+    request: Request,
     user: dict = Depends(require_login),
     db: Session = Depends(get_db),
 ):
     ok, msg = profile_svc.commit_draft(db, cccd)
     if not ok:
-        return {"ok": False, "message": msg}
-    return RedirectResponse(f"/profile/{cccd}", status_code=302)
+        # Nếu lỗi, trả về trigger để hiện toast thông báo lỗi (dùng 204 để không swap đè nút)
+        from fastapi import Response
+        import json
+        return Response(
+            status_code=204,
+            headers={"HX-Trigger": json.dumps({"showToast": {"type": "error", "msg": msg}})}
+        )
+    
+    # Thành công: Điều hướng toàn trang bằng HX-Redirect
+    from fastapi import Response
+    response = Response(status_code=204)
+    response.headers["HX-Redirect"] = f"/profile/{cccd}"
+    return response
 
 
 @router.delete("/{cccd}")
@@ -101,6 +113,11 @@ def cancel_draft(
     db: Session = Depends(get_db),
 ):
     ok, msg = profile_svc.delete_profile(db, cccd, user["username"])
+    if ok:
+        from fastapi import Response
+        response = Response(status_code=204)
+        response.headers["HX-Redirect"] = "/nhap-lieu"
+        return response
     return {"ok": ok, "message": msg}
 
 
