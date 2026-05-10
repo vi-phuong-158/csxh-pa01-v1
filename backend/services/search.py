@@ -44,30 +44,27 @@ def search_profiles(
         or_conditions = []
         
         if search_all or 'name' in selected_fields:
-            or_conditions.append(DoiTuong.ho_ten.ilike(f"%{query}%"))
-            
-            # Accent-insensitive search via Python memory (fast enough for local DB)
             try:
                 from backend.utils.fuzzy_matching import remove_vietnamese_diacritics
-                query_normalized = remove_vietnamese_diacritics(query).lower()
+                from sqlalchemy import func, and_
                 
-                # Fetch all names
-                all_names_query = select(DoiTuong.cccd, DoiTuong.ho_ten).where(DoiTuong.is_draft == False)
-                all_names = db.execute(all_names_query).all()
-                
-                matched_cccds = []
-                for cccd, name in all_names:
-                    if name and query_normalized in remove_vietnamese_diacritics(name).lower():
-                        matched_cccds.append(cccd)
+                # Each token is separated by comma/semicolon/newline.
+                # For each token, we split it into sub-tokens to support multi-word accent-insensitive matching.
+                name_or_conds = []
+                for t in tokens:
+                    t_norm = remove_vietnamese_diacritics(t).lower()
+                    sub_tokens = [st for st in t_norm.split() if st]
+                    if sub_tokens:
+                        name_conds = [func.unaccent_lower(DoiTuong.ho_ten).contains(st) for st in sub_tokens]
+                        name_or_conds.append(and_(*name_conds))
                         
-                if matched_cccds:
-                    # chunk it to prevent SQLite "too many SQL variables" error (max 999)
-                    if len(matched_cccds) > 900:
-                        or_conditions.append(DoiTuong.cccd.in_(matched_cccds[:900]))
-                    else:
-                        or_conditions.append(DoiTuong.cccd.in_(matched_cccds))
+                if name_or_conds:
+                    or_conditions.append(or_(*name_or_conds))
+                else:
+                    # Fallback just in case
+                    or_conditions.append(DoiTuong.ho_ten.ilike(f"%{query}%"))
             except ImportError:
-                pass
+                or_conditions.append(DoiTuong.ho_ten.ilike(f"%{query}%"))
             
         if search_all or 'cccd' in selected_fields:
             or_conditions.append(DoiTuong.cccd.in_(tokens))

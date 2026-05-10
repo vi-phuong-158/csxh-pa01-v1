@@ -178,7 +178,7 @@
           if (p.dataType === 'node') {
             return '<b>' + p.data.name + '</b>' + (p.data.is_draft ? ' 🟡 Nháp' : '');
           }
-          return p.data.label || '';
+          return p.data.value || '';
         }
       },
       legend: {
@@ -202,7 +202,13 @@
           return {
             source: l.source,
             target: l.target,
-            label: { show: false },
+            value: l.label,
+            label: { 
+              show: true,
+              formatter: '{c}',
+              fontSize: 10,
+              color: '#94a3b8'
+            },
             lineStyle: {
               width: Math.max(1, (l.do_tin_cay || 50) / 25),
               curveness: 0.1,
@@ -213,6 +219,7 @@
         }),
         categories: data.categories,
         roam: true,
+        draggable: true,
         force: { repulsion: 220, gravity: 0.05, edgeLength: [60, 180] },
         itemStyle: { borderWidth: 2, borderColor: '#1e293b' },
         label: { color: '#e2e8f0', fontSize: 10, show: data.nodes.length <= 80 },
@@ -221,6 +228,12 @@
     };
 
     globalChart.setOption(option, true);
+    
+    // Đảm bảo chart lấy đúng kích thước container sau khi Alpine x-show render xong
+    setTimeout(function() {
+      if (globalChart) globalChart.resize();
+    }, 100);
+
     globalChart.off('click');
     globalChart.on('click', 'series', function (params) {
       if (params.dataType === 'node') {

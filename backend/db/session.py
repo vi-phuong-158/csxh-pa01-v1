@@ -63,6 +63,13 @@ def _verify_key(cursor) -> None:
     cursor.fetchone()
 
 
+def sqlite_unaccent_lower(text: str) -> str:
+    if not text:
+        return ""
+    from backend.utils.text_utils import remove_accents
+    return remove_accents(text).lower()
+
+
 def _get_engine():
     engine = create_engine(
         settings.SQLALCHEMY_DATABASE_URI,
@@ -82,6 +89,7 @@ def _get_engine():
         Mỗi lần SQLAlchemy mở connection mới: nạp key, kiểm tra hợp lệ,
         sau đó bật khoá ngoại + journal mode.
         """
+        dbapi_connection.create_function("unaccent_lower", 1, sqlite_unaccent_lower)
         cursor = dbapi_connection.cursor()
         try:
             # F-02 fix: escape thủ công vì PRAGMA không bind tham số được

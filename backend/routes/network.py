@@ -31,9 +31,25 @@ def search_profiles(
     """Tìm kiếm hồ sơ theo tên hoặc CCCD — dùng cho typeahead."""
     if len(q) < 2:
         return []
+        
+    from backend.utils.text_utils import remove_accents
+    from sqlalchemy import and_, func
+    
+    q_normalized = remove_accents(q).lower()
+    tokens = [t for t in q_normalized.split() if t]
+    
+    if not tokens:
+        return []
+
+    conditions = [DoiTuong.cccd.contains(q)]
+    
+    name_conditions = [func.unaccent_lower(DoiTuong.ho_ten).contains(token) for token in tokens]
+    if name_conditions:
+        conditions.append(and_(*name_conditions))
+        
     rows = db.execute(
         select(DoiTuong.cccd, DoiTuong.ho_ten)
-        .where(or_(DoiTuong.ho_ten.ilike(f"%{q}%"), DoiTuong.cccd.contains(q)))
+        .where(or_(*conditions))
         .limit(10)
     ).all()
     return [{"cccd": r.cccd, "ho_ten": r.ho_ten or f"[{r.cccd}]"} for r in rows]

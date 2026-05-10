@@ -1,112 +1,115 @@
 # 🇻🇳 VCFE Database - Cơ sở dữ liệu người Việt Nam có yếu tố nước ngoài
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.9+-green.svg)
 ![Framework](https://img.shields.io/badge/FastAPI-Modern-orange.svg)
 ![Database](https://img.shields.io/badge/SQLCipher-Encrypted-red.svg)
+![UI](https://img.shields.io/badge/UI-Modern_Dark-purple.svg)
 
 ## 📝 Giới thiệu
-**VCFE Database** (Vietnamese Citizens with Foreign Elements) là hệ thống quản lý cơ sở dữ liệu chuyên sâu dành cho việc theo dõi, lưu trữ và phân tích thông tin về người Việt Nam có các yếu tố liên quan đến nước ngoài. Dự án được thiết kế với tiêu chuẩn bảo mật cao, giao diện hiện đại và khả năng xử lý dữ liệu quy mô lớn, hỗ trợ đắc lực cho công tác nghiệp vụ và quản lý nhà nước.
+**VCFE Database** (Vietnamese Citizens with Foreign Elements) là hệ thống quản lý cơ sở dữ liệu chuyên sâu dành cho việc theo dõi, lưu trữ và phân tích thông tin về người Việt Nam có các yếu tố liên quan đến nước ngoài. Dự án được thiết kế với tiêu chuẩn bảo mật cao, giao diện tối ưu (Modern Dark Mode) và khả năng xử lý dữ liệu phức tạp, hỗ trợ đắc lực cho công tác nghiệp vụ và quản lý nhà nước.
 
 ---
 
 ## ✨ Tính năng nổi bật
-Dựa trên phân tích mã nguồn, hệ thống cung cấp các nhóm tính năng cốt lõi sau:
+Hệ thống cung cấp các nhóm tính năng cốt lõi và nâng cao:
 
-*   **📊 Dashboard Tổng quát:** Cung cấp biểu đồ thống kê trực quan, theo dõi biến động dữ liệu và tình trạng hồ sơ theo thời gian thực.
-*   **👤 Quản lý Hồ sơ Chi tiết (DoiTuong):** Quản lý thông tin định danh (CCCD), quá trình hoạt động, mối quan hệ thân nhân, tài chính và phương tiện của từng cá nhân.
-*   **🔍 Tra cứu & Rà soát Thông minh:** Tìm kiếm nâng cao theo nhiều tiêu chí, hỗ trợ quy trình rà soát và xác minh thông tin đối tượng.
-*   **📥 Nhập liệu Excel (Batch Import):** Tự động hóa việc nạp dữ liệu từ các tệp Excel mẫu, giúp tiết kiệm thời gian và giảm thiểu sai sót thủ công.
-*   **📄 Xuất báo cáo Đa dạng:** Hỗ trợ trích xuất dữ liệu ra các định dạng chuyên dụng (PDF, Docx, Excel) phục vụ công tác báo cáo.
-*   **🛡️ Bảo mật & Nhật ký (Audit Log):** Hệ thống mã hóa cơ sở dữ liệu (SQLCipher), quản lý phân quyền người dùng (RBAC) và lưu vết mọi tác động lên hệ thống.
-*   **📅 Lịch sự kiện:** Theo dõi và quản lý các mốc thời gian quan trọng liên quan đến đối tượng hoặc hồ sơ nghiệp vụ.
+*   **📊 Dashboard Thông minh:** Thống kê trực quan các chỉ số quan trọng, biến động dữ liệu và biểu đồ phân bổ đối tượng theo thời gian thực.
+*   **👤 Quản lý Hồ sơ 360°:** Theo dõi chi tiết thông tin định danh, quá trình hoạt động, tài chính, phương tiện và tài liệu đính kèm.
+*   **🕸️ Mạng lưới Quan hệ (Network Graph):** Trực quan hóa các mối liên kết giữa các cá nhân bằng đồ thị tương tác (ECharts), hỗ trợ phân tích đa tầng (depth).
+*   **🔗 Quản lý Quan hệ Chuyên sâu:** Mô hình hóa các mối quan hệ (gia đình, xã hội, nghiệp vụ) với độ tin cậy và mô tả chi tiết.
+*   **🆔 Lịch sử CCCD:** Tự động theo dõi và truy vết lịch sử thay đổi số định danh cá nhân (CCCD).
+*   **🔍 Tra cứu & Rà soát Nâng cao:** Tìm kiếm thông minh (Fuzzy Search), lọc dữ liệu theo nhiều tiêu chí nghiệp vụ phức tạp.
+*   **📥 Nhập liệu Excel & Batch Processing:** Tự động hóa nạp dữ liệu từ file Excel mẫu, xử lý hàng nghìn hồ sơ trong vài giây.
+*   **📄 Xuất báo cáo Đa dạng:** Trích xuất hồ sơ và báo cáo thống kê ra các định dạng PDF, Docx, Excel với template chuyên nghiệp.
+*   **🛡️ Bảo mật Cấp độ Nghiệp vụ:** 
+    *   Mã hóa toàn bộ cơ sở dữ liệu với **SQLCipher**.
+    *   Phân quyền người dùng dựa trên vai trò (RBAC).
+    *   Nhật ký hệ thống (Audit Log) lưu vết mọi thao tác thay đổi dữ liệu.
 
 ---
 
 ## 🛠️ Công nghệ sử dụng
-Dự án áp dụng mô hình **SSR (Server-Side Rendering)** kết hợp với các công nghệ hiện đại:
+Dự án áp dụng mô hình **Modern Monolith** với trải nghiệm mượt mà như SPA:
 
 ### **Backend**
-*   **FastAPI:** Framework Python hiệu năng cao, xử lý bất đồng bộ (Async).
-*   **SQLAlchemy 2.0:** ORM mạnh mẽ để tương tác với cơ sở dữ liệu.
-*   **SQLCipher:** Mã hóa toàn bộ tệp tin database SQLite ở cấp độ lưu trữ.
-*   **Jinja2:** Engine template để render giao diện phía Server.
+*   **FastAPI:** Framework Python hiệu năng cao, xử lý Async.
+*   **SQLAlchemy 2.0:** ORM tiên tiến nhất cho Python.
+*   **SQLCipher:** Mã hóa AES-256 cho tệp tin SQLite.
+*   **Jinja2:** Engine template render phía Server.
 
-### **Frontend**
-*   **Tailwind CSS 3.4:** Framework CSS tiện ích cho giao diện hiện đại và responsive.
-*   **Vanilla JS:** Xử lý các tương tác micro-interaction trên trình duyệt.
+### **Frontend (Modern Stack)**
+*   **Tailwind CSS 3.4:** Giao diện Dark Mode cao cấp, responsive.
+*   **HTMX:** Xử lý tương tác động (AJAX) mà không cần viết nhiều JavaScript.
+*   **Alpine.js:** Framework JS siêu nhẹ cho các micro-interaction và quản lý state phía Client.
+*   **ECharts:** Thư viện đồ thị mạnh mẽ để trực quan hóa mạng lưới quan hệ.
 
 ### **Tooling & Data**
-*   **Pandas & Openpyxl:** Xử lý và phân tích dữ liệu Excel.
-*   **FPDF2 & Python-docx:** Xuất bản tài liệu chuyên nghiệp.
-*   **Uvicorn:** ASGI Server vận hành ứng dụng.
+*   **Pandas & Openpyxl:** Xử lý dữ liệu Excel quy mô lớn.
+*   **FPDF2 & Python-docx:** Engine xuất bản tài liệu nghiệp vụ.
+*   **Uvicorn:** ASGI Server tốc độ cao.
 
 ---
 
 ## 📂 Cấu trúc thư mục
-Cấu trúc dự án được tổ chức theo tiêu chuẩn sạch (Clean Architecture):
+Cấu trúc dự án theo tiêu chuẩn Clean Architecture:
 
 ```text
 csxh-pa01-v1/
 ├── backend/                # Lõi xử lý logic (Python)
-│   ├── db/                 # Kết nối và cấu hình Database
+│   ├── db/                 # Cấu hình Database & Session
 │   ├── models/             # Định nghĩa Schema Database (SQLAlchemy)
-│   ├── routes/             # Định nghĩa API và Controllers (Page Handlers)
-│   ├── schemas/            # Pydantic models (Validation dữ liệu)
-│   ├── services/           # Business logic xử lý nghiệp vụ
-│   └── utils/              # Các hàm bổ trợ (Mã hóa, Export, ...)
+│   ├── routes/             # API & Page Handlers (HTMX Integration)
+│   ├── schemas/            # Pydantic models (Validation)
+│   ├── services/           # Business logic & Phân tích mạng lưới
+│   └── utils/              # Mã hóa, Export, Security helpers
 ├── frontend/               # Giao diện người dùng
-│   ├── static/             # CSS (Tailwind), JS, Hình ảnh
-│   └── templates/          # Giao diện HTML (Jinja2)
-├── scripts/                # Các script khởi tạo và bảo trì hệ thống
-├── tests/                  # Mã nguồn kiểm thử tự động
-├── run_server.py           # Launcher chính của ứng dụng
-├── requirements.txt        # Danh sách thư viện Python
-└── tailwind.config.js      # Cấu hình giao diện Tailwind
+│   ├── static/             # CSS (Tailwind), JS (HTMX/Alpine), Vendor libs
+│   └── templates/          # Giao diện HTML (Jinja2 + Components)
+├── scripts/                # Script khởi tạo, Backup & Migration
+├── tests/                  # Bộ test đảm bảo chất lượng phần mềm
+├── run_server.py           # Launcher chính (Hỗ trợ nhập Key giải mã DB)
+├── requirements.txt        # Dependencies
+└── tailwind.config.js      # Cấu hình Design System
 ```
 
 ---
 
-## 🚀 Hướng dẫn cài đặt & Chạy dự án (Getting Started)
+## 🚀 Hướng dẫn cài đặt & Chạy dự án
 
 ### 1. Chuẩn bị môi trường
 *   Cài đặt **Python 3.9** trở lên.
-*   (Tùy chọn) Cài đặt **Node.js** nếu bạn muốn chỉnh sửa CSS (Tailwind).
+*   Tải bộ thư viện cần thiết.
 
 ### 2. Cài đặt thư viện
-Mở terminal tại thư mục gốc và chạy:
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Cấu hình biến môi trường
-Sao chép file `.env.example` thành `.env`:
-```bash
-cp .env.example .env
-```
-*Lưu ý: Các thông tin nhạy cảm như mật khẩu DB sẽ được nhập trực tiếp khi khởi chạy để đảm bảo an toàn.*
+### 3. Cấu hình
+Sao chép file `.env.example` thành `.env` và điều chỉnh các tham số nếu cần.
 
-### 4. Khởi chạy ứng dụng
-Chạy script launcher:
+### 4. Khởi chạy
+Sử dụng script launcher để đảm bảo database được mở khóa đúng cách:
 ```bash
 python run_server.py
 ```
-Hoặc dùng file bat trên Windows:
+Hoặc dùng file bat (Windows):
 ```bash
 start_server.bat
 ```
-*   **Bước 1:** Nhập mật khẩu để mở khóa/tạo Database (Mật khẩu cần độ phức tạp cao).
-*   **Bước 2:** Nếu là lần đầu, hệ thống sẽ yêu cầu tạo tài khoản Admin.
-*   **Bước 3:** Truy cập vào `http://127.0.0.1:8000` để bắt đầu làm việc.
+*   **Mật khẩu DB:** Bạn sẽ được yêu cầu nhập mật khẩu để mở khóa database khi khởi chạy.
+*   **Tài khoản:** Nếu là lần đầu, hãy tạo tài khoản quản trị theo hướng dẫn trên terminal.
+*   **Địa chỉ:** Truy cập `http://127.0.0.1:9000` (mặc định).
 
 ---
 
 ## 🗺️ Kế hoạch phát triển (Roadmap)
 
-Dựa trên cấu trúc hiện tại, hai hướng nâng cấp tiềm năng cho hệ thống bao gồm:
-
-1.  **🔍 Tích hợp AI Search & Matching:** Áp dụng thuật toán Fuzzy logic nâng cao và xử lý ngôn ngữ tự nhiên (NLP) để tự động phát hiện các hồ sơ trùng lặp hoặc có mối quan hệ tiềm ẩn ngay cả khi dữ liệu đầu vào không đồng nhất.
-2.  **📱 Mobile-First Dashboard:** Phát triển giao diện Dashboard tối ưu hóa hoàn toàn cho thiết bị di động và máy tính bảng, giúp cán bộ có thể tra cứu và rà soát hồ sơ nhanh chóng ngay tại hiện trường.
+1.  **🤖 Tích hợp AI Core:** Áp dụng NLP để tự động trích xuất thông tin từ tài liệu quét (OCR) và phát hiện các mẫu hành vi bất thường.
+2.  **📊 Phân tích Mối liên hệ Tiềm ẩn:** Sử dụng Graph Algorithms để gợi ý các mối quan hệ chưa được khai báo dựa trên địa chỉ, số điện thoại hoặc lịch sử di chuyển.
 
 ---
 *Phát triển bởi đội ngũ Kỹ thuật - VCFE Project.*
+*Tác giả: Đại úy Vi Ngọc Phương - Công an tỉnh Phú Thọ.*
+
