@@ -3,10 +3,18 @@ from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import select, or_
 
-from backend.models.models import DoiTuong, LienHe, TaiChinh
+from backend.models.models import DoiTuong, LienHe, TaiChinh, CCCDHistory
 import re
 
 logger = logging.getLogger(__name__)
+
+
+def lookup_old_cccd(db: Session, cccd_cu: str) -> Optional[str]:
+    """Trả CCCD hiện tại nếu cccd_cu tồn tại trong lịch sử đổi CCCD."""
+    row = db.execute(
+        select(CCCDHistory.cccd_moi).where(CCCDHistory.cccd_cu == cccd_cu).limit(1)
+    ).first()
+    return row[0] if row else None
 
 
 def search_profiles(
@@ -109,11 +117,19 @@ def search_profiles(
     offset = (page - 1) * page_size
     rows = db.execute(stmt.order_by(DoiTuong.ho_ten).offset(offset).limit(page_size)).scalars().all()
 
+    # Tra cứu lịch sử đổi CCCD khi kết quả rỗng và query là CCCD hợp lệ
+    cccd_redirect = None
+    if total == 0 and query:
+        q_stripped = query.strip()
+        if re.fullmatch(r'\d{9}|\d{12}', q_stripped):
+            cccd_redirect = lookup_old_cccd(db, q_stripped)
+
     return {
         "total": total,
         "page": page,
         "page_size": page_size,
         "pages": (total + page_size - 1) // page_size if total else 0,
+        "cccd_redirect": cccd_redirect,
         "results": [
             {
                 "cccd": r.cccd,

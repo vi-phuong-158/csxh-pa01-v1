@@ -176,6 +176,14 @@ _PENDING_COLUMNS: list[tuple[str, str, str]] = [
     ("nhan_than", "quoc_tich",      "TEXT"),
 ]
 
+_PENDING_INDEXES: list[str] = [
+    "CREATE INDEX IF NOT EXISTS ix_qthd_ngay_ket_thuc ON qua_trinh_hoat_dong(ngay_ket_thuc)",
+    "CREATE INDEX IF NOT EXISTS ix_quan_he_cccd_1 ON quan_he_doi_tuong(cccd_1)",
+    "CREATE INDEX IF NOT EXISTS ix_quan_he_cccd_2 ON quan_he_doi_tuong(cccd_2)",
+    "CREATE INDEX IF NOT EXISTS ix_quan_he_loai ON quan_he_doi_tuong(loai_quan_he)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS uq_quan_he_cap ON quan_he_doi_tuong(cccd_1, cccd_2, loai_quan_he)",
+]
+
 
 def _auto_migrate() -> None:
     """
@@ -191,11 +199,8 @@ def _auto_migrate() -> None:
             logger.info("Auto-migrate: ALTER TABLE %s ADD COLUMN %s", table, col)
             conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}")
             conn.commit()
-        # Đảm bảo index cho cột ngày kết thúc (tăng tốc truy vấn thông báo)
-        conn.exec_driver_sql(
-            "CREATE INDEX IF NOT EXISTS ix_qthd_ngay_ket_thuc "
-            "ON qua_trinh_hoat_dong(ngay_ket_thuc)"
-        )
+        for sql in _PENDING_INDEXES:
+            conn.exec_driver_sql(sql)
         conn.commit()
 
 

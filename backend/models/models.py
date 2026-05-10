@@ -47,6 +47,12 @@ class DoiTuong(Base):
     ho_so_dac_thu: Mapped[List["HoSoDacThu"]] = relationship(back_populates="doi_tuong", cascade="all, delete-orphan")
     tai_lieu: Mapped[List["TaiLieu"]] = relationship(back_populates="doi_tuong", cascade="all, delete-orphan")
     qua_trinh: Mapped[List["QuaTrinhHoatDong"]] = relationship(back_populates="doi_tuong", cascade="all, delete-orphan")
+    quan_he_as_1: Mapped[List["QuanHeDoiTuong"]] = relationship(
+        foreign_keys="[QuanHeDoiTuong.cccd_1]", back_populates="doi_tuong_1", cascade="all, delete-orphan",
+    )
+    quan_he_as_2: Mapped[List["QuanHeDoiTuong"]] = relationship(
+        foreign_keys="[QuanHeDoiTuong.cccd_2]", back_populates="doi_tuong_2", cascade="all, delete-orphan",
+    )
 
 
 # ============================================
@@ -180,6 +186,9 @@ class QuanHeDoiTuong(Base):
     do_tin_cay: Mapped[Optional[int]] = mapped_column(Integer, default=50)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
+    doi_tuong_1: Mapped["DoiTuong"] = relationship(foreign_keys=[cccd_1], back_populates="quan_he_as_1")
+    doi_tuong_2: Mapped["DoiTuong"] = relationship(foreign_keys=[cccd_2], back_populates="quan_he_as_2")
+
 
 class AuditLog(Base):
     __tablename__ = "audit_log"
@@ -191,6 +200,20 @@ class AuditLog(Base):
     du_lieu_moi: Mapped[Optional[str]] = mapped_column(Text)
     nguoi_thuc_hien: Mapped[Optional[str]] = mapped_column(String)
     ip_address: Mapped[Optional[str]] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class CCCDHistory(Base):
+    """Lưu lịch sử đổi số CCCD để tra cứu CCCD cũ."""
+    __tablename__ = "cccd_history"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    cccd_cu: Mapped[str] = mapped_column(String, index=True)
+    cccd_moi: Mapped[str] = mapped_column(String, index=True)
+    doi_tuong_cccd_hien_tai: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("doi_tuong.cccd", ondelete="SET NULL"), nullable=True
+    )
+    ly_do: Mapped[Optional[str]] = mapped_column(Text)
+    nguoi_thuc_hien: Mapped[Optional[str]] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 

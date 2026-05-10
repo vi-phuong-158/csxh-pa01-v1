@@ -126,3 +126,44 @@
 
   </div>
 </form>
+
+{% if user.role == 'super_admin' %}
+<div x-data="{showCccdModal: false}" class="mt-3 text-right">
+  <button type="button" @click="showCccdModal=true"
+          class="text-xs text-amber-400 hover:text-amber-300 underline">🔧 Sửa số CCCD</button>
+
+  <div x-show="showCccdModal" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-slate-800 border border-slate-600 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+      <p class="text-white font-semibold mb-1">Sửa số CCCD</p>
+      <p class="text-amber-300 text-xs mb-4">
+        ⚠ Hành động này không thể hoàn tác. Toàn bộ dữ liệu (quan hệ, tài liệu, lịch sử...) sẽ được chuyển sang số CCCD mới.
+      </p>
+      <form hx-post="/profile/{{ profile.cccd }}/change-cccd"
+            hx-target="#cccd-change-msg"
+            hx-swap="innerHTML"
+            class="space-y-3">
+        <div>
+          <label class="label">CCCD mới <span class="text-red-400">*</span></label>
+          <input name="new_cccd" type="text" inputmode="numeric" maxlength="12"
+                 class="input font-mono" placeholder="9 hoặc 12 số" required />
+        </div>
+        <div>
+          <label class="label">Xác nhận CCCD mới <span class="text-red-400">*</span></label>
+          <input name="confirm_cccd" type="text" inputmode="numeric" maxlength="12"
+                 class="input font-mono" placeholder="Nhập lại để xác nhận" required />
+        </div>
+        <div>
+          <label class="label">Lý do</label>
+          <input name="ly_do" type="text" class="input" placeholder="Nhập sai / cập nhật CCCD mới..." />
+        </div>
+        <div id="cccd-change-msg"></div>
+        <div class="flex gap-3 justify-end">
+          <button type="button" @click="showCccdModal=false" class="btn-ghost text-xs">Hủy</button>
+          <button type="submit" class="btn-danger text-xs">Đổi CCCD</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}

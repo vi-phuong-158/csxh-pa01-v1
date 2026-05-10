@@ -117,12 +117,16 @@ def create_full_template(wb, csxh_type):
     ws4.append(["001234567891", "Xe máy", "19B1-67890", "Honda Wave", ""])
     ws4.cell(row=5, column=1, value="Loại xe: Ô tô, Xe máy, Xe tải, Xe khách, Khác")
 
-    # ========== SHEET 6: THÂN NHÂN ==========
-    ws6 = wb.create_sheet("6. Thân nhân")
+    # ========== SHEET 6: QUAN HỆ ==========
+    ws6 = wb.create_sheet("6. Quan hệ")
     headers_6 = TEMPLATE_DEFINITIONS['than_nhan']['headers']
     style_header_row(ws6, headers_6)
-    ws6.append(["001234567890", "Nguyễn Văn B", "Bố đẻ", "1960",
-                "Hưu trí", "Việt Trì, Phú Thọ", ""])
+    ws6.append(["001234567890", "001234567891", "Nguyễn Văn B", "Cha-Con",
+                "1960", "Hưu trí", "Việt Trì, Phú Thọ", ""])
+    ws6.append(["001234567890", "", "John Smith", "Đồng nghiệp",
+                "1985", "Kỹ sư", "", "Không có CCCD → lưu dạng ghi chú"])
+    ws6.cell(row=5, column=1,
+             value=TEMPLATE_DEFINITIONS['than_nhan'].get('note', ''))
 
     # ========== SHEET 7: QUÁ TRÌNH HOẠT ĐỘNG ==========
     ws7 = wb.create_sheet("7. Quá trình hoạt động")

@@ -1,9 +1,10 @@
 # KẾ HOẠCH: Refactor "Nhân thân" → "Quan hệ" + Auto tạo hồ sơ
 
-> **Trạng thái:** Đã chốt thiết kế, chờ thực hiện.
+> **Trạng thái:** Sprint 1 ✅ HOÀN THÀNH | Sprint 2 🔄 Đang thực hiện | Sprint 3, 4 chờ
 > **Branch phát triển:** `claude/auto-create-profile-relationship-PBkZr`
 > **Ngày lập kế hoạch:** 2026-05-08
-> **Người phụ trách thực hiện:** Anh (sau chuyến công tác)
+> **Sprint 1 hoàn thành:** 2026-05-10
+> **Sprint 2 bắt đầu:** 2026-05-10
 
 ---
 
@@ -143,9 +144,9 @@ for edge in edges:
 
 ---
 
-## 5. SPRINT 1 — Tab "Quan hệ" (LÀM TRƯỚC)
+## 5. SPRINT 1 — Tab "Quan hệ" ✅ HOÀN THÀNH
 
-### T1.1 — Refactor `LOAI_QUAN_HE` thành dạng cặp có hướng
+### T1.1 ✅ — Refactor `LOAI_QUAN_HE` thành dạng cặp có hướng
 **File:** `backend/constants.py` (sửa dòng 280-283)
 **Việc cần làm:**
 ```python
@@ -168,19 +169,19 @@ def get_quan_he_label(loai: str, vi_tri: int) -> str:
 
 ---
 
-### T1.2 — Cập nhật schema DB cho `quan_he_doi_tuong`
-**File:** `backend/db/session.py` (theo pattern `_ensure_columns` dòng ~174) + `backend/models/models.py:172-181`
+### T1.2 ✅ — Cập nhật schema DB cho `quan_he_doi_tuong`
+**File:** `backend/db/session.py` (tương tự pattern `_auto_migrate` và `_PENDING_COLUMNS`) + `backend/models/models.py:172-181`
 **Việc cần làm:**
 - Thêm Index trên `cccd_1`, `cccd_2`, `loai_quan_he` (single + composite).
 - Thêm UNIQUE constraint `(cccd_1, cccd_2, loai_quan_he)`.
 - Service phải guard `cccd_1 != cccd_2` (cấm self-loop) — vì SQLite CHECK constraint không reliable.
-- Tạo cơ chế migrate `_ensure_indexes` tương tự `_ensure_columns` để chạy lần đầu sau update.
+- Tạo cơ chế migrate `_ensure_indexes` (dùng `CREATE INDEX IF NOT EXISTS`) chạy vòng lặp riêng tương tự `_auto_migrate` để tạo index cho bảng cũ.
 
 **Kiểm chứng:** Chạy app, `sqlite> .schema quan_he_doi_tuong` thấy index mới.
 
 ---
 
-### T1.3 — Service `services/quan_he.py` (file mới)
+### T1.3 ✅ — Service `services/quan_he.py` (file mới)
 **File:** `backend/services/quan_he.py` (TẠO MỚI)
 **Hàm cần viết:**
 ```python
@@ -188,7 +189,10 @@ def get_quan_he_full(db, cccd) -> List[Dict]:
     """Gộp graph + satellite, render đúng chiều"""
 
 def add_quan_he_co_cccd(db, cccd_chinh, data) -> Tuple[bool, str]:
-    """Tạo edge + auto tạo DoiTuong nếu chưa có (is_draft theo có ho_ten)"""
+    """
+    Tạo edge + auto tạo DoiTuong nếu chưa có (is_draft theo có ho_ten).
+    Sử dụng try/except IntegrityError để xử lý race condition.
+    """
 
 def add_quan_he_khong_cccd(db, cccd_chinh, data) -> Tuple[bool, str]:
     """Insert vào nhan_than (fallback)"""
@@ -216,25 +220,27 @@ def _is_orphan_draft(db, cccd) -> bool:
 ```python
 edge = db.get(QuanHeDoiTuong, edge_id)
 cccd_doi_tac = edge.cccd_2 if edge.cccd_1 == cccd_chinh else edge.cccd_1
-db.delete(edge); db.commit()
+db.delete(edge)
+db.flush()  # Quan trọng: flush để tránh stale read trước khi check orphan
 
 dt = db.get(DoiTuong, cccd_doi_tac)
 if dt and dt.is_draft and _is_orphan_draft(db, cccd_doi_tac):
-    db.delete(dt); db.commit()
+    db.delete(dt)
+db.commit()
 ```
 
 **Test:** Tạo file `tests/test_quan_he_service.py` test các case: add, query, delete edge, auto-clean orphan, không xóa nếu không phải orphan.
 
 ---
 
-### T1.4 — Routes `routes/quan_he.py` (file mới)
+### T1.4 ✅ — Routes `routes/quan_he.py` (file mới)
 **File:** `backend/routes/quan_he.py` (TẠO MỚI), mount trong `backend/main.py`
 **Endpoints:**
 - `POST /profile/{cccd}/quan-he/graph` — form có CCCD
 - `POST /profile/{cccd}/quan-he/satellite` — form không CCCD
 - `DELETE /profile/{cccd}/quan-he/graph/{edge_id}`
 - `DELETE /profile/{cccd}/quan-he/satellite/{item_id}`
-- `GET /profile/{cccd}/quan-he/preview-cccd?cccd=...` — HTMX banner + autofill
+- `GET /profile/{cccd}/quan-he/preview-cccd?cccd=...` — HTMX banner + autofill (yêu cầu require_login để chống brute-force)
 
 **Lưu ý:**
 - Validate CCCD đầu mỗi handler bằng `_cccd_dep` (đã có trong `routes/profile.py:78`).
@@ -244,7 +250,7 @@ if dt and dt.is_draft and _is_orphan_draft(db, cccd_doi_tac):
 
 ---
 
-### T1.5 — Template `_tab_quan_he.html` (file mới, thay `_tab_nhan_than.html`)
+### T1.5 ✅ — Template `_tab_quan_he.html` (file mới, thay `_tab_nhan_than.html`)
 **File:** `frontend/templates/profile/_tab_quan_he.html` (TẠO MỚI)
 **Tham khảo template cũ:** `frontend/templates/profile/_tab_nhan_than.html`
 **Cấu trúc:**
@@ -261,7 +267,7 @@ if dt and dt.is_draft and _is_orphan_draft(db, cccd_doi_tac):
 
 ---
 
-### T1.6 — Cập nhật profile route và tab-dispatch
+### T1.6 ✅ — Cập nhật profile route và tab-dispatch
 **File:** `backend/routes/profile.py:140`
 **Việc cần làm:**
 - Sửa `template_map`: `"quan-he": "profile/_tab_quan_he.html"`.
@@ -271,7 +277,7 @@ if dt and dt.is_draft and _is_orphan_draft(db, cccd_doi_tac):
 
 ---
 
-### T1.7 — Cập nhật điều hướng tab
+### T1.7 ✅ — Cập nhật điều hướng tab
 **File:** `frontend/templates/profile/index.html`
 **Việc cần làm:**
 - Đổi label tab "Nhân thân" → "**Quan hệ**".
@@ -279,15 +285,16 @@ if dt and dt.is_draft and _is_orphan_draft(db, cccd_doi_tac):
 
 ---
 
-### T1.8 — Cập nhật export DOCX và báo cáo Excel
+### T1.8 ✅ — Cập nhật export DOCX và báo cáo Excel
 **Files:**
 - `backend/services/docx_export.py:144-148` — phần "Thân nhân" đổi tên "Quan hệ", merge graph + satellite.
 - `backend/routes/bao_cao.py:454-482` — sheet "Nhân thân" → "Quan hệ", thêm cột "Loại nguồn".
-- `backend/routes/bao_cao.py:682` — giữ `joinedload(DoiTuong.nhan_than)`, thêm load edge từ `quan_he_doi_tuong`.
+- `backend/routes/bao_cao.py:682` — thêm `joinedload(DoiTuong.quan_he_cccd_1)` và `joinedload(DoiTuong.quan_he_cccd_2)`.
+- **Lưu ý trong `bao_cao.py`:** Do query trực tiếp bằng ORM (không qua `get_profile_full`), phải tự gộp data từ `quan_he_cccd_1`, `quan_he_cccd_2` và `nhan_than` trước khi render sheet Excel.
 
 ---
 
-### T1.9 — Tailwind rebuild + verify cuối
+### T1.9 ✅ — Tailwind rebuild + verify cuối
 **Việc cần làm:**
 1. **Anh tự chạy:** `npx tailwindcss -i ./frontend/static/css/input.css -o ./frontend/static/css/output.css`
 2. **Verify checklist:**
@@ -312,9 +319,9 @@ if dt and dt.is_draft and _is_orphan_draft(db, cccd_doi_tac):
 
 ---
 
-## 6. SPRINT 2 — Sửa CCCD (Hướng A + C) — *làm sau Sprint 1*
+## 6. SPRINT 2 — Sửa CCCD (Hướng A + C) 🔄 HOÀN THÀNH (2026-05-10)
 
-### T2.1 — Tạo bảng `cccd_history`
+### T2.1 ✅ — Tạo bảng `cccd_history`
 **File:** `backend/models/models.py`
 **Schema:**
 ```python
@@ -329,7 +336,7 @@ class CCCDHistory(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 ```
 
-### T2.2 — Service `change_cccd(old, new, ly_do, user)`
+### T2.2 ✅ — Service `change_cccd(old, new, ly_do, user)`
 **File:** `backend/services/profile.py`
 **Logic:**
 ```python
@@ -353,7 +360,7 @@ def change_cccd(db, old_cccd, new_cccd, ly_do, user):
 ```
 **Lưu ý:** filesystem rename phải có rollback handler nếu DB transaction fail.
 
-### T2.3 — Route + UI sửa CCCD
+### T2.3 ✅ — Route + UI sửa CCCD
 - Endpoint `POST /profile/{cccd}/change-cccd` — admin only (`require_admin`).
 - Modal Alpine.js trên `_tab_basic.html`: nút "🔧 Sửa CCCD" → modal:
   - Nhập CCCD mới
@@ -362,46 +369,42 @@ def change_cccd(db, old_cccd, new_cccd, ly_do, user):
   - Cảnh báo "Hành động không thể hoàn tác"
 - Sau khi đổi: `HX-Redirect` sang `/profile/{new_cccd}`.
 
-### T2.4 — Tra cứu theo CCCD cũ
+### T2.4 ✅ — Tra cứu theo CCCD cũ
 - Sửa `services/search.py`: khi tìm CCCD không thấy → query `cccd_history.cccd_cu` → redirect.
 
 ---
 
-## 7. SPRINT 3 — Migration dữ liệu cũ — *làm khi sẵn sàng*
+## 7. SPRINT 3 — Chuẩn bị nhập dữ liệu thật ✅ HOÀN THÀNH (2026-05-10)
 
-### T3.1 — Script `tools/migrate_nhan_than_to_graph.py`
-**Logic:**
-```
-Cảnh báo: "Backup DB trước khi chạy! (cp data.db data.db.bak)"
-Loop từng row nhan_than:
-  if validate_cccd(row.cccd_nhan_than) OK:
-    upsert DoiTuong(cccd=cccd_nhan_than, ho_ten, ngay_sinh, ..., is_draft=...)
-    insert QuanHeDoiTuong(cccd_1=row.cccd, cccd_2=cccd_nhan_than, loai_quan_he=...)
-    DELETE row nhan_than
-  else:
-    giữ nguyên (đúng phương án C)
-```
-**Flags:** `--dry-run` (chỉ log), `--commit` (thực thi).
+> **Điều chỉnh (2026-05-10):** Hệ thống đang dùng mockdata, bảng `nhan_than` chưa có dữ liệu thật cần migrate.
+> T3.1 (script migrate) **BỎ QUA** — không có gì để chuyển đổi.
+> Chỉ cần làm T3.2 để đảm bảo khi nhập dữ liệu thật qua Excel, quan hệ đi thẳng vào graph ngay từ đầu.
 
-### T3.2 — Nâng cấp bulk_import
-**File:** `backend/utils/bulk_import/bulk_import/importers.py:133`
-- Nếu cột "CCCD nhân thân" trong Excel hợp lệ → tạo edge (như T1.3).
-- Không hợp lệ → giữ insert vào `nhan_than` như cũ.
+### T3.1 — ~~Script `tools/migrate_nhan_than_to_graph.py`~~ — BỎ QUA
+**Lý do bỏ qua:** Hệ thống dùng mockdata, chưa có dữ liệu `nhan_than` thật.
+Dữ liệu chính thức sẽ được nhập mới qua bulk_import (T3.2) và tab Quan hệ — không cần migrate.
+
+### T3.2 ✅ — Nâng cấp bulk_import
+**Files đã sửa:**
+- `backend/utils/bulk_import/bulk_import/constants.py` — thêm `_LOAI_QUAN_HE_DOI_XUNG`, cập nhật template `than_nhan` (8 cột, tên sheet "6. Quan hệ")
+- `backend/utils/bulk_import/bulk_import/validators.py` — đọc cột `cccd_nhan_than`, validate nếu có (9 hoặc 12 số, không trùng CCCD chính)
+- `backend/utils/bulk_import/bulk_import/importers.py` — routing: `cccd_nhan_than` hợp lệ → upsert `doi_tuong` + insert `quan_he_doi_tuong`; không có → insert `nhan_than` như cũ
+- `backend/utils/bulk_import/bulk_import/templates.py` — sample row 2 dòng (1 có CCCD, 1 không có) để hướng dẫn người dùng
 
 ---
 
-## 8. SPRINT 4 — Vẽ mạng lưới (roadmap tương lai)
+## 8. SPRINT 4 — Vẽ mạng lưới ✅ HOÀN THÀNH (2026-05-10)
 
-### T4.1 — Endpoint JSON `/api/network/{cccd}?depth=N`
+### T4.1 ✅ — Endpoint JSON `/api/network/{cccd}?depth=N`
 - BFS từ `cccd` qua `quan_he_doi_tuong`, max depth 3, max 100 nodes.
 - Trả `{nodes:[{cccd, ho_ten, is_draft}], links:[{source, target, label, do_tin_cay}]}` chuẩn ECharts.
 
-### T4.2 — Tab "Mạng lưới" trên hồ sơ
+### T4.2 ✅ — Tab "Mạng lưới" trên hồ sơ
 - ECharts force-directed graph.
 - Click node → mở hồ sơ.
 - Filter theo loại quan hệ (chỉ "Vợ chồng + Cha-Con" = cây gia đình).
 
-### T4.3 — Endpoint mạng lưới toàn cục
+### T4.3 ✅ — Endpoint mạng lưới toàn cục
 - `/network` — view all với filter địa bàn / nghề nghiệp.
 
 ---

@@ -4,12 +4,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any, Tuple, List
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, update as sa_update, func as sa_func
 
 from backend.models.models import (
     DoiTuong, LienHe, TaiChinh, PhuongTien, NhanThan,
     HoSoDacThu, TaiLieu, QuaTrinhHoatDong, AuditLog,
+    QuanHeDoiTuong, CCCDHistory,
 )
+from backend.services import quan_he as qh_svc
 from backend.config import settings
 
 logger = logging.getLogger(__name__)
@@ -45,7 +47,7 @@ def get_profile_full(db: Session, cccd: str) -> Optional[Dict]:
         "lien_he": [{"id": x.id, "loai": x.loai_lien_he, "gia_tri": x.gia_tri, "ghi_chu": x.ghi_chu} for x in dt.lien_he],
         "tai_chinh": [{"id": x.id, "ngan_hang": x.ngan_hang, "so_tai_khoan": x.so_tai_khoan, "chu": x.chu_tai_khoan, "ghi_chu": x.ghi_chu} for x in dt.tai_chinh],
         "phuong_tien": [{"id": x.id, "loai_xe": x.loai_xe, "bien": x.bien_kiem_soat, "ten": x.ten_phuong_tien, "ghi_chu": x.ghi_chu} for x in dt.phuong_tien],
-        "nhan_than": [{"id": x.id, "quan_he": x.loai_quan_he, "ho_ten": x.ho_ten, "cccd": x.cccd_nhan_than, "ngay_sinh": x.ngay_sinh.strftime("%Y-%m-%d") if x.ngay_sinh else "", "gioi_tinh": x.gioi_tinh, "dan_toc": x.dan_toc, "ton_giao": x.ton_giao, "quoc_tich": x.quoc_tich, "nghe_nghiep": x.nghe_nghiep, "noi_o": x.noi_o, "dia_chi_tinh": x.dia_chi_tinh, "dia_chi_xa": x.dia_chi_xa, "ghi_chu": x.ghi_chu} for x in dt.nhan_than],
+        "quan_he": qh_svc.get_quan_he_full(db, cccd),
         "ho_so_dac_thu": [{"id": x.id, "loai_hinh": x.loai_hinh, "noi_dung": x.noi_dung_chi_tiet, "ghi_chu": x.ghi_chu} for x in dt.ho_so_dac_thu],
         "tai_lieu": [{"id": x.id, "ten_goc": x.ten_file_goc, "duong_dan": x.duong_dan, "loai": x.loai_tai_lieu, "mo_ta": x.mo_ta} for x in dt.tai_lieu],
         "qua_trinh": [{
@@ -351,6 +353,96 @@ def _parse_date_dmy(val):
         except ValueError:
             continue
     return None
+
+
+def change_cccd(db: Session, old_cccd: str, new_cccd: str, ly_do: str, nguoi: str) -> Tuple[bool, str]:
+    """
+    Chuyển toàn bộ dữ liệu từ old_cccd sang new_cccd trong 1 transaction.
+    Gọi bởi super_admin only. Filesystem rename xảy ra SAU khi commit DB.
+    """
+    old_dt = db.get(DoiTuong, old_cccd)
+    if not old_dt:
+        return False, "Không tìm thấy hồ sơ"
+    if db.get(DoiTuong, new_cccd):
+        return False, "CCCD mới đã tồn tại trong hệ thống"
+
+    # 1. Tạo DoiTuong mới — copy toàn bộ field, cập nhật path avatar
+    avatar = old_dt.anh_chan_dung
+    if avatar:
+        avatar = avatar.replace(f"avatars/{old_cccd}/", f"avatars/{new_cccd}/")
+    new_dt = DoiTuong(
+        cccd=new_cccd,
+        ho_ten=old_dt.ho_ten,
+        ngay_sinh=old_dt.ngay_sinh,
+        gioi_tinh=old_dt.gioi_tinh,
+        dia_chi_tinh=old_dt.dia_chi_tinh,
+        dia_chi_xa=old_dt.dia_chi_xa,
+        anh_chan_dung=avatar,
+        phan_loai_nghe_nghiep=old_dt.phan_loai_nghe_nghiep,
+        chi_tiet_nghe_nghiep=old_dt.chi_tiet_nghe_nghiep,
+        ghi_chu_chung=old_dt.ghi_chu_chung,
+        dan_toc=old_dt.dan_toc,
+        ton_giao=old_dt.ton_giao,
+        que_quan=old_dt.que_quan,
+        noi_o_hien_nay=old_dt.noi_o_hien_nay,
+        quoc_tich=old_dt.quoc_tich,
+        is_draft=old_dt.is_draft,
+        nguoi_phu_trach_id=old_dt.nguoi_phu_trach_id,
+        created_at=old_dt.created_at,
+    )
+    db.add(new_dt)
+    db.flush()  # đảm bảo new_cccd tồn tại trong DB trước khi chuyển FK
+
+    # 2. Dịch chuyển các bảng satellite
+    for model in (LienHe, TaiChinh, PhuongTien, NhanThan, HoSoDacThu, QuaTrinhHoatDong):
+        db.execute(sa_update(model).where(model.cccd == old_cccd).values(cccd=new_cccd))
+
+    # 3. TaiLieu: chuyển FK + cập nhật đường dẫn (docs/{old}/ → docs/{new}/)
+    db.execute(sa_update(TaiLieu).where(TaiLieu.cccd == old_cccd).values(cccd=new_cccd))
+    db.execute(
+        sa_update(TaiLieu)
+        .where(TaiLieu.cccd == new_cccd, TaiLieu.duong_dan.isnot(None))
+        .values(duong_dan=sa_func.replace(TaiLieu.duong_dan, f"/{old_cccd}/", f"/{new_cccd}/"))
+    )
+
+    # 4. QuanHeDoiTuong: chuyển 2 chiều cccd_1 và cccd_2
+    db.execute(sa_update(QuanHeDoiTuong).where(QuanHeDoiTuong.cccd_1 == old_cccd).values(cccd_1=new_cccd))
+    db.execute(sa_update(QuanHeDoiTuong).where(QuanHeDoiTuong.cccd_2 == old_cccd).values(cccd_2=new_cccd))
+
+    # 5. Ghi lịch sử + audit
+    db.add(CCCDHistory(
+        cccd_cu=old_cccd,
+        cccd_moi=new_cccd,
+        doi_tuong_cccd_hien_tai=new_cccd,
+        ly_do=ly_do or None,
+        nguoi_thuc_hien=nguoi,
+    ))
+    _log(db, "doi_tuong", "CHANGE_CCCD", old_cccd, old_cccd, new_cccd, nguoi)
+
+    # 6. Xóa hồ sơ cũ — tất cả FK đã chuyển sang new_cccd, CASCADE không tác động gì
+    db.delete(old_dt)
+
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("change_cccd thất bại: %s → %s", old_cccd, new_cccd)
+        return False, "Lỗi cơ sở dữ liệu khi đổi CCCD"
+
+    # 7. Đổi tên thư mục files SAU khi DB commit (filesystem không rollback được)
+    upload_root = (Path(settings.BASE_DIR) / settings.UPLOAD_DIR).resolve()
+    for sub in ("avatars", "docs"):
+        old_dir = (upload_root / sub / old_cccd).resolve()
+        new_dir = (upload_root / sub / new_cccd).resolve()
+        try:
+            old_dir.relative_to(upload_root)
+            new_dir.relative_to(upload_root)
+        except ValueError:
+            continue
+        if old_dir.exists() and not new_dir.exists():
+            old_dir.rename(new_dir)
+
+    return True, new_cccd
 
 
 def _log(db, bang, hanh_dong, khoa, cu, moi, nguoi):

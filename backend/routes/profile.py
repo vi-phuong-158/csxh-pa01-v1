@@ -20,16 +20,16 @@ from pathlib import Path
 from urllib.parse import quote
 
 import aiofiles
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from backend.config import settings
 from backend.constants import (
-    LOAI_HINH_DAC_THU, LOAI_LIEN_HE, LOAI_QUAN_HE, LOAI_TAI_LIEU,
-    LOAI_XE, NGAN_HANG, PHAN_LOAI_NGHE_NGHIEP, TINH_THANH, XA_PHUONG,
-    DANH_SACH_QUOC_GIA, DAN_TOC, TON_GIAO,
+    DANH_SACH_QUOC_GIA, DAN_TOC, LOAI_HINH_DAC_THU, LOAI_LIEN_HE,
+    LOAI_QUAN_HE, LOAI_QUAN_HE_DEF, LOAI_TAI_LIEU, LOAI_XE, NGAN_HANG,
+    PHAN_LOAI_NGHE_NGHIEP, TINH_THANH, TON_GIAO, XA_PHUONG,
 )
 from backend.db.session import get_db
 from backend.deps import require_admin, require_login, require_profile_access
@@ -48,6 +48,7 @@ _CTX_OPTS = {
     "xa_phuong": XA_PHUONG,
     "loai_lien_he": LOAI_LIEN_HE,
     "loai_quan_he": LOAI_QUAN_HE,
+    "loai_quan_he_def": LOAI_QUAN_HE_DEF,
     "loai_hinh_dac_thu": LOAI_HINH_DAC_THU,
     "ngan_hang": NGAN_HANG,
     "loai_xe": LOAI_XE,
@@ -137,7 +138,9 @@ def profile_tab(
     if not data:
         return HTMLResponse("", status_code=404)
     template_map = {
-        "nhan-than":     "profile/_tab_nhan_than.html",
+        "quan-he":       "profile/_tab_quan_he.html",
+        "nhan-than":     "profile/_tab_quan_he.html",  # alias backward compat
+        "mang-luoi":     "profile/_tab_mang_luoi.html",
         "lien-he":       "profile/_tab_lien_he.html",
         "tai-chinh":     "profile/_tab_tai_chinh.html",
         "phuong-tien":   "profile/_tab_phuong_tien.html",
@@ -184,27 +187,34 @@ async def update_basic(
 # CRUD nhân thân / liên hệ / tài chính / phương tiện / hồ sơ đặc thù / quá trình
 # (DB-only, không động chạm filesystem — vẫn validate cccd defense-in-depth)
 # ============================================================================
-@router.post("/{cccd}/nhan-than")
-async def add_nhan_than(
+
+@router.post("/{cccd}/change-cccd")
+async def change_cccd_route(
     request: Request,
     cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_profile_access),
+    user: dict = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    profile_svc.add_nhan_than(db, cccd, dict(await request.form()))
-    return _tab_response(request, db, cccd, user, "profile/_tab_nhan_than.html")
+    """Đổi số CCCD — super_admin only. Dữ liệu + file đều được chuyển sang CCCD mới."""
+    form = await request.form()
+    new_cccd_raw = (str(form.get("new_cccd") or "")).strip()
+    confirm_cccd = (str(form.get("confirm_cccd") or "")).strip()
+    ly_do = (str(form.get("ly_do") or "")).strip()
 
+    if new_cccd_raw != confirm_cccd:
+        return HTMLResponse('<p class="text-red-400 text-xs">CCCD xác nhận không khớp với CCCD mới</p>')
+    try:
+        new_cccd_val = validate_cccd(new_cccd_raw)
+    except HTTPException:
+        return HTMLResponse('<p class="text-red-400 text-xs">CCCD mới không hợp lệ (phải 9 hoặc 12 số)</p>')
 
-@router.delete("/{cccd}/nhan-than/{item_id}", response_class=HTMLResponse)
-def delete_nhan_than(
-    item_id: int,
-    request: Request,
-    cccd: str = Depends(_cccd_dep),
-    user: dict = Depends(require_profile_access),
-    db: Session = Depends(get_db),
-):
-    profile_svc.delete_nhan_than(db, item_id)
-    return _tab_response(request, db, cccd, user, "profile/_tab_nhan_than.html")
+    ok, result = profile_svc.change_cccd(db, cccd, new_cccd_val, ly_do, user["username"])
+    if not ok:
+        return HTMLResponse(f'<p class="text-red-400 text-xs">{result}</p>')
+
+    response = HTMLResponse("")
+    response.headers["HX-Redirect"] = f"/profile/{result}"
+    return response
 
 
 @router.post("/{cccd}/lien-he")

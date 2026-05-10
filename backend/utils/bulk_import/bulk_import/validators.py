@@ -270,7 +270,7 @@ def validate_excel_data(excel_file, import_type='all'):
                 results['lien_he']['errors'] = errors
                 results['lien_he']['valid_count'] = len(valid_rows)
 
-        # ===== SHEET: THÂN NHÂN (New) =====
+        # ===== SHEET: QUAN HỆ (Thân nhân) =====
         if 'than_nhan' in VALIDATOR_CONFIG and should_read('than_nhan'):
             config = VALIDATOR_CONFIG['than_nhan']
             target_sheet_index = config['index'] if import_type == 'all' else 0
@@ -279,7 +279,7 @@ def validate_excel_data(excel_file, import_type='all'):
             df = df.dropna(how='all')
 
             if len(df) > 0:
-                df.columns = ['cccd', 'ho_ten', 'quan_he',
+                df.columns = ['cccd', 'cccd_nhan_than', 'ho_ten', 'quan_he',
                               'nam_sinh', 'nghe_nghiep', 'dia_chi', 'ghi_chu']
                 errors = []
                 valid_rows = []
@@ -287,15 +287,25 @@ def validate_excel_data(excel_file, import_type='all'):
                 for idx, row in df.iterrows():
                     row_errors = []
                     cccd = normalize_cccd(row['cccd'])
-                    ho_ten = str(row['ho_ten']).strip(
-                    ) if pd.notna(row['ho_ten']) else ""
-                    
+                    ho_ten = str(row['ho_ten']).strip() if pd.notna(row['ho_ten']) else ""
+
                     if cccd not in valid_cccds:
                         row_errors.append(
                             f"Dòng {idx+1}: CCCD {cccd} không tồn tại")
                     if not ho_ten:
                         row_errors.append(
                             f"Dòng {idx+1}: Thiếu họ tên thân nhân")
+
+                    # Validate CCCD nhân thân nếu có (không bắt buộc)
+                    cccd_nt_raw = row.get('cccd_nhan_than')
+                    if pd.notna(cccd_nt_raw) and str(cccd_nt_raw).strip():
+                        cccd_nt = normalize_cccd(cccd_nt_raw)
+                        if not cccd_nt.isdigit() or len(cccd_nt) not in (9, 12):
+                            row_errors.append(
+                                f"Dòng {idx+1}: CCCD nhân thân '{cccd_nt}' không hợp lệ (phải 9 hoặc 12 số)")
+                        elif cccd_nt == cccd:
+                            row_errors.append(
+                                f"Dòng {idx+1}: CCCD nhân thân không được trùng với CCCD chính")
 
                     if row_errors:
                         errors.extend(row_errors)

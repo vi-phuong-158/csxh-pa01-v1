@@ -3,6 +3,7 @@ import pandas as pd
 import json
 from datetime import datetime
 from database import get_connection
+from constants import _LOAI_QUAN_HE_DOI_XUNG
 
 def bulk_import_all(validated_data, update_existing=False):
     """
@@ -16,6 +17,7 @@ def bulk_import_all(validated_data, update_existing=False):
     stats = {
         'doi_tuong': 0,
         'lien_he': 0,
+        'quan_he_graph': 0,
         'than_nhan': 0,
         'tai_chinh': 0,
         'phuong_tien': 0,
@@ -113,38 +115,79 @@ def bulk_import_all(validated_data, update_existing=False):
                 """, data_list)
                 stats['lien_he'] = len(data_list)
 
-        # ===== INSERT THÂN NHÂN =====
+        # ===== INSERT QUAN HỆ (Graph nếu có CCCD nhân thân, Satellite nếu không) =====
         if 'than_nhan' in validated_data and validated_data['than_nhan']['data'] is not None:
             df = validated_data['than_nhan']['data']
-            data_list = []
-            for row in df.to_dict('records'):
-                data_list.append((
-                    str(row['cccd']).strip(),
-                    str(row['ho_ten']).strip(),
-                    get_val(row, 'quan_he'),
-                    get_val(row, 'nam_sinh'),
-                    get_val(row, 'nghe_nghiep'),
-                    get_val(row, 'dia_chi'),
-                    get_val(row, 'ghi_chu')
-                ))
+            graph_list = []       # (cccd_1, cccd_2, loai_quan_he, mo_ta)
+            draft_upsert = []     # (cccd, ho_ten, is_draft) — hồ sơ nháp mới
+            draft_fill_name = []  # (ho_ten, cccd) — fill tên nếu đã có hồ sơ nhưng chưa có tên
+            satellite_list = []   # (cccd, ho_ten, loai_quan_he, ngay_sinh, nghe_nghiep, noi_o, ghi_chu)
 
-            if data_list:
+            for row in df.to_dict('records'):
+                cccd_main = str(row['cccd']).strip()
+                loai_qh = get_val(row, 'quan_he') or 'Khác'
+                ho_ten = get_val(row, 'ho_ten')
+
+                # Chuẩn hóa CCCD nhân thân (giống normalize_cccd trong validators)
+                cccd_nt = ""
+                cccd_nt_raw = row.get('cccd_nhan_than')
+                if pd.notna(cccd_nt_raw) and str(cccd_nt_raw).strip():
+                    s = str(cccd_nt_raw).strip()
+                    if s.endswith('.0'):
+                        s = s[:-2]
+                    if s.isdigit() and len(s) < 12:
+                        s = s.zfill(12)
+                    cccd_nt = s
+
+                is_valid_nt = cccd_nt and cccd_nt.isdigit() and len(cccd_nt) in (9, 12) and cccd_nt != cccd_main
+
+                if is_valid_nt:
+                    # Graph path: chuẩn hóa cặp theo loại quan hệ
+                    if loai_qh in _LOAI_QUAN_HE_DOI_XUNG:
+                        cccd_1, cccd_2 = min(cccd_main, cccd_nt), max(cccd_main, cccd_nt)
+                    else:
+                        cccd_1, cccd_2 = cccd_main, cccd_nt
+                    graph_list.append((cccd_1, cccd_2, loai_qh, get_val(row, 'ghi_chu')))
+                    draft_upsert.append((cccd_nt, ho_ten, 0 if ho_ten else 1))
+                    if ho_ten:
+                        draft_fill_name.append((ho_ten, cccd_nt))
+                else:
+                    # Satellite path: ghi chú quan hệ không có CCCD
+                    satellite_list.append((
+                        cccd_main, ho_ten, loai_qh,
+                        get_val(row, 'nam_sinh'),
+                        get_val(row, 'nghe_nghiep'),
+                        get_val(row, 'dia_chi'),
+                        get_val(row, 'ghi_chu')
+                    ))
+
+            # 1. Tạo hồ sơ nháp cho cccd_nhan_than chưa tồn tại
+            if draft_upsert:
+                cursor.executemany("""
+                    INSERT OR IGNORE INTO doi_tuong (cccd, ho_ten, is_draft)
+                    VALUES (?, ?, ?)
+                """, draft_upsert)
+            # 2. Fill tên nếu hồ sơ đã có nhưng chưa có tên
+            if draft_fill_name:
+                cursor.executemany("""
+                    UPDATE doi_tuong SET ho_ten=? WHERE cccd=? AND (ho_ten IS NULL OR ho_ten='')
+                """, draft_fill_name)
+
+            # 3. Insert graph edges (bỏ qua nếu cặp đã tồn tại)
+            if graph_list:
+                cursor.executemany("""
+                    INSERT OR IGNORE INTO quan_he_doi_tuong (cccd_1, cccd_2, loai_quan_he, mo_ta)
+                    VALUES (?, ?, ?, ?)
+                """, graph_list)
+                stats['quan_he_graph'] = len(graph_list)
+
+            # 4. Insert satellite (ghi chú không có CCCD)
+            if satellite_list:
                 cursor.executemany("""
                     INSERT INTO nhan_than (cccd, ho_ten, loai_quan_he, ngay_sinh, nghe_nghiep, noi_o, ghi_chu)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, data_list)
-                stats['than_nhan'] = len(data_list)
-            # Note: The original code used `loai_quan_he` as `quan_he`, `ngay_sinh` as `nam_sinh`, `noi_o` as `dia_chi`
-            # But the table schema has `loai_quan_he`, `ngay_sinh`, `noi_o`.
-            # I matched the VALUES to the columns.
-            # Original insert:
-            # INSERT INTO than_nhan (cccd, ho_ten, quan_he, nam_sinh, nghe_nghiep, dia_chi, ghi_chu)
-            # Schema from database.py:
-            # INSERT INTO nhan_than (..., loai_quan_he, ..., ngay_sinh, ..., noi_o, ...)
-            # I must ensure the SQL matches the table schema in database.py
-            # Table is `nhan_than`. Columns: cccd, loai_quan_he, ho_ten, cccd_nhan_than, ngay_sinh, nghe_nghiep, noi_o, ghi_chu
-            # The excel has `quan_he` -> `loai_quan_he`, `nam_sinh` -> `ngay_sinh`, `dia_chi` -> `noi_o`.
-            # I adjusted the query above to match table schema names.
+                """, satellite_list)
+                stats['than_nhan'] = len(satellite_list)
 
         # ===== INSERT TÀI CHÍNH =====
         if validated_data['tai_chinh']['data'] is not None:
@@ -239,7 +282,12 @@ def bulk_import_all(validated_data, update_existing=False):
         conn.close()
 
         total = sum(stats.values())
-        return True, f"Import thành công {total} bản ghi!", stats
+        graph_count = stats.get('quan_he_graph', 0)
+        sat_count = stats.get('than_nhan', 0)
+        qh_detail = ""
+        if graph_count or sat_count:
+            qh_detail = f" (quan hệ: {graph_count} hồ sơ liên kết, {sat_count} ghi chú)"
+        return True, f"Import thành công {total} bản ghi!{qh_detail}", stats
 
     except Exception as e:
         # Rollback nếu có lỗi

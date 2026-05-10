@@ -10,12 +10,12 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
-from backend.constants import PHAN_LOAI_NGHE_NGHIEP, LOAI_HINH_DAC_THU
+from backend.constants import LOAI_HINH_DAC_THU, PHAN_LOAI_NGHE_NGHIEP, get_quan_he_label
 from backend.db.session import get_db
 from backend.deps import require_login
 from backend.models.models import (
     DoiTuong, LienHe, TaiChinh, HoSoDacThu,
-    NhanThan, PhuongTien, QuaTrinhHoatDong,
+    NhanThan, PhuongTien, QuaTrinhHoatDong, QuanHeDoiTuong,
 )
 
 logger = logging.getLogger(__name__)
@@ -448,38 +448,43 @@ def _build_xlsx(stats: dict, filter_lines: list, generated_at: datetime, detaile
         _c(ws, row, 3, ho_ten, font=DATA_FONT, fill=fill, align=LEFT, border=BORDER)
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # SHEET 6 — Nhân thân
+    # SHEET 6 — Quan hệ (graph edges + satellite nhan_than)
     # ═══════════════════════════════════════════════════════════════════════════
     if detailed_records:
-        nhan_than_rows = [
-            (dt, nt) for dt in detailed_records for nt in dt.nhan_than
-        ]
-        if nhan_than_rows:
-            ws6 = wb.create_sheet("Nhân thân")
+        # Gộp graph + satellite thành flat list: (dt, label, ho_ten, cccd_doi_tac, loai_nguon, ghi_chu)
+        quan_he_rows = []
+        for dt in detailed_records:
+            for edge in dt.quan_he_as_1:
+                label = get_quan_he_label(edge.loai_quan_he, 1)
+                doi_tac = edge.doi_tuong_2
+                quan_he_rows.append((dt, label, doi_tac.ho_ten if doi_tac else "", edge.cccd_2, "Hồ sơ", edge.mo_ta or ""))
+            for edge in dt.quan_he_as_2:
+                label = get_quan_he_label(edge.loai_quan_he, 2)
+                doi_tac = edge.doi_tuong_1
+                quan_he_rows.append((dt, label, doi_tac.ho_ten if doi_tac else "", edge.cccd_1, "Hồ sơ", edge.mo_ta or ""))
+            for nt in dt.nhan_than:
+                quan_he_rows.append((dt, nt.loai_quan_he or "", nt.ho_ten or "", nt.cccd_nhan_than or "", "Ghi chú", nt.ghi_chu or ""))
+
+        if quan_he_rows:
+            ws6 = wb.create_sheet("Quan hệ")
             ws6.sheet_view.showGridLines = False
-            _title_row(ws6, 1, 12, "DANH SÁCH NHÂN THÂN")
+            _title_row(ws6, 1, 8, "DANH SÁCH QUAN HỆ")
             _col_headers(ws6, 2, [
                 "STT", "CCCD chủ hồ sơ", "Họ tên chủ hồ sơ",
-                "Quan hệ", "Họ tên nhân thân", "CCCD nhân thân",
-                "Ngày sinh", "Giới tính", "Nghề nghiệp",
-                "Nơi ở", "Địa chỉ tỉnh", "Ghi chú",
-            ], widths=[6, 16, 25, 14, 25, 16, 12, 10, 20, 28, 16, 25])
-            for i, (dt, nt) in enumerate(nhan_than_rows, 1):
+                "Nhãn quan hệ", "Họ tên đối tác", "CCCD đối tác",
+                "Loại nguồn", "Ghi chú",
+            ], widths=[6, 16, 25, 16, 25, 16, 12, 30])
+            for i, (dt, label, ho_ten, cccd_doi_tac, loai_nguon, ghi_chu) in enumerate(quan_he_rows, 1):
                 r = i + 2
                 fill = ALT_FILL if i % 2 == 0 else None
-                ns = nt.ngay_sinh.strftime("%d/%m/%Y") if nt.ngay_sinh else ""
                 _c(ws6, r, 1, i, font=DATA_FONT, fill=fill, align=CENTER, border=BORDER)
                 _cccd_link(ws6, r, dt.cccd, dt.ho_ten or "")
-                rest = [
-                    nt.loai_quan_he or "", nt.ho_ten or "", nt.cccd_nhan_than or "",
-                    ns, nt.gioi_tinh or "", nt.nghe_nghiep or "",
-                    nt.noi_o or "", nt.dia_chi_tinh or "", nt.ghi_chu or "",
-                ]
-                al_rest = [LEFT, LEFT, CENTER, CENTER, CENTER, LEFT, LEFT, LEFT, LEFT]
+                rest = [label, ho_ten, cccd_doi_tac, loai_nguon, ghi_chu]
+                al_rest = [LEFT, LEFT, CENTER, CENTER, LEFT]
                 for ci, v in enumerate(rest, 4):
                     _c(ws6, r, ci, v, font=DATA_FONT, fill=fill, align=al_rest[ci - 4], border=BORDER)
             ws6.freeze_panes = "A3"
-            ws6.auto_filter.ref = f"A2:L{2 + len(nhan_than_rows)}"
+            ws6.auto_filter.ref = f"A2:H{2 + len(quan_he_rows)}"
 
     # ═══════════════════════════════════════════════════════════════════════════
     # SHEET 7 — Phương tiện
@@ -683,6 +688,8 @@ def export_xlsx(
             joinedload(DoiTuong.phuong_tien),
             joinedload(DoiTuong.tai_chinh),
             joinedload(DoiTuong.qua_trinh),
+            joinedload(DoiTuong.quan_he_as_1),
+            joinedload(DoiTuong.quan_he_as_2),
         ).order_by(DoiTuong.created_at.desc())
         
         detailed_records = db.execute(query).unique().scalars().all()

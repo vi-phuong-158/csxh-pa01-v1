@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+# Loại quan hệ đối xứng: chuẩn hóa cccd_1=min(a,b), cccd_2=max(a,b) để tránh trùng
+_LOAI_QUAN_HE_DOI_XUNG = frozenset({"Vợ chồng", "Anh chị em", "Bạn bè", "Đồng nghiệp", "Khác"})
+
 # Định nghĩa cấu trúc cột cho từng loại CSXH
 CSXH_TEMPLATES = {
     "Hon_Nhan_NN": {
@@ -65,12 +68,13 @@ TEMPLATE_DEFINITIONS = {
         "headers": ["CCCD (*)", "Loại liên hệ", "Giá trị (*)", "Ghi chú"],
         "sample": ["001234567890", "Số điện thoại", "0912345678", "SĐT chính"]
     },
-    "than_nhan": {  # Mới thêm theo yêu cầu
-        "name": "Thân nhân",
-        "headers": ["CCCD (*)", "Họ tên thân nhân", "Quan hệ", "Năm sinh",
-                    "Nghề nghiệp/Nơi làm việc", "Địa chỉ", "Ghi chú"],
-        "sample": ["001234567890", "Nguyễn Văn B", "Bố đẻ", "1960",
-                   "Hưu trí", "Việt Trì, Phú Thọ", ""]
+    "than_nhan": {
+        "name": "Quan hệ",
+        "headers": ["CCCD (*)", "CCCD nhân thân", "Họ tên thân nhân", "Loại quan hệ",
+                    "Năm sinh", "Nghề nghiệp/Nơi làm việc", "Địa chỉ", "Ghi chú"],
+        "sample": ["001234567890", "001234567891", "Nguyễn Văn B", "Cha-Con",
+                   "1960", "Hưu trí", "Việt Trì, Phú Thọ", ""],
+        "note": "CCCD nhân thân: nếu có → tự động tạo hồ sơ + liên kết graph. Loại QH: Cha-Con, Mẹ-Con, Vợ chồng, Anh chị em, Bạn bè, Đồng nghiệp, Khác"
     },
     "tai_chinh": {
         "name": "Tài chính & Ngân hàng",

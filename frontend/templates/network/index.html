@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}Mạng lưới quan hệ · VCFE{% endblock %}
+{% block head %}
+<script src="/static/js/vendor/echarts.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+{# ── Page Header ── #}
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
+  <div>
+    <h2 class="font-h1 text-h1 text-white leading-tight">Mạng lưới quan hệ</h2>
+    <p class="text-body-md text-on-surface-variant mt-1">
+      Chọn đích danh 1 hoặc nhiều cá nhân để xem mạng lưới quan hệ
+    </p>
+  </div>
+  <span id="global-network-info" class="text-xs text-slate-400 self-end pb-1"></span>
+</div>
+
+{# ── Search + Controls ── #}
+<div x-data="{
+       query: '',
+       results: [],
+       selected: [],
+       searching: false,
+       showDropdown: false,
+       depth: '2',
+       loading: false,
+       loaded: false,
+
+       async searchProfiles() {
+         if (this.query.length < 2) { this.results = []; this.showDropdown = false; return; }
+         this.searching = true;
+         try {
+           const r = await fetch('/network/search?q=' + encodeURIComponent(this.query));
+           this.results = await r.json();
+           this.showDropdown = this.results.length > 0;
+         } finally {
+           this.searching = false;
+         }
+       },
+
+       addPerson(person) {
+         if (!this.selected.find(function(s) { return s.cccd === person.cccd; })) {
+           this.selected.push(person);
+         }
+         this.query = '';
+         this.results = [];
+         this.showDropdown = false;
+       },
+
+       removePerson(cccd) {
+         this.selected = this.selected.filter(function(s) { return s.cccd !== cccd; });
+       },
+
+       loadNetwork() {
+         if (this.selected.length === 0) return;
+         this.loading = true;
+         const params = new URLSearchParams();
+         this.selected.forEach(function(s) { params.append('cccd', s.cccd); });
+         params.set('depth', this.depth);
+         const self = this;
+         fetch('/network/api/data?' + params.toString())
+           .then(function(r) { return r.json(); })
+           .then(function(data) {
+             self.loading = false;
+             self.loaded = true;
+             self.$nextTick(function() { window.renderGlobalNetwork(data); });
+           })
+           .catch(function() { self.loading = false; });
+       }
+     }"
+     class="space-y-4">
+
+  <div class="card space-y-3">
+    {# ── Search row ── #}
+    <div class="flex flex-wrap gap-3 items-end">
+      <div class="relative flex-1 min-w-[220px]" @click.away="showDropdown = false">
+        <label class="label">Tìm hồ sơ</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[16px] text-slate-400 pointer-events-none">search</span>
+          <input type="text"
+                 x-model="query"
+                 @input.debounce.300ms="searchProfiles()"
+                 @focus="if (results.length) showDropdown = true"
+                 placeholder="Gõ tên hoặc CCCD..."
+                 class="input text-xs py-1 h-8 pl-7 w-full" />
+          <span x-show="searching"
+                class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[14px] text-slate-400 animate-spin">progress_activity</span>
+        </div>
+        {# Dropdown #}
+        <div x-show="showDropdown"
+             x-cloak
+             class="absolute z-50 mt-1 w-full bg-slate-800 border border-slate-600 rounded-lg shadow-xl overflow-hidden">
+          <template x-for="person in results" :key="person.cccd">
+            <button type="button"
+                    @click="addPerson(person)"
+                    class="w-full flex items-center justify-between px-3 py-2 text-xs text-slate-200 hover:bg-slate-700 transition-colors text-left">
+              <span x-text="person.ho_ten"></span>
+              <span class="font-mono text-slate-400 text-[10px]" x-text="person.cccd"></span>
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <div>
+        <label class="label">Độ sâu</label>
+        <select x-model="depth" class="input text-xs py-1 h-8 min-w-[100px]">
+          <option value="1">1 lớp</option>
+          <option value="2">2 lớp</option>
+          <option value="3">3 lớp</option>
+        </select>
+      </div>
+
+      <button @click="loadNetwork()"
+              :disabled="loading || selected.length === 0"
+              class="btn-primary text-xs h-8 px-4 flex items-center gap-2 shrink-0">
+        <span class="material-symbols-outlined text-[16px]"
+              :class="loading ? 'animate-spin' : ''">hub</span>
+        <span x-text="loading ? 'Đang tải...' : 'Tải mạng lưới'"></span>
+      </button>
+    </div>
+
+    {# ── Selected chips ── #}
+    <div x-show="selected.length > 0" class="flex flex-wrap gap-2">
+      <span class="text-xs text-slate-400 self-center">Đã chọn:</span>
+      <template x-for="person in selected" :key="person.cccd">
+        <span class="inline-flex items-center gap-1 bg-primary/20 border border-primary/40 text-primary text-xs px-2 py-0.5 rounded-full">
+          <span x-text="person.ho_ten"></span>
+          <button type="button" @click="removePerson(person.cccd)"
+                  class="hover:text-error transition-colors ml-0.5">
+            <span class="material-symbols-outlined text-[12px]">close</span>
+          </button>
+        </span>
+      </template>
+    </div>
+  </div>
+
+  {# ── Graph Area ── #}
+  <div class="card p-0 overflow-hidden relative">
+    <div x-show="!loaded && !loading"
+         class="flex flex-col items-center justify-center text-slate-500 text-sm gap-3"
+         style="height: calc(100vh - 300px);">
+      <span class="material-symbols-outlined text-[48px] opacity-30">hub</span>
+      <p>Tìm và chọn hồ sơ, sau đó nhấn <b class="text-slate-400">Tải mạng lưới</b></p>
+    </div>
+    <div x-show="loading && !loaded"
+         class="flex items-center justify-center text-slate-400 text-sm"
+         style="height: calc(100vh - 300px);">
+      Đang tải dữ liệu...
+    </div>
+    <div id="global-network-chart"
+         x-show="loaded"
+         style="height: calc(100vh - 300px); width: 100%;">
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var globalChart = null;
+
+  window.renderGlobalNetwork = function (data) {
+    var el = document.getElementById('global-network-chart');
+    if (!el) return;
+    if (!globalChart) {
+      globalChart = echarts.init(el, null, { renderer: 'svg' });
+    } else {
+      globalChart.resize();
+    }
+
+    var option = {
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'item',
+        formatter: function (p) {
+          if (p.dataType === 'node') {
+            return '<b>' + p.data.name + '</b>' + (p.data.is_draft ? ' 🟡 Nháp' : '');
+          }
+          return p.data.label || '';
+        }
+      },
+      legend: {
+        data: data.categories.map(function (c) { return c.name; }),
+        bottom: 8,
+        textStyle: { color: '#94a3b8', fontSize: 11 }
+      },
+      series: [{
+        type: 'graph',
+        layout: 'force',
+        data: data.nodes.map(function (n) {
+          return Object.assign({}, n, {
+            itemStyle: {
+              opacity: n.is_draft ? 0.55 : 1,
+              borderWidth: n.is_center ? 3 : 2,
+              borderColor: n.is_center ? '#10b981' : '#1e293b'
+            }
+          });
+        }),
+        links: data.links.map(function (l) {
+          return {
+            source: l.source,
+            target: l.target,
+            label: { show: false },
+            lineStyle: {
+              width: Math.max(1, (l.do_tin_cay || 50) / 25),
+              curveness: 0.1,
+              color: '#475569',
+              opacity: 0.7
+            }
+          };
+        }),
+        categories: data.categories,
+        roam: true,
+        force: { repulsion: 220, gravity: 0.05, edgeLength: [60, 180] },
+        itemStyle: { borderWidth: 2, borderColor: '#1e293b' },
+        label: { color: '#e2e8f0', fontSize: 10, show: data.nodes.length <= 80 },
+        emphasis: { focus: 'adjacency', lineStyle: { width: 3 } }
+      }]
+    };
+
+    globalChart.setOption(option, true);
+    globalChart.off('click');
+    globalChart.on('click', 'series', function (params) {
+      if (params.dataType === 'node') {
+        window.location.href = '/profile/' + params.data.id;
+      }
+    });
+
+    var info = document.getElementById('global-network-info');
+    if (info) {
+      info.textContent = data.nodes.length + ' người · ' + data.links.length + ' liên kết';
+    }
+  };
+
+  window.addEventListener('resize', function () {
+    if (globalChart) globalChart.resize();
+  });
+})();
+</script>
+
+{% endblock %}

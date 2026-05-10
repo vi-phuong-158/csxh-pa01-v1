@@ -1,0 +1,145 @@
+<div x-data="{ depth: '2', loai_filter: '' }" class="card space-y-3">
+
+  {# ── Header + Controls ── #}
+  <div class="flex items-center justify-between mb-1">
+    <div class="flex items-center gap-3">
+      <p class="text-sm font-semibold text-slate-200">Mạng lưới quan hệ</p>
+      <span id="network-info-{{ profile.cccd }}" class="text-xs text-slate-400"></span>
+    </div>
+    <div class="flex items-center gap-2">
+      <select id="depth-select-{{ profile.cccd }}"
+              x-model="depth"
+              @change="window['loadGraph_{{ profile.cccd }}'](depth)"
+              class="input text-xs py-1 px-2 h-7">
+        <option value="1">1 lớp</option>
+        <option value="2" selected>2 lớp</option>
+        <option value="3">3 lớp</option>
+      </select>
+      <select x-model="loai_filter"
+              @change="window['filterGraph_{{ profile.cccd }}'](loai_filter)"
+              class="input text-xs py-1 px-2 h-7">
+        <option value="">Tất cả loại QH</option>
+        {% for loai in loai_quan_he_def %}
+        <option value="{{ loai }}">{{ loai }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  {# ── ECharts Container ── #}
+  <div id="network-chart-{{ profile.cccd }}"
+       class="w-full rounded-lg bg-black/20"
+       style="height: 480px; min-height: 300px;">
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var CCCD = '{{ profile.cccd }}';
+  var containerId = 'network-chart-' + CCCD;
+  var chart = null;
+  var cachedData = null;
+  var currentFilter = '';
+
+  function buildOption(data) {
+    return {
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'item',
+        formatter: function (p) {
+          if (p.dataType === 'node') {
+            return '<b>' + p.data.name + '</b>' + (p.data.is_draft ? ' 🟡 Nháp' : '');
+          }
+          return p.data.label || '';
+        }
+      },
+      legend: {
+        data: data.categories.map(function (c) { return c.name; }),
+        bottom: 4,
+        textStyle: { color: '#94a3b8', fontSize: 11 }
+      },
+      series: [{
+        type: 'graph',
+        layout: 'force',
+        data: data.nodes.map(function (n) {
+          return Object.assign({}, n, {
+            itemStyle: { opacity: n.is_draft ? 0.55 : 1 }
+          });
+        }),
+        links: data.links.map(function (l) {
+          return {
+            source: l.source,
+            target: l.target,
+            label: { show: true, formatter: l.label, fontSize: 10, color: '#cbd5e1' },
+            lineStyle: {
+              width: Math.max(1, (l.do_tin_cay || 50) / 25),
+              curveness: 0.1,
+              color: '#475569'
+            }
+          };
+        }),
+        categories: data.categories,
+        roam: true,
+        force: { repulsion: 300, gravity: 0.1, edgeLength: [80, 200] },
+        itemStyle: { borderWidth: 2, borderColor: '#1e293b' },
+        label: { color: '#e2e8f0', fontSize: 11 },
+        emphasis: { focus: 'adjacency', lineStyle: { width: 4 } }
+      }]
+    };
+  }
+
+  function applyFilter(data, loai) {
+    if (!loai) return data;
+    var filteredLinks = data.links.filter(function (l) { return l.loai === loai; });
+    var visible = new Set(filteredLinks.flatMap(function (l) { return [l.source, l.target]; }));
+    visible.add(CCCD);
+    return {
+      nodes: data.nodes.filter(function (n) { return visible.has(n.id); }),
+      links: filteredLinks,
+      categories: data.categories
+    };
+  }
+
+  function renderGraph(data) {
+    var el = document.getElementById(containerId);
+    if (!el) return;
+    if (!chart) chart = echarts.init(el, null, { renderer: 'svg' });
+    chart.setOption(buildOption(data), true);
+    chart.off('click');
+    chart.on('click', 'series', function (params) {
+      if (params.dataType === 'node' && params.data.id !== CCCD) {
+        window.location.href = '/profile/' + params.data.id;
+      }
+    });
+    var info = document.getElementById('network-info-' + CCCD);
+    if (info) info.textContent = data.nodes.length + ' người · ' + data.links.length + ' liên kết';
+  }
+
+  function loadGraph(depth) {
+    var d = depth || document.getElementById('depth-select-' + CCCD)?.value || 2;
+    fetch('/network/profile/' + CCCD + '/api?depth=' + d)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        cachedData = data;
+        renderGraph(applyFilter(data, currentFilter));
+      });
+  }
+
+  window['loadGraph_' + CCCD] = loadGraph;
+  window['filterGraph_' + CCCD] = function (loai) {
+    currentFilter = loai;
+    if (cachedData) renderGraph(applyFilter(cachedData, loai));
+  };
+
+  // Tải ECharts nếu chưa có (tab load qua HTMX, không đi qua block head)
+  if (typeof echarts === 'undefined') {
+    var s = document.createElement('script');
+    s.src = '/static/js/vendor/echarts.min.js';
+    s.onload = function () { loadGraph(2); };
+    document.head.appendChild(s);
+  } else {
+    loadGraph(2);
+  }
+})();
+</script>

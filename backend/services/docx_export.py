@@ -140,31 +140,25 @@ def generate_profile_docx(profile: dict, base_dir: str = "") -> Optional[bytes]:
 
     doc.add_paragraph()  # spacing
 
-    # ── 2. Nhân thân ──
-    nhan_than = profile.get("nhan_than", [])
-    if nhan_than:
-        h = doc.add_heading("2. THÔNG TIN THÂN NHÂN", level=2)
+    # ── 2. Quan hệ ──
+    quan_he = profile.get("quan_he", [])
+    if quan_he:
+        h = doc.add_heading("2. THÔNG TIN QUAN HỆ", level=2)
         _heading_style(h)
-        for nt in nhan_than:
-            details = []
-            ns = _fmt_date(nt.get("ngay_sinh"))
-            if ns:
-                details.append(f"Sinh: {ns}")
-            if _safe(nt.get("gioi_tinh")):
-                details.append(f"Giới tính: {nt['gioi_tinh']}")
-            if _safe(nt.get("nghe_nghiep")):
-                details.append(f"Nghề nghiệp: {nt['nghe_nghiep']}")
-            addr_parts = [_safe(nt.get("dia_chi_xa")), _safe(nt.get("dia_chi_tinh"))]
-            addr_r = " - ".join(p for p in addr_parts if p)
-            if addr_r:
-                details.append(f"Địa chỉ: {addr_r}")
-            detail_str = ""
-            if details:
-                detail_str = "\n   " + " | ".join(details)
+        for item in quan_he:
+            label = item.get("label") or item.get("loai_quan_he", "")
+            ho_ten = item.get("ho_ten") or ""
+            cccd = item.get("cccd_doi_tac") or ""
+            loai_nguon = "Hồ sơ" if item.get("type") == "graph" else "Ghi chú"
+            detail_parts = []
+            if cccd:
+                detail_parts.append(f"CCCD: {cccd}")
+            if _safe(item.get("mo_ta")):
+                detail_parts.append(f"Ghi chú: {item['mo_ta']}")
+            detail_str = "\n   " + " | ".join(detail_parts) if detail_parts else ""
             _bullet(doc,
-                     f"{nt.get('quan_he', '')}: {nt.get('ho_ten', '')}",
-                     detail_str,
-                     _safe(nt.get("ghi_chu")))
+                     f"{label}: {ho_ten}  [{loai_nguon}]",
+                     detail_str)
 
     # ── 3. Liên hệ ──
     lien_he = profile.get("lien_he", [])

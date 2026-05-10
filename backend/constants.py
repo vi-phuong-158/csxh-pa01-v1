@@ -281,6 +281,23 @@ LOAI_QUAN_HE = [
     "Bố", "Mẹ", "Vợ", "Chồng", "Con trai", "Con gái",
     "Anh", "Chị", "Em trai", "Em gái", "Bạn bè", "Đồng nghiệp", "Khác",
 ]
+
+# Cấu trúc cặp có hướng cho tab Quan hệ (Graph)
+LOAI_QUAN_HE_DEF: dict = {
+    "Cha-Con":     {"label_xuoi": "Cha",          "label_nguoc": "Con",          "doi_xung": False},
+    "Mẹ-Con":      {"label_xuoi": "Mẹ",           "label_nguoc": "Con",          "doi_xung": False},
+    "Vợ chồng":    {"label_xuoi": "Vợ/Chồng",     "label_nguoc": "Vợ/Chồng",    "doi_xung": True},
+    "Anh chị em":  {"label_xuoi": "Anh/Chị/Em",   "label_nguoc": "Anh/Chị/Em",  "doi_xung": True},
+    "Bạn bè":      {"label_xuoi": "Bạn",           "label_nguoc": "Bạn",          "doi_xung": True},
+    "Đồng nghiệp": {"label_xuoi": "Đồng nghiệp",  "label_nguoc": "Đồng nghiệp", "doi_xung": True},
+    "Khác":        {"label_xuoi": "Khác",          "label_nguoc": "Khác",         "doi_xung": True},
+}
+
+
+def get_quan_he_label(loai: str, vi_tri: int) -> str:
+    """vi_tri=1 → label_xuoi; vi_tri=2 → label_nguoc."""
+    info = LOAI_QUAN_HE_DEF.get(loai, {})
+    return info.get("label_xuoi" if vi_tri == 1 else "label_nguoc", loai)
 NGAN_HANG = DANH_SACH_NGAN_HANG
 LOAI_XE = LOAI_XE_OPTIONS
 LOAI_TAI_LIEU = LOAI_TAI_LIEU_OPTIONS
