@@ -1,12 +1,12 @@
 @echo off
 chcp 65001 >nul
-title Build - VCFED Database
+title Build - VCFE Database
 
 cd /d "%~dp0\.."
 
 echo.
 echo ============================================================
-echo   DONG GOI VCFED DATABASE v2.0
+echo   DONG GOI VCFE DATABASE v2.0.0
 echo ============================================================
 echo.
 

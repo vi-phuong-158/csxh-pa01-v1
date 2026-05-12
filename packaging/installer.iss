@@ -1,4 +1,4 @@
-#define AppName      "VCFED Database"
+#define AppName      "VCFE Database"
 #define AppNameShort "VCFED"
 #define AppVersion   "2.0"
 #define AppPublisher "PA01"

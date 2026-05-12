@@ -1,5 +1,5 @@
 """
-run_server.py — Launcher chính cho VCFED Database Server.
+run_server.py — Launcher chính cho VCFE Database Server.
 
 Thay thế cơ chế .env cho các secret bằng nhập tay tương tác:
   - DB_PASSWORD  : nhập qua getpass (ẩn ký tự)
@@ -22,6 +22,36 @@ from pathlib import Path
 # Thay đổi salt này sẽ làm toàn bộ session hiện tại bị invalidate.
 _SK_SALT = b"vcfe-secret-key-salt-2024-v1"
 _DB_DEFAULT_NAME = "security_profile.db"
+
+# ── Windows Credential Manager (keyring) ─────────────────────────────────────
+_KEYRING_SERVICE = "VCFE-Database"
+_KEYRING_USERNAME = "db_password"
+
+def _keyring_get() -> str:
+    """Lấy passphrase đã lưu từ Windows Credential Manager."""
+    try:
+        import keyring
+        val = keyring.get_password(_KEYRING_SERVICE, _KEYRING_USERNAME)
+        return val or ""
+    except Exception:
+        return ""
+
+def _keyring_set(password: str) -> bool:
+    """Lưu passphrase vào Windows Credential Manager."""
+    try:
+        import keyring
+        keyring.set_password(_KEYRING_SERVICE, _KEYRING_USERNAME, password)
+        return True
+    except Exception:
+        return False
+
+def _keyring_clear() -> None:
+    """Xóa passphrase khỏi Windows Credential Manager (khi sai mật khẩu)."""
+    try:
+        import keyring
+        keyring.delete_password(_KEYRING_SERVICE, _KEYRING_USERNAME)
+    except Exception:
+        pass
 
 
 def _derive_secret_key(db_password: str) -> str:
@@ -51,7 +81,7 @@ def _read_dotenv(name: str, default: str = "") -> str:
     return default
 
 
-def _prompt_gui_password(title: str, prompt_text: str) -> str:
+def _prompt_gui_password(title: str, prompt_text: str, icon_path: str = None) -> str:
     import tkinter as tk
     from tkinter import messagebox
     import sys
@@ -59,6 +89,12 @@ def _prompt_gui_password(title: str, prompt_text: str) -> str:
     root = tk.Tk()
     root.withdraw()
     
+    if icon_path and os.path.exists(icon_path):
+        try:
+            root.iconbitmap(icon_path)
+        except Exception:
+            pass
+
     final_password = None
     
     while True:
@@ -188,7 +224,7 @@ def main() -> None:
 
     print()
     print("  ╔══════════════════════════════════════════╗")
-    print("  ║         VCFED Database Server            ║")
+    print("  ║         VCFE Database Server             ║")
     print("  ╚══════════════════════════════════════════╝")
     print()
 
@@ -201,29 +237,51 @@ def main() -> None:
     db_name = _read_dotenv("DB_NAME", _DB_DEFAULT_NAME)
     db_path = root / db_name
 
+    # Cấu hình logo custom (nếu có)
+    logo_path = str(root / "assets" / "logo.ico")
+
     # ── 1. Nhập mật khẩu DB ──────────────────────────────────────────────
     while True:
-        if gui_available:
-            db_password = _prompt_gui_password("VCFED Database Server", "🔑 Nhập mật khẩu cơ sở dữ liệu để khởi động:")
-        else:
-            db_password = getpass.getpass("  Mật khẩu cơ sở dữ liệu: ")
-            if len(db_password) < 12 or not any(c.isdigit() for c in db_password) or not any(c.isalpha() for c in db_password):
-                print("\n  [LỖI] Mật khẩu phải >= 12 ký tự, gồm cả chữ và số.")
-                continue
+        db_password = _read_dotenv("DB_PASSWORD") or os.environ.get("DB_PASSWORD", "")
+        
+        if not db_password:
+            # Ưu tiên lấy từ Keyring (nếu không có trong .env / env var)
+            db_password = _keyring_get()
+            
+        if not db_password:
+            # Hỏi người dùng nếu chưa có ở đâu
+            if gui_available:
+                db_password = _prompt_gui_password("VCFED Database Server", "🔑 Nhập mật khẩu cơ sở dữ liệu để khởi động:", icon_path=logo_path)
+            else:
+                db_password = getpass.getpass("  Mật khẩu cơ sở dữ liệu: ")
+                if len(db_password) < 12 or not any(c.isdigit() for c in db_password) or not any(c.isalpha() for c in db_password):
+                    print("\n  [LỖI] Mật khẩu phải >= 12 ký tự, gồm cả chữ và số.")
+                    continue
 
         os.environ["DB_PASSWORD"] = db_password
         os.environ["SECRET_KEY"] = _derive_secret_key(db_password)
 
         try:
             admin_exists = _admin_exists(db_path, db_password)
+            # Mật khẩu đúng -> lưu lại vào keyring nếu vừa mới nhập thủ công
+            if _keyring_get() != db_password:
+                _keyring_set(db_password)
             break
         except ValueError as e:
             if str(e) == "WRONG_PASSWORD":
+                # Sai mật khẩu -> Xóa khỏi keyring để lần lặp sau hỏi lại
+                _keyring_clear()
+                os.environ.pop("DB_PASSWORD", None)
+                os.environ.pop("SECRET_KEY", None)
+                
                 if gui_available:
                     import tkinter as tk
                     from tkinter import messagebox
                     tk_root = tk.Tk()
                     tk_root.withdraw()
+                    if os.path.exists(logo_path):
+                        try: tk_root.iconbitmap(logo_path)
+                        except: pass
                     messagebox.showerror("Sai mật khẩu", "Mật khẩu cơ sở dữ liệu không đúng (không thể giải mã file).", parent=tk_root)
                     tk_root.destroy()
                 else:
@@ -236,7 +294,7 @@ def main() -> None:
         print()
         print("  [Lần đầu] Chưa có tài khoản nào trong cơ sở dữ liệu.")
         if gui_available:
-            admin_pass = _prompt_gui_password("Tạo tài khoản quản trị", "Lần đầu khởi chạy! Tạo mật khẩu Admin:")
+            admin_pass = _prompt_gui_password("Tạo tài khoản quản trị", "Lần đầu khởi chạy! Tạo mật khẩu Admin:", icon_path=logo_path)
         else:
             admin_pass = getpass.getpass("  Tạo mật khẩu admin (tối thiểu 12 ký tự): ")
             if len(admin_pass) < 12:

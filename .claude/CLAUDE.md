@@ -1,4 +1,4 @@
-BỘ NÃO ĐIỀU PHỐI DỰ ÁN VCFED DATABASE
+BỘ NÃO ĐIỀU PHỐI DỰ ÁN VCFE DATABASE
 
 Trạng thái: Đã hoàn thành Refactor & Đóng gói. Chuyển sang giai đoạn Bảo trì & Nâng cấp.
 
