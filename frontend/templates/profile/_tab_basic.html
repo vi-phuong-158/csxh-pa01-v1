@@ -24,7 +24,7 @@
 
     <div class="md:col-span-2">
       <label class="label">Họ và tên <span class="text-red-400">*</span></label>
-      <input name="ho_ten" type="text" class="input uppercase" value="{{ profile.ho_ten or '' }}" required />
+      <input name="ho_ten" type="text" class="input uppercase" oninput="this.value = this.value.toUpperCase()" value="{{ profile.ho_ten or '' }}" required />
     </div>
     <div>
       <label class="label">Ngày sinh</label>

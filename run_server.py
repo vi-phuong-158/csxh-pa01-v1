@@ -18,6 +18,14 @@ import sys
 import webbrowser
 from pathlib import Path
 
+# Cấu hình encoding UTF-8 chống lỗi UnicodeEncodeError trên Windows
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # Salt cố định để SECRET_KEY luôn nhất quán qua mỗi lần restart.
 # Thay đổi salt này sẽ làm toàn bộ session hiện tại bị invalidate.
 _SK_SALT = b"vcfe-secret-key-salt-2024-v1"
@@ -241,8 +249,12 @@ def main() -> None:
     logo_path = str(root / "assets" / "logo.ico")
 
     # ── 1. Nhập mật khẩu DB ──────────────────────────────────────────────
+    try_env = True
     while True:
-        db_password = _read_dotenv("DB_PASSWORD") or os.environ.get("DB_PASSWORD", "")
+        db_password = ""
+        if try_env:
+            db_password = _read_dotenv("DB_PASSWORD") or os.environ.get("DB_PASSWORD", "")
+            try_env = False
         
         if not db_password:
             # Ưu tiên lấy từ Keyring (nếu không có trong .env / env var)

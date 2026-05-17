@@ -105,7 +105,7 @@ async def upload_excel(
                         
             dt = DoiTuong(
                 cccd=cccd,
-                ho_ten=ho_ten,
+                ho_ten=ho_ten.upper(),
                 ngay_sinh=ngay_sinh,
                 gioi_tinh=str(row.get('gioi_tinh', '')) if pd.notna(row.get('gioi_tinh')) else None,
                 dia_chi_tinh=str(row.get('dia_chi_tinh', '')) if pd.notna(row.get('dia_chi_tinh')) else None,

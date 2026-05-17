@@ -100,7 +100,7 @@ def create_user(
     db.add(User(
         username=username,
         password_hash=hash_password(password),
-        ho_ten=ho_ten,
+        ho_ten=ho_ten.strip().upper(),
         role=role,
         must_change_password=int(must_change_password),
     ))

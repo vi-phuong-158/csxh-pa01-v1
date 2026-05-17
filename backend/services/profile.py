@@ -153,7 +153,7 @@ def add_nhan_than(db: Session, cccd: str, data: Dict) -> Tuple[bool, str]:
     db.add(NhanThan(
         cccd=cccd,
         loai_quan_he=data.get("loai_quan_he", ""),
-        ho_ten=data.get("ho_ten"),
+        ho_ten=(data.get("ho_ten") or "").strip().upper() or None,
         cccd_nhan_than=data.get("cccd_nhan_than"),
         ngay_sinh=_parse_date(data.get("ngay_sinh")),
         gioi_tinh=data.get("gioi_tinh", ""),

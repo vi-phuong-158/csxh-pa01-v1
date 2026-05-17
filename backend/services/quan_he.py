@@ -71,7 +71,7 @@ def add_quan_he_co_cccd(db: Session, cccd_chinh: str, data: Dict) -> Tuple[bool,
 
     doi_tac = db.get(DoiTuong, cccd_doi_tac)
     if not doi_tac:
-        ho_ten: Optional[str] = (data.get("ho_ten") or "").strip() or None
+        ho_ten: Optional[str] = (data.get("ho_ten") or "").strip().upper() or None
         doi_tac = DoiTuong(
             cccd=cccd_doi_tac,
             is_draft=not bool(ho_ten),
@@ -94,7 +94,7 @@ def add_quan_he_co_cccd(db: Session, cccd_chinh: str, data: Dict) -> Tuple[bool,
             doi_tac = db.get(DoiTuong, cccd_doi_tac)
     else:
         if not doi_tac.ho_ten and data.get("ho_ten"):
-            doi_tac.ho_ten = data["ho_ten"].strip()
+            doi_tac.ho_ten = data["ho_ten"].strip().upper()
 
     cccd_1, cccd_2, loai_chuan = _chuan_hoa_cap(cccd_chinh, cccd_doi_tac, loai)
     try:
@@ -114,7 +114,7 @@ def add_quan_he_khong_cccd(db: Session, cccd_chinh: str, data: Dict) -> Tuple[bo
     db.add(NhanThan(
         cccd=cccd_chinh,
         loai_quan_he=loai,
-        ho_ten=data.get("ho_ten") or None,
+        ho_ten=(data.get("ho_ten") or "").strip().upper() or None,
         gioi_tinh=data.get("gioi_tinh") or None,
         quoc_tich=data.get("quoc_tich") or None,
         dia_chi_tinh=data.get("dia_chi_tinh") or None,
