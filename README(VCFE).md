@@ -88,5 +88,37 @@ python run_server.py
 2.  **📈 Export Template Builder**: Cho phép người dùng tự định nghĩa mẫu báo cáo Word/PDF bằng cách kéo thả các trường thông tin.
 
 ---
-*Phát triển bởi đội ngũ Kỹ thuật PA01 - Công an tỉnh Phú Thọ.*
+
+## ⚠️ Vấn Đề Kỹ Thuật Đã Biết (Known Issues)
+
+> Chi tiết đầy đủ và hướng khắc phục xem tại: [`Review.md`](Review.md)
+
+### [KI-01] Module `bulk_import` bị ngắt khỏi hệ thống (Dead Code)
+
+**Mô tả**: Trong quá trình chuyển đổi từ Streamlit sang FastAPI, module `backend/utils/bulk_import/` đã không được cập nhật theo, dẫn đến 3 vấn đề cộng hưởng:
+
+1.  **Cấu trúc thư mục lồng sai**: Folder bị lồng `utils/bulk_import/bulk_import/` (2 cấp). Outer folder `utils/bulk_import/` **thiếu `__init__.py`** nên Python không nhận ra là package → không thể import được.
+
+2.  **Import sai thế hệ**: Bên trong `importers.py` và `validators.py` còn dùng cú pháp kết nối DB từ thời Streamlit cũ (`from database import get_connection`) — module `database` này không tồn tại trong dự án FastAPI. Bất kỳ lần import nào cũng sẽ báo `ModuleNotFoundError`.
+
+3.  **Route không kết nối với module**: `routes/nhap_excel.py` không dùng module `bulk_import` mà tự có implementation inline riêng — chỉ nhập được 1 sheet, thiếu validation đầy đủ và **vi phạm CLAUDE.md** vì commit tất cả dòng cùng một lúc thay vì theo chunk 50–100 dòng.
+
+**Hệ quả thực tế**: Tính năng "Nhập từ Excel" hiện hoạt động ở mức tối giản (chỉ 9 trường cơ bản của `doi_tuong`). Toàn bộ khả năng nhập đa sheet (liên hệ, tài chính, phương tiện, quan hệ...) tuy đã được code trong `bulk_import/` nhưng **không được gọi đến**.
+
+**Hướng khắc phục** (xem `Review.md` — VẤN ĐỀ 1 để có code mẫu chi tiết):
+- Flatten cấu trúc: chuyển file từ `bulk_import/bulk_import/` lên `bulk_import/`, thêm `__init__.py`
+- Đổi `from database import get_connection` → dùng SQLAlchemy `Session`
+- Đổi `from constants import ...` → `from backend.constants import ...`
+- Thêm chunked commit (mỗi 50 dòng) vào `importers.py`
+- Kết nối `nhap_excel.py` gọi `validate_excel_data()` và `bulk_import_all()` từ module này
+
+### [KI-02] Đổi mật khẩu DB sẽ kick toàn bộ session đang hoạt động
+
+**Mô tả**: `SECRET_KEY` được sinh tự động từ `DB_PASSWORD` qua thuật toán PBKDF2. Khi admin đổi mật khẩu DB → `SECRET_KEY` mới → toàn bộ cookie session cũ mất hiệu lực → **cán bộ đang đăng nhập bị đăng xuất ngay lập tức mà không có cảnh báo**.
+
+**Hướng khắc phục**: Thêm dòng cảnh báo vào hộp thoại đổi mật khẩu hoặc tài liệu hướng dẫn vận hành.
+
+---
+
+*Phát triển bởi đội ngũ Kỹ thuật PA01 - Công an tỉnh Phú Thọ.*  
 *Chủ nhiệm dự án: Đại úy Vi Ngọc Phương.*
