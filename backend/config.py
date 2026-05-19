@@ -12,6 +12,7 @@ NGUYÊN TẮC FAIL-FAST:
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Optional, Set
 
@@ -40,6 +41,13 @@ _FORBIDDEN_SECRETS: Set[str] = {
 }
 
 
+def _default_base_dir() -> Path:
+    runtime_dir = os.environ.get("VCFE_RUNTIME_DIR")
+    if runtime_dir:
+        return Path(runtime_dir).resolve()
+    return Path(__file__).resolve().parent.parent
+
+
 class Settings(BaseSettings):
     # `extra="forbid"` để chặn typo env-var lặng lẽ (ví dụ DB_PASSWROD)
     model_config = SettingsConfigDict(
@@ -52,7 +60,7 @@ class Settings(BaseSettings):
     # ---------- Metadata ----------
     PROJECT_NAME: str = "VCFE Database"
     PROJECT_VERSION: str = "2.0.0"
-    BASE_DIR: Path = Path(__file__).resolve().parent.parent
+    BASE_DIR: Path = Field(default_factory=_default_base_dir)
 
     # ---------- Database ----------
     DB_NAME: str = "security_profile.db"

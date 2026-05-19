@@ -31,6 +31,36 @@ if hasattr(sys.stdout, "reconfigure"):
 _SK_SALT = b"vcfe-secret-key-salt-2024-v1"
 _DB_DEFAULT_NAME = "security_profile.db"
 
+
+def _runtime_root() -> Path:
+    """Folder that contains the real executable/script and writable app data."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent
+
+
+def _bundle_root() -> Path:
+    """Folder that contains bundled read-only resources such as frontend assets."""
+    if getattr(sys, "frozen", False):
+        return Path(getattr(sys, "_MEIPASS", _runtime_root() / "_internal")).resolve()
+    return Path(__file__).resolve().parent
+
+
+def _iter_dotenv(env_file: Path):
+    if not env_file.exists():
+        return
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line.startswith("#") or "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        yield key.strip(), val.strip().strip('"').strip("'")
+
+
+def _load_dotenv_defaults(root: Path) -> None:
+    for key, val in _iter_dotenv(root / ".env") or ():
+        os.environ.setdefault(key, val)
+
 # ── Windows Credential Manager (keyring) ─────────────────────────────────────
 _KEYRING_SERVICE = "VCFE-Database"
 _KEYRING_USERNAME = "db_password"
@@ -74,18 +104,12 @@ def _derive_secret_key(db_password: str) -> str:
     return base64.urlsafe_b64encode(raw).decode()
 
 
-def _read_dotenv(name: str, default: str = "") -> str:
+def _read_dotenv(name: str, default: str = "", root: Path | None = None) -> str:
     """Đọc 1 biến từ file .env (nếu có), không dùng pydantic."""
-    env_file = Path(".env")
-    if not env_file.exists():
-        return default
-    for line in env_file.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line.startswith("#") or "=" not in line:
-            continue
-        key, _, val = line.partition("=")
-        if key.strip() == name:
-            return val.strip()
+    env_file = (root or _runtime_root()) / ".env"
+    for key, val in _iter_dotenv(env_file) or ():
+        if key == name:
+            return val
     return default
 
 
@@ -228,7 +252,13 @@ def _kill_process_on_port(port: int) -> None:
 
 
 def main() -> None:
-    root = Path(__file__).resolve().parent
+    runtime_root = _runtime_root()
+    bundle_root = _bundle_root()
+
+    _load_dotenv_defaults(runtime_root)
+    os.environ["VCFE_RUNTIME_DIR"] = str(runtime_root)
+    os.environ["BASE_DIR"] = str(runtime_root)
+    (runtime_root / "data" / "uploads").mkdir(parents=True, exist_ok=True)
 
     print()
     print("  ╔══════════════════════════════════════════╗")
@@ -242,18 +272,18 @@ def main() -> None:
     except ImportError:
         gui_available = False
 
-    db_name = _read_dotenv("DB_NAME", _DB_DEFAULT_NAME)
-    db_path = root / db_name
+    db_name = _read_dotenv("DB_NAME", _DB_DEFAULT_NAME, runtime_root)
+    db_path = runtime_root / db_name
 
     # Cấu hình logo custom (nếu có)
-    logo_path = str(root / "assets" / "logo.ico")
+    logo_path = str(bundle_root / "assets" / "logo.ico")
 
     # ── 1. Nhập mật khẩu DB ──────────────────────────────────────────────
     try_env = True
     while True:
         db_password = ""
         if try_env:
-            db_password = _read_dotenv("DB_PASSWORD") or os.environ.get("DB_PASSWORD", "")
+            db_password = _read_dotenv("DB_PASSWORD", root=runtime_root) or os.environ.get("DB_PASSWORD", "")
             try_env = False
         
         if not db_password:
@@ -320,17 +350,15 @@ def main() -> None:
     # Khi chạy từ PyInstaller bundle: đổi working directory về _MEIPASS
     # để các đường dẫn tương đối "frontend/static", "frontend/templates"
     # trong main.py và các routes giải quyết đúng vị trí trong _internal/.
-    if getattr(sys, "frozen", False):
-        bundle_dir = getattr(sys, "_MEIPASS", Path(sys.executable).parent / "_internal")
-        os.chdir(bundle_dir)
-        if str(bundle_dir) not in sys.path:
-            sys.path.insert(0, str(bundle_dir))
+    os.chdir(bundle_root)
+    if str(bundle_root) not in sys.path:
+        sys.path.insert(0, str(bundle_root))
 
     # Import app TRỰC TIẾP sau khi env vars đã set — tránh dùng string
     # "backend.main:app" vì PyInstaller không phân tích được string đó.
     from backend.main import app as vcfe_app  # noqa: E402
 
-    port = int(_read_dotenv("PORT", "8000"))
+    port = int(_read_dotenv("PORT", "8000", runtime_root))
     
     # Dọn dẹp cổng trước khi bind
     _kill_process_on_port(port)

@@ -34,18 +34,18 @@ HIDDEN_IMPORTS = [
     "sqlalchemy.dialects.sqlite",
     "greenlet",
     # auth & security
-    "bcrypt", "itsdangerous", "slowapi",
+    "bcrypt", "itsdangerous", "slowapi", "keyring", "keyring.backends.Windows",
     # data processing
     "openpyxl", "pandas", "rapidfuzz",
     # export
-    "fpdf2", "docx",
+    "docx",
     # utils
     "cachetools", "aiofiles", "multipart",
     "email.mime.multipart", "email.mime.text",
 ]
 
 EXCLUDES = [
-    "tkinter", "matplotlib", "PIL", "pytest",
+    "matplotlib", "PIL", "pytest",
     "IPython", "notebook", "jupyter", "sphinx",
     "docutils", "pygments", "numpy.testing",
 ]
@@ -92,6 +92,7 @@ def run_pyinstaller():
         "--clean",
         "--distpath", str(DIST_DIR),
         "--workpath", str(BUILD_DIR),
+        "--specpath", str(BUILD_DIR),
         "--log-level", "WARN",
     ]
     if icon_path.exists():
@@ -115,8 +116,21 @@ def run_pyinstaller():
 def post_build():
     output_dir = DIST_DIR / APP_NAME
     # Tạo thư mục data/uploads trống để app có thể ghi file upload
-    uploads_dir = output_dir / "_internal" / "data" / "uploads"
+    uploads_dir = output_dir / "data" / "uploads"
     uploads_dir.mkdir(parents=True, exist_ok=True)
+
+    sample_template = ROOT / "mau_ho_so_csxh.xlsx"
+    if sample_template.exists():
+        shutil.copy2(sample_template, output_dir / sample_template.name)
+
+    env_example = ROOT / ".env.example"
+    if env_example.exists():
+        shutil.copy2(env_example, output_dir / ".env.example")
+
+    assets_dir = ROOT / "assets"
+    if assets_dir.exists():
+        shutil.copytree(assets_dir, output_dir / "assets", dirs_exist_ok=True)
+
     print(f"\n[v] BUILD THANH CONG!")
     print(f"    Output: {output_dir}")
 
