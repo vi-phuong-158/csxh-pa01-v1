@@ -1,7 +1,7 @@
 BỘ NÃO ĐIỀU PHỐI DỰ ÁN VCFE DATABASE
 
 Trạng thái: ĐANG REFACTOR GIAO DIỆN — Chuyển từ Glassmorphism sang Paper CAND Theme.
-Branch: feature/ui-cand-refresh | Pha 0-2 HOÀN THÀNH, đang tiến hành Pha 3.
+Branch: feature/ui-cand-refresh | Pha 0-3 HOÀN THÀNH, chuẩn bị Pha 4.
 
 1. TỔNG QUAN DỰ ÁN (PROJECT OVERVIEW)
 
@@ -101,7 +101,7 @@ Mục tiêu HIỆN TẠI: REFACTOR GIAO DIỆN CAND THEME (xem chi tiết tại 
 - Pha 1 (Login + Dashboard): HOÀN THÀNH
 - Pha 2 (Shell: base + sidebar + banner): HOÀN THÀNH
 - Pha 2B (CSS Polish toàn cục): HOÀN THÀNH
-- Pha 3 (Trang nghiệp vụ: tra_cuu, nhap_lieu, nhap_excel, danh_ba): ĐANG CHỜ
+- Pha 3 (Trang nghiệp vụ: tra_cuu, nhap_lieu, nhap_excel, danh_ba): HOÀN THÀNH
 - Pha 4-6: CHƯA BẮT ĐẦU
 
 Mục tiêu SAU REFACTOR: Phát triển tính năng Nhập liệu từ file Excel (Bulk Import)

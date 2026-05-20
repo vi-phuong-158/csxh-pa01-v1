@@ -1,6 +1,6 @@
 # REFACTOR UI PLAN — VCFED Frontend CAND Theme
 
-> Trang thai: DANG THUC HIEN — Pha 0-2 HOAN THANH, dang tien hanh Pha 3
+> Trang thai: DANG THUC HIEN — Pha 0-3 HOAN THANH, chuan bi Pha 4
 > Ngay bat dau: 2026-05-19
 > Cap nhat lan cuoi: 2026-05-20
 > Nguyen tac: CHI THAY DOI GIAO DIEN, GIU NGUYEN 100% LOGIC BACKEND
@@ -139,11 +139,13 @@
 
 ## PHA 3 — Trang nghiep vu (cluster 1) (SAU KHI PHA 2 OK)
 
-- [ ] 3.1 `tra_cuu/index.html` -> filter-bar + tbl style
-- [ ] 3.2 `nhap_lieu/index.html` + `nhap_lieu/form.html` -> form-grid + field style
-- [ ] 3.3 `nhap_excel/index.html` + `_results.html` -> drop-zone + progress style
-- [ ] 3.4 `danh_ba/index.html` + `_partials/danh_ba_results.html`
-- [ ] 3.5 Verify: tat ca form submit, HTMX partial reload van hoat dong
+- [x] 3.1 `tra_cuu/index.html` -> filter-bar + tbl style
+- [x] 3.2 `nhap_lieu/index.html` + `nhap_lieu/form.html` -> form-grid + field style
+- [x] 3.3 `nhap_excel/index.html` + `_results.html` -> drop-zone + progress style
+- [x] 3.4 `danh_ba/index.html` + `_partials/danh_ba_results.html`
+- [x] 3.5 Verify: tat ca form submit, HTMX partial reload van hoat dong
+
+> Thuc hien boi Codex ngay 2026-05-20. Pham vi: chi refactor UI cac template Pha 3; giu nguyen backend, endpoint, field name, HTMX target/swap va partial reload. Verify da chay: Jinja parse/render, Python compileall, hook preservation, quet fetch/CDN/alert/confirm, node --check cho JS inline `tra_cuu`.
 
 ---
 

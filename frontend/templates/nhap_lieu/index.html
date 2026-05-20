@@ -3,26 +3,61 @@
 {% block page_title %}Nhập liệu hồ sơ mới{% endblock %}
 
 {% block content %}
-<div class="max-w-sm mx-auto mt-10">
-  <div class="card">
-    <h2 class="text-base font-semibold text-white mb-1">Bắt đầu nhập liệu</h2>
-    <p class="text-xs text-slate-400 mb-5">Nhập số CCCD (9 hoặc 12 chữ số) để tạo hồ sơ mới.</p>
+<div class="cand-ui">
+  <div class="page-header">
+    <div>
+      <div class="eyebrow">Khởi tạo hồ sơ</div>
+      <h1>Nhập liệu hồ sơ mới</h1>
+      <div class="sub">Nhập số CCCD để tạo bản ghi nháp trước khi bổ sung thông tin chi tiết.</div>
+    </div>
+    <div class="page-header__actions">
+      <a href="/tra-cuu" class="btn btn-secondary">
+        <span class="ico">search</span>
+        Tra cứu hồ sơ
+      </a>
+    </div>
+  </div>
 
-    {% if error %}
-    <div class="mb-4 px-3 py-2.5 bg-red-900/40 border border-red-700/50 rounded-lg text-sm text-red-300">{{ error }}</div>
-    {% endif %}
-
-    <form action="/nhap-lieu/start" method="post" class="space-y-4">
-      <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}"/>
-      <div>
-        <label class="label">Số CCCD <span class="text-red-400">*</span></label>
-        <input name="cccd" type="text" class="input font-mono text-lg tracking-widest"
-               placeholder="123456789012" maxlength="12" pattern="[0-9]{9,12}"
-               autofocus required />
-        <p class="text-xs text-slate-500 mt-1">9 hoặc 12 chữ số</p>
+  <div style="max-width:560px;margin:0 auto;">
+    <div class="card card--accent">
+      <div class="card__head" style="padding-left:0;padding-right:0;padding-top:0;">
+        <h3><span class="ico">badge</span> Bắt đầu nhập liệu</h3>
       </div>
-      <button type="submit" class="btn-primary w-full justify-center">Tạo hồ sơ</button>
-    </form>
+      <div style="padding-top:18px;">
+        <p style="font-size:13px;color:var(--ink-500);margin-bottom:18px;">
+          Số CCCD gồm 9 hoặc 12 chữ số. Hệ thống sẽ tạo hồ sơ nháp để cán bộ hoàn thiện từng nhóm thông tin.
+        </p>
+
+        {% if error %}
+        <div style="margin-bottom:16px;padding:10px 12px;border-radius:8px;background:var(--cand-red-soft);border:1px solid rgba(185,28,28,0.25);color:var(--cand-red-deep);font-size:13px;">
+          {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="/nhap-lieu/start" method="post" class="form-grid" style="grid-template-columns:1fr;">
+          <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}"/>
+          <div>
+            <label class="field__label" for="cccd-start">Số CCCD <span class="req">*</span></label>
+            <input id="cccd-start"
+                   name="cccd"
+                   type="text"
+                   class="field__input"
+                   style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:18px;letter-spacing:0.18em;"
+                   placeholder="123456789012"
+                   maxlength="12"
+                   pattern="[0-9]{9,12}"
+                   inputmode="numeric"
+                   autofocus
+                   required />
+            <div class="field__hint" style="margin-top:6px;">Chấp nhận 9 hoặc 12 chữ số.</div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+            <span class="ico">post_add</span>
+            Tạo hồ sơ nháp
+          </button>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
