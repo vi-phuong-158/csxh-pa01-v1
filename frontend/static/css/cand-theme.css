@@ -1,0 +1,1494 @@
+/* ============================================================
+   VCFE — CAND Theme Override
+   Nguon: new_frontend/styles.css (React prototype)
+   Port sang: Jinja2 + HTMX + Alpine.js
+
+   CHIEN LUOC:
+   - CSS variables (:root) — global, khong xung dot
+   - Class KHONG xung dot (.banner, .sidebar, .login-screen,
+     .stat-tile, .card, .page-header, .tbl, .pill, .field__*,
+     .form-grid, .tabs, .drop-zone, .profile-hero, .qa-card,
+     .timeline, .modal, .toast, .progress, .ico, ...) — global
+   - Class XUNG DOT voi input.css (.btn*, .nav-item, .badge*)
+     — scope duoi `.cand-ui` de tranh anh huong trang chua refactor
+
+   CACH DUNG:
+   - Template da refactor: them class="cand-ui" vao wrapper div
+   - Template chua refactor: khong bi anh huong
+   ============================================================ */
+
+/* ============================================================
+   CSS Variables (global — khong xung dot)
+   ============================================================ */
+:root {
+  /* Bang mau CAND */
+  --cand-red:        #B91C1C;
+  --cand-red-deep:   #7F1212;
+  --cand-red-soft:   #FAE7E7;
+  --cand-green:      #1F4936;
+  --cand-green-deep: #14352A;
+  --cand-green-soft: #E6EFE9;
+  --cand-gold:       #C99528;
+  --cand-gold-light: #E8C04D;
+  --cand-gold-soft:  #FBF3DA;
+
+  --ink-900:  #1A1814;
+  --ink-700:  #3C3A33;
+  --ink-500:  #6E6A5E;
+  --ink-300:  #B8B1A0;
+  --ink-200:  #D6CEBC;
+
+  --paper:    #FAF6EE;
+  --paper-2:  #F3EDDD;
+  --card:     #FFFFFF;
+  --line:     #E5DBC4;
+  --line-2:   #D9CEAF;
+
+  --shadow-card: 0 1px 0 rgba(122, 95, 30, 0.06), 0 8px 24px -16px rgba(122, 95, 30, 0.18);
+  --shadow-pop:  0 2px 0 rgba(122, 95, 30, 0.08), 0 24px 48px -20px rgba(122, 95, 30, 0.28);
+
+  --radius-sm: 4px;
+  --radius:    8px;
+  --radius-lg: 14px;
+}
+
+/* ============================================================
+   Material Symbols (global — khong xung dot)
+   ============================================================ */
+.ico {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal; font-style: normal;
+  line-height: 1; letter-spacing: normal;
+  text-transform: none;
+  display: inline-block; white-space: nowrap;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+.ico--fill { font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24; }
+
+/* ============================================================
+   App shell (global — khong xung dot)
+   ============================================================ */
+.app-shell {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  grid-template-rows: 72px 1fr;
+  grid-template-areas:
+    "banner banner"
+    "side   main";
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---- Top banner ---- */
+.banner {
+  grid-area: banner;
+  background:
+    linear-gradient(180deg, #C9252A 0%, #A8181B 70%, #8C0F12 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  border-bottom: 3px solid var(--cand-gold);
+  position: relative;
+  z-index: 5;
+}
+.banner::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+}
+.banner__logo {
+  width: 52px; height: 52px;
+  background-image: url("/static/img/logo-cand.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,0.25));
+  flex-shrink: 0;
+}
+.banner__titles { margin-left: 14px; }
+.banner__eyebrow {
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #FFE7B0;
+  font-weight: 600;
+}
+.banner__title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  margin-top: 1px;
+}
+.banner__sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.78);
+  margin-top: 2px;
+}
+.banner__spacer { flex: 1; }
+.banner__divider {
+  width: 1px; height: 36px; background: rgba(255,255,255,0.18);
+  margin: 0 16px;
+}
+.banner__sysstatus {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: rgba(255,255,255,0.85);
+}
+.banner__sysstatus .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #62E08A; box-shadow: 0 0 0 3px rgba(98, 224, 138, 0.18);
+  animation: cand-pulse 2s ease-in-out infinite;
+}
+@keyframes cand-pulse {
+  0%, 100% { opacity: 1; } 50% { opacity: 0.55; }
+}
+.banner__user {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.16);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.banner__user .avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, #F0C04A, #C99528);
+  color: #5B3F0F;
+  font-weight: 700; font-size: 13px;
+  display: grid; place-items: center;
+  border: 1.5px solid rgba(255,255,255,0.35);
+}
+.banner__user .info { font-size: 12px; line-height: 1.2; }
+.banner__user .info .name { font-weight: 600; color: #fff; }
+.banner__user .info .role { color: #FFE7B0; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ---- Sidebar ---- */
+.sidebar {
+  grid-area: side;
+  background: linear-gradient(180deg, #FFFDF6 0%, #F7F0DE 100%);
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+.sidebar__top {
+  padding: 16px 14px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.sidebar__search {
+  width: 100%;
+  padding: 8px 10px 8px 32px;
+  border: 1px solid var(--line-2);
+  background: #fff;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--ink-900);
+  outline: none;
+  transition: border 0.15s, box-shadow 0.15s;
+}
+.sidebar__search:focus {
+  border-color: var(--cand-red);
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.10);
+}
+.sidebar__search-wrap { position: relative; }
+.sidebar__search-wrap .ico {
+  position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+  color: var(--ink-500); font-size: 18px;
+}
+.sidebar__nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 8px 16px;
+}
+.nav-group__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  padding: 14px 12px 6px;
+}
+
+/* nav-item — SCOPED duoi .cand-ui de tranh xung dot voi Tailwind .nav-item */
+.cand-ui .nav-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 8px 12px;
+  border-radius: 7px;
+  color: var(--ink-700);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  border: 1px solid transparent;
+  user-select: none;
+  text-decoration: none;
+}
+.cand-ui .nav-item .ico { font-size: 20px; color: var(--ink-500); }
+.cand-ui .nav-item:hover {
+  background: rgba(185, 28, 28, 0.06);
+  color: var(--ink-900);
+}
+.cand-ui .nav-item:hover .ico { color: var(--cand-red); }
+.cand-ui .nav-item--active {
+  background: linear-gradient(90deg, var(--cand-red) 0%, var(--cand-red-deep) 100%) !important;
+  color: var(--cand-gold) !important;
+  border-color: var(--cand-red-deep) !important;
+  box-shadow: 0 2px 6px -2px rgba(185,28,28,0.45), inset 0 1px 0 rgba(255,255,255,0.14);
+  font-weight: 600;
+}
+.cand-ui .nav-item--active::before {
+  content: "";
+  position: absolute; left: -8px; top: 8px; bottom: 8px;
+  width: 3px; background: var(--cand-gold); border-radius: 0 3px 3px 0;
+}
+.cand-ui .nav-item--active .ico,
+.cand-ui .nav-item--active:hover .ico { color: var(--cand-gold) !important; }
+
+/* badge trong nav — SCOPED */
+.cand-ui .nav-item .badge {
+  margin-left: auto;
+  background: rgba(0,0,0,0.06);
+  color: var(--ink-700);
+  font-size: 10.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+.cand-ui .nav-item--active .badge {
+  background: var(--cand-gold);
+  color: #5B3F0F;
+}
+.cand-ui .nav-item .badge--alert {
+  background: var(--cand-red-soft);
+  color: var(--cand-red);
+}
+
+.sidebar__foot {
+  border-top: 1px solid var(--line);
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11.5px;
+  color: var(--ink-500);
+  background: rgba(0,0,0,0.02);
+}
+.sidebar__foot .badge-sec {
+  background: var(--cand-green);
+  color: var(--cand-gold-light);
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* ---- Main scroll area ---- */
+.main {
+  grid-area: main;
+  overflow-y: auto;
+  position: relative;
+}
+.main__inner {
+  padding: 28px 36px 56px;
+  max-width: 1380px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+/* Trong dong watermark */
+.main::before {
+  content: "";
+  position: fixed;
+  left: 50%; top: 50%;
+  width: 760px; height: 760px;
+  margin-left: -380px;
+  margin-top: -380px;
+  transform: translateX(124px);
+  background-image: url("/static/img/trong-dong.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.42;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   Page header (global — khong xung dot)
+   ============================================================ */
+.page-header {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 18px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.page-header::after {
+  content: "";
+  position: absolute; left: 0; bottom: -1px;
+  width: 64px; height: 3px;
+  background: linear-gradient(90deg, var(--cand-red), var(--cand-gold));
+  border-radius: 2px;
+}
+.page-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink-900);
+}
+.page-header .sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--ink-500);
+}
+.page-header .eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cand-red);
+  margin-bottom: 4px;
+}
+.page-header__actions { display: flex; gap: 8px; align-items: center; }
+
+/* ============================================================
+   Buttons — SCOPED duoi .cand-ui (xung dot voi Tailwind .btn)
+   ============================================================ */
+.cand-ui .btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  background: #fff;
+  color: var(--ink-900);
+  transition: all 0.14s;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+}
+.cand-ui .btn .ico { font-size: 18px; }
+.cand-ui .btn:hover { background: #f8f4ea; }
+.cand-ui .btn-primary {
+  background: linear-gradient(180deg, #C9252A, #A8181B);
+  color: #fff;
+  border-color: var(--cand-red-deep);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.cand-ui .btn-primary:hover { background: linear-gradient(180deg, #B91C1F, #8C0F12); }
+.cand-ui .btn-secondary {
+  background: #fff;
+  border-color: var(--line-2);
+  color: var(--ink-700);
+}
+.cand-ui .btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-700);
+}
+.cand-ui .btn-ghost:hover { background: rgba(0,0,0,0.04); }
+.cand-ui .btn-danger {
+  background: var(--cand-red-soft);
+  color: var(--cand-red-deep);
+  border-color: rgba(185,28,28,0.20);
+}
+.cand-ui .btn-icon {
+  width: 32px; padding: 0; justify-content: center;
+}
+.cand-ui .btn-sm { height: 30px; font-size: 12.5px; padding: 0 10px; }
+.cand-ui .btn-xs { height: 26px; font-size: 12px; padding: 0 8px; border-radius: 5px; }
+
+/* ============================================================
+   Cards (global — khong xung dot)
+   ============================================================ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  padding: 24px;
+}
+.card--accent { border-top: 3px solid var(--cand-red); border-top-left-radius: 0; border-top-right-radius: 0; }
+.card__head {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+.card__head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ink-900);
+  display: flex; align-items: center; gap: 8px;
+}
+.card__head h3 .ico { color: var(--cand-red); font-size: 19px; }
+.card__head .sub { font-size: 11.5px; color: var(--ink-500); font-weight: 500; }
+.card__body { padding: 20px; }
+.card__foot { padding: 12px 20px; border-top: 1px solid var(--line); background: var(--paper-2); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+
+/* ============================================================
+   Stat tiles (global — khong xung dot)
+   ============================================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-tile {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 18px 18px 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.stat-tile::before {
+  content: "";
+  position: absolute; left: 0; right: 0; top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cand-red), var(--cand-gold));
+}
+.stat-tile__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  display: flex; align-items: center; gap: 6px;
+}
+.stat-tile__label .ico { font-size: 16px; color: var(--cand-red); }
+.stat-tile__value {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink-900);
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.stat-tile__value .unit { font-size: 14px; font-weight: 500; color: var(--ink-500); margin-left: 4px; }
+.stat-tile__delta {
+  font-size: 11.5px;
+  margin-top: 6px;
+  color: var(--ink-500);
+  display: flex; align-items: center; gap: 4px;
+}
+.stat-tile__delta .up { color: #1F8A4E; font-weight: 600; }
+.stat-tile__delta .down { color: var(--cand-red); font-weight: 600; }
+.stat-tile__delta .ico { font-size: 14px; }
+
+/* ============================================================
+   Tables (global — khong xung dot)
+   ============================================================ */
+.tbl {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+.tbl th {
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  padding: 10px 14px;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0;
+}
+.tbl td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-900);
+  vertical-align: middle;
+}
+.tbl tbody tr:hover { background: rgba(185, 28, 28, 0.025); }
+.tbl tbody tr.is-selected { background: var(--cand-red-soft); }
+.tbl tbody tr:last-child td { border-bottom: 0; }
+.tbl td .mono, .tbl td.mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; color: var(--ink-700); }
+.tbl td .row-name { font-weight: 600; color: var(--ink-900); }
+.tbl td .row-sub { font-size: 11.5px; color: var(--ink-500); }
+
+/* avatar */
+.avatar-sm {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, #E5DBC4, #C2AE7A);
+  color: var(--ink-900);
+  font-weight: 700; font-size: 12px;
+  display: inline-grid; place-items: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.avatar-lg {
+  width: 84px; height: 84px; border-radius: 8px;
+  background: linear-gradient(135deg, #E5DBC4, #C2AE7A);
+  color: var(--ink-900);
+  font-weight: 700; font-size: 28px;
+  display: inline-grid; place-items: center;
+  border: 1px solid var(--line-2);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+.avatar-lg::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+  background: linear-gradient(90deg, var(--cand-red), var(--cand-gold));
+}
+
+.row-person { display: flex; align-items: center; gap: 10px; }
+
+/* ============================================================
+   Badges / Pills (global — ten khac voi Tailwind .badge)
+   ============================================================ */
+.pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+.pill .dot { width: 5px; height: 5px; border-radius: 50%; }
+.pill-red {    background: var(--cand-red-soft); color: var(--cand-red-deep); border-color: rgba(185,28,28,0.16); }
+.pill-red .dot { background: var(--cand-red); }
+.pill-green {  background: var(--cand-green-soft); color: var(--cand-green-deep); border-color: rgba(31,73,54,0.18); }
+.pill-green .dot { background: var(--cand-green); }
+.pill-gold {   background: var(--cand-gold-soft); color: #7A5A12; border-color: rgba(201,149,40,0.30); }
+.pill-gold .dot { background: var(--cand-gold); }
+.pill-gray {   background: #EFEADD; color: var(--ink-700); border-color: var(--line-2); }
+.pill-gray .dot { background: var(--ink-500); }
+.pill-blue {   background: #E4ECF6; color: #1F3B66; border-color: rgba(31,59,102,0.16); }
+.pill-blue .dot { background: #2D5BA4; }
+
+/* ============================================================
+   Form (global — .field__* khong xung dot)
+   ============================================================ */
+.field__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+.field__label .req { color: var(--cand-red); margin-left: 2px; }
+.field__input, .field__select, .field__textarea {
+  width: 100%;
+  padding: 9px 11px;
+  background: #fff;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  font-size: 13.5px;
+  color: var(--ink-900);
+  outline: none;
+  transition: border 0.15s, box-shadow 0.15s;
+}
+.field__input:focus, .field__select:focus, .field__textarea:focus {
+  border-color: var(--cand-red);
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.10);
+}
+.field__hint { font-size: 11.5px; color: var(--ink-500); }
+.field__error { font-size: 11.5px; color: var(--cand-red); }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px 18px;
+}
+.form-grid .col-2 { grid-column: span 2; }
+.form-grid .col-3 { grid-column: span 3; }
+
+/* ============================================================
+   Tabs (global — khong xung dot)
+   ============================================================ */
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+.tab {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-500);
+  border: 0;
+  background: transparent;
+  border-bottom: 2px solid transparent;
+  position: relative;
+  margin-bottom: -1px;
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tab .ico { font-size: 17px; }
+.tab .count {
+  font-size: 10.5px;
+  background: var(--paper-2);
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: var(--ink-700);
+  font-weight: 700;
+}
+.tab:hover { color: var(--ink-900); }
+.tab.is-active {
+  color: var(--cand-red);
+  border-bottom-color: var(--cand-red);
+}
+.tab.is-active .count { background: var(--cand-red-soft); color: var(--cand-red-deep); }
+
+/* ============================================================
+   Misc (global — khong xung dot)
+   ============================================================ */
+.kbd {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  background: #fff;
+  border: 1px solid var(--line-2);
+  border-bottom-width: 2px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--ink-700);
+}
+
+.divider-gold {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cand-gold), transparent);
+  margin: 16px 0;
+}
+
+.section-eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cand-red);
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px;
+}
+.section-eyebrow::before {
+  content: ""; width: 16px; height: 2px; background: var(--cand-red);
+}
+
+.empty-state {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--ink-500);
+  font-size: 13px;
+}
+.empty-state .ico { font-size: 42px; color: var(--ink-300); margin-bottom: 8px; }
+
+/* ============================================================
+   Login screen (global — khong xung dot)
+   ============================================================ */
+/* --- Login: full-screen centered, trong-dong background --- */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at center, rgba(0,0,0,0.0) 30%, rgba(0,0,0,0.25) 100%),
+    linear-gradient(160deg, #B91C1C 0%, #7F1212 60%, #4A0808 100%);
+  overflow: hidden;
+  font-family: "Be Vietnam Pro", "Inter", system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-900);
+}
+
+/* Trong dong xoay nhe — full man hinh */
+.login-screen__bg {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 110vmin; height: 110vmin;
+  margin-left: -55vmin;
+  margin-top: -55vmin;
+  pointer-events: none;
+  opacity: 0.09;
+  animation: cand-spin-slow 90s linear infinite;
+}
+.login-screen__bg img {
+  display: block;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  filter: brightness(2.5) sepia(0.3);
+}
+@keyframes cand-spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Card dang nhap giua man hinh */
+.login-card {
+  position: relative; z-index: 2;
+  width: 90%; max-width: 420px;
+  padding: 48px 40px;
+  background: rgba(74, 8, 8, 0.55);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  text-align: center;
+}
+
+/* Logo + ten he thong phia tren form */
+.login-brand {
+  display: flex; flex-direction: column; align-items: center;
+  margin-bottom: 32px;
+}
+.login-brand img {
+  display: block;
+  width: 80px; height: 80px;
+  max-width: 80px; max-height: 80px;
+  object-fit: contain;
+  margin-bottom: 16px;
+}
+.login-brand h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #FFE7B0;
+  line-height: 1.5;
+}
+.login-brand .login-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  margin-top: 4px;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+/* Form */
+.login-form {
+  width: 100%;
+  text-align: left;
+}
+.login-form h2 {
+  margin: 0 0 20px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+}
+.login-form .field + .field { margin-top: 14px; }
+.login-form .field { display: flex; flex-direction: column; gap: 5px; }
+.login-form .btn-primary {
+  width: 100%; justify-content: center; height: 44px; margin-top: 20px;
+  display: inline-flex; align-items: center; gap: 7px;
+  border-radius: 10px; border: 1px solid var(--cand-red-deep);
+  font-size: 14px; font-weight: 600;
+  background: linear-gradient(180deg, #C9252A, #A8181B);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(185,28,28,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+  cursor: pointer; font-family: inherit;
+  transition: all 0.2s;
+}
+.login-form .btn-primary:hover {
+  background: linear-gradient(180deg, #B91C1F, #8C0F12);
+  box-shadow: 0 4px 16px rgba(185,28,28,0.4);
+  transform: translateY(-1px);
+}
+.login-form .btn-primary:active { transform: translateY(0); }
+
+/* Login field overrides — tong toi */
+.login-card .field__label {
+  color: rgba(255,255,255,0.75);
+}
+.login-card .field__input {
+  background: rgba(0,0,0,0.25);
+  border-color: rgba(255,255,255,0.15);
+  color: #fff;
+}
+.login-card .field__input::placeholder {
+  color: rgba(255,255,255,0.35);
+}
+.login-card .field__input:focus {
+  border-color: #FFE7B0;
+  box-shadow: 0 0 0 3px rgba(255,231,176,0.15);
+}
+
+/* Footer credits */
+.login-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+  text-align: center;
+  line-height: 1.7;
+}
+
+/* ============================================================
+   Sparkline / mini charts (global)
+   ============================================================ */
+.spark { display: block; width: 100%; }
+
+/* Bar list */
+.bar-list { display: flex; flex-direction: column; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: 1fr 56px; align-items: center; gap: 12px; }
+.bar-row__label { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; margin-bottom: 4px; }
+.bar-row__bar { height: 8px; background: var(--paper-2); border-radius: 999px; overflow: hidden; position: relative; }
+.bar-row__bar::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: var(--w, 0%); background: linear-gradient(90deg, var(--cand-red), var(--cand-gold)); border-radius: 999px; }
+.bar-row__val { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; color: var(--ink-900); text-align: right; }
+
+/* Toast — CAND style (global, ten khac: .toast-region vs #toast-root) */
+.cand-toast-region { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+.cand-toast {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--cand-green);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: var(--shadow-pop);
+  font-size: 13px; min-width: 280px;
+  animation: cand-toast-in 0.25s ease;
+}
+@keyframes cand-toast-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+.cand-toast--error { border-left-color: var(--cand-red); }
+.cand-toast .ico { color: var(--cand-green); font-size: 20px; }
+.cand-toast--error .ico { color: var(--cand-red); }
+
+/* Modal (global — khong xung dot) */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(20, 18, 12, 0.45);
+  backdrop-filter: blur(2px);
+  display: grid; place-items: center;
+  z-index: 200;
+  animation: cand-fade-in 0.18s ease;
+}
+@keyframes cand-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--card);
+  border-radius: 12px;
+  width: 100%; max-width: 480px;
+  padding: 24px;
+  box-shadow: var(--shadow-pop);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--cand-red);
+}
+.modal h3 { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
+.modal p { margin: 0; color: var(--ink-500); font-size: 13px; }
+.modal__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+/* Drag-drop zone (global) */
+.drop-zone {
+  border: 1.5px dashed var(--line-2);
+  border-radius: 12px;
+  padding: 32px 24px;
+  text-align: center;
+  background: linear-gradient(180deg, #fff, var(--paper-2));
+  transition: border 0.15s, background 0.15s;
+}
+.drop-zone:hover { border-color: var(--cand-red); background: var(--cand-red-soft); }
+.drop-zone .ico { font-size: 42px; color: var(--cand-red); }
+.drop-zone h4 { margin: 8px 0 4px; font-size: 14px; font-weight: 700; }
+.drop-zone p { margin: 0; font-size: 12px; color: var(--ink-500); }
+
+/* Progress (global) */
+.progress { height: 8px; background: var(--paper-2); border-radius: 999px; overflow: hidden; }
+.progress__bar { height: 100%; background: linear-gradient(90deg, var(--cand-red), var(--cand-gold)); border-radius: 999px; transition: width 0.4s; }
+
+/* ============================================================
+   Profile header card (global)
+   ============================================================ */
+.profile-hero {
+  background: linear-gradient(180deg, #fff, var(--paper-2));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  display: flex; gap: 22px;
+  position: relative;
+  overflow: hidden;
+}
+.profile-hero::before {
+  content: "";
+  position: absolute; right: -60px; top: -60px;
+  width: 220px; height: 220px;
+  background-image: url("/static/img/trong-dong.png");
+  background-size: contain; background-repeat: no-repeat;
+  opacity: 0.18;
+}
+.profile-hero__name { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink-900); }
+.profile-hero__cccd { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 13px; color: var(--ink-500); margin-top: 2px; }
+.profile-hero__meta { display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
+.meta-chip { display: flex; flex-direction: column; gap: 1px; }
+.meta-chip .k { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--ink-500); font-weight: 700; }
+.meta-chip .v { font-size: 13.5px; font-weight: 600; color: var(--ink-900); }
+
+/* Section: 2/3 column layout */
+.grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+.grid-2-eq { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+/* Quick-action cards (dashboard) */
+.qa-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+.qa-card:hover { border-color: var(--cand-red); transform: translateY(-1px); box-shadow: var(--shadow-pop); }
+.qa-card__icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  background: var(--cand-red-soft);
+  color: var(--cand-red);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.qa-card__icon .ico { font-size: 24px; }
+.qa-card__title { font-weight: 700; font-size: 13.5px; }
+.qa-card__sub { font-size: 12px; color: var(--ink-500); margin-top: 2px; }
+
+/* Activity timeline */
+.timeline { position: relative; padding-left: 18px; }
+.timeline::before {
+  content: ""; position: absolute; left: 5px; top: 4px; bottom: 4px;
+  width: 1px; background: var(--line);
+}
+.timeline__item { position: relative; padding-bottom: 14px; }
+.timeline__item::before {
+  content: ""; position: absolute; left: -18px; top: 5px;
+  width: 11px; height: 11px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--cand-red);
+}
+.timeline__item .when { font-size: 11px; color: var(--ink-500); font-variant-numeric: tabular-nums; }
+.timeline__item .what { font-size: 13px; }
+.timeline__item .what strong { font-weight: 700; }
+
+/* Search results highlight */
+.cand-ui mark { background: var(--cand-gold-light); color: var(--ink-900); padding: 0 2px; border-radius: 2px; }
+
+/* Filter bar */
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+.filter-bar .field__input { height: 36px; }
+.search-box { position: relative; min-width: 280px; }
+.search-box .ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--ink-500); font-size: 18px; }
+.search-box input { padding-left: 34px; }
+
+/* Network graph placeholder */
+.network-stage { background: linear-gradient(180deg, #fff, var(--paper-2)); border: 1px solid var(--line); border-radius: var(--radius-lg); height: 520px; position: relative; overflow: hidden; }
+.network-legend { position: absolute; left: 16px; bottom: 16px; background: rgba(255,255,255,0.95); border: 1px solid var(--line); padding: 10px 12px; border-radius: 8px; font-size: 12px; box-shadow: var(--shadow-card); }
+.network-legend .row { display: flex; align-items: center; gap: 8px; }
+.network-legend .row + .row { margin-top: 4px; }
+.network-legend .swatch { width: 12px; height: 12px; border-radius: 50%; }
+
+/* Heatcell (for activity heatmap) */
+.heatcell { width: 100%; aspect-ratio: 1; border-radius: 3px; background: var(--paper-2); }
+
+/* ============================================================
+   Spin animation (for loading states)
+   ============================================================ */
+@keyframes cand-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+.cand-spin { animation: cand-spin 1s linear infinite; }
+
+/* ============================================================
+   LEGACY OVERRIDE — Chuyen tat ca class cu (dark theme)
+   sang tong sang CAND. Ap dung TOAN CUC cho cac trang
+   chua refactor (bao-cao, nhap-lieu, tra-cuu, v.v.)
+   ============================================================ */
+
+/* --- Body & Background --- */
+body {
+  background: var(--paper) !important;
+  color: var(--ink-900) !important;
+  font-family: "Be Vietnam Pro", "Inter", system-ui, -apple-system, sans-serif !important;
+}
+.orb-1, .orb-2 { display: none !important; }
+
+/* --- Glass panels / cards → white cards --- */
+.glass-panel {
+  background: var(--card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-color: var(--line) !important;
+}
+.glass-card {
+  background: var(--card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: var(--shadow-card) !important;
+  padding: 24px !important;
+  border-radius: var(--radius-lg) !important;
+}
+.glass-card-dark {
+  background: var(--card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: var(--shadow-card) !important;
+  padding: 24px !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+/* --- Widen narrow form containers --- */
+.main .max-w-sm { max-width: 480px !important; }
+.main .max-w-md { max-width: 560px !important; }
+
+/* --- Text color overrides (dark→light) --- */
+.text-white { color: var(--ink-900) !important; }
+.text-on-surface { color: var(--ink-900) !important; }
+.text-on-surface-variant { color: var(--ink-500) !important; }
+.text-on-background { color: var(--ink-900) !important; }
+.text-primary { color: var(--cand-red) !important; }
+.text-on-primary { color: #fff !important; }
+.text-primary-fixed { color: var(--cand-red) !important; }
+.text-secondary-container { color: var(--cand-gold) !important; }
+.text-on-secondary-container { color: #5B3F0F !important; }
+.text-outline { color: var(--ink-500) !important; }
+.text-on-error-container { color: var(--cand-red) !important; }
+.text-error { color: var(--cand-red) !important; }
+.text-on-primary-container { color: var(--cand-red-deep) !important; }
+
+/* --- Background overrides --- */
+.bg-background { background: var(--paper) !important; }
+.bg-surface-container { background: var(--paper-2) !important; }
+.bg-surface-container-high { background: var(--paper-2) !important; }
+.bg-surface-container-highest { background: var(--line) !important; }
+.bg-surface-container-low { background: var(--paper) !important; }
+.bg-surface-container-lowest { background: #fff !important; }
+.bg-primary-container { background: var(--cand-red-soft) !important; }
+.bg-on-primary-container { background: var(--cand-red) !important; }
+.bg-secondary-container { background: var(--cand-gold-soft) !important; }
+.bg-error-container { background: var(--cand-red-soft) !important; }
+.bg-primary-container\/30 { background: rgba(185,28,28,0.08) !important; }
+.bg-error\/20 { background: rgba(185,28,28,0.08) !important; }
+.bg-primary\/20 { background: rgba(185,28,28,0.10) !important; }
+
+/* --- Border overrides --- */
+.border-white\/10, .border-white\/5, .border-white\/15, .border-white\/20 {
+  border-color: var(--line) !important;
+}
+.divide-white\/5 > * + * { border-color: var(--line) !important; }
+.border-outline-variant { border-color: var(--line) !important; }
+.border-primary { border-color: var(--cand-red) !important; }
+.border-primary\/30, .border-primary\/20 { border-color: rgba(185,28,28,0.20) !important; }
+.border-error { border-color: var(--cand-red) !important; }
+.border-error\/20 { border-color: rgba(185,28,28,0.20) !important; }
+.border-secondary-container\/30 { border-color: rgba(201,149,40,0.30) !important; }
+
+/* --- Hover bg overrides --- */
+.hover\:bg-white\/5:hover { background: rgba(185,28,28,0.04) !important; }
+.hover\:bg-white\/10:hover { background: rgba(185,28,28,0.06) !important; }
+
+/* --- Input / Select / Textarea --- */
+.input,
+input[type="text"],
+input[type="date"],
+input[type="number"],
+input[type="search"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+select,
+textarea {
+  background: #fff !important;
+  background-color: #fff !important;
+  color: var(--ink-900) !important;
+  border: 1px solid var(--line-2) !important;
+  border-radius: var(--radius) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  font-size: 13.5px !important;
+}
+select {
+  padding: 10px 32px 10px 14px !important;
+}
+/* Default left/right padding — overridable by pl-* utility classes */
+.input:not([class*="pl-"]),
+input[type="text"]:not([class*="pl-"]),
+input[type="date"],
+input[type="number"],
+input[type="search"]:not([class*="pl-"]),
+input[type="email"],
+input[type="tel"],
+input[type="password"] {
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+}
+.input:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--cand-red) !important;
+  box-shadow: 0 0 0 3px rgba(185,28,28,0.10) !important;
+  outline: none !important;
+}
+.input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink-300) !important;
+}
+/* Checkbox + Radio labels */
+input[type="checkbox"], input[type="radio"] {
+  accent-color: var(--cand-red) !important;
+}
+
+/* --- Buttons (non-scoped, for unrefa'd pages) --- */
+.btn {
+  font-family: "Be Vietnam Pro", "Inter", sans-serif !important;
+  border-radius: 7px !important;
+}
+.btn-primary {
+  background: linear-gradient(180deg, #C9252A, #A8181B) !important;
+  background-color: #C9252A !important;
+  color: #fff !important;
+  border-color: var(--cand-red-deep) !important;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.15) !important;
+}
+.btn-primary:hover {
+  background: linear-gradient(180deg, #B91C1F, #8C0F12) !important;
+  background-color: #B91C1F !important;
+}
+.btn-secondary {
+  background: #fff !important;
+  background-color: #fff !important;
+  color: var(--ink-700) !important;
+  border: 1px solid var(--line-2) !important;
+}
+.btn-secondary:hover { background: var(--paper-2) !important; background-color: var(--paper-2) !important; }
+.btn-ghost {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: var(--ink-700) !important;
+}
+.btn-ghost:hover { background: rgba(0,0,0,0.04) !important; background-color: rgba(0,0,0,0.04) !important; }
+.btn-danger {
+  background: var(--cand-red-soft) !important;
+  background-color: var(--cand-red-soft) !important;
+  color: var(--cand-red-deep) !important;
+  border: 1px solid rgba(185,28,28,0.20) !important;
+}
+
+/* Override Tailwind bg-* utilities that conflict with button styling */
+.btn-primary.bg-primary-container,
+.btn-primary[class*="bg-"] {
+  background: linear-gradient(180deg, #C9252A, #A8181B) !important;
+  background-color: #C9252A !important;
+}
+.btn-secondary.bg-surface-container-high,
+.btn-secondary[class*="bg-"] {
+  background: #fff !important;
+  background-color: #fff !important;
+}
+
+/* --- Badge / Status pill (non-scoped) --- */
+.badge {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  border-radius: 999px !important;
+}
+.badge-active {
+  background: var(--cand-red-soft) !important;
+  color: var(--cand-red-deep) !important;
+  border-color: rgba(185,28,28,0.16) !important;
+}
+.badge-warning {
+  background: var(--cand-gold-soft) !important;
+  color: #7A5A12 !important;
+  border-color: rgba(201,149,40,0.30) !important;
+}
+.badge-alert {
+  background: var(--cand-red-soft) !important;
+  color: var(--cand-red) !important;
+  border-color: rgba(185,28,28,0.25) !important;
+}
+.badge-gray {
+  background: #EFEADD !important;
+  color: var(--ink-700) !important;
+  border-color: var(--line-2) !important;
+}
+.badge-green {
+  background: var(--cand-green-soft) !important;
+  color: var(--cand-green-deep) !important;
+  border-color: rgba(31,73,54,0.18) !important;
+}
+.badge-blue {
+  background: #E4ECF6 !important;
+  color: #1F3B66 !important;
+  border-color: rgba(31,59,102,0.16) !important;
+}
+.badge-red {
+  background: var(--cand-red-soft) !important;
+  color: var(--cand-red) !important;
+  border-color: rgba(185,28,28,0.25) !important;
+}
+.badge-yellow {
+  background: var(--cand-gold-soft) !important;
+  color: #7A5A12 !important;
+  border-color: rgba(201,149,40,0.30) !important;
+}
+
+/* --- Table (legacy) --- */
+.table-auto th {
+  background: var(--paper-2) !important;
+  color: var(--ink-500) !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+.table-auto td {
+  color: var(--ink-900) !important;
+  border-top: 1px solid var(--line) !important;
+}
+.table-auto tr:hover td {
+  background: rgba(185,28,28,0.025) !important;
+}
+
+/* --- Nav-item (legacy, non-CAND sidebar pages) --- */
+.nav-item {
+  color: var(--ink-700) !important;
+}
+.nav-item:hover {
+  background: rgba(185,28,28,0.06) !important;
+  color: var(--ink-900) !important;
+}
+.nav-item-active,
+.cand-ui .nav-item--active,
+.nav-item--active {
+  background: linear-gradient(90deg, var(--cand-red), var(--cand-red-deep)) !important;
+  color: var(--cand-gold) !important;
+  border-color: var(--cand-red-deep) !important;
+  font-weight: 600 !important;
+}
+.cand-ui .nav-item--active .ico,
+.nav-item--active .ico,
+.nav-item-active .ico {
+  color: var(--cand-gold) !important;
+}
+
+/* --- Tab buttons (legacy) --- */
+.tab-btn { color: var(--ink-500) !important; border-bottom-color: transparent !important; }
+.tab-btn:hover { color: var(--ink-900) !important; border-bottom-color: var(--line) !important; }
+.tab-btn-active { color: var(--cand-red) !important; border-bottom-color: var(--cand-red) !important; }
+
+/* --- Amber text (header, nav) → CAND gold/red --- */
+.text-amber-400, .text-amber-500\/90, .text-amber-300 { color: var(--cand-gold) !important; }
+.hover\:text-amber-300:hover { color: var(--cand-gold-light) !important; }
+.border-amber-400 { border-color: var(--cand-gold) !important; }
+.bg-amber-500\/10 { background: var(--cand-gold-soft) !important; }
+
+/* --- Red/Green/Orange status pills --- */
+.text-red-400, .text-red-300, .text-red-500, .bg-red-500 { color: var(--cand-red) !important; }
+.bg-red-500\/20 { background: var(--cand-red-soft) !important; }
+.text-green-400 { color: var(--cand-green) !important; }
+.text-orange-400 { color: var(--cand-gold) !important; }
+.text-slate-300, .text-slate-400 { color: var(--ink-500) !important; }
+
+/* --- Misc white-alpha backgrounds → paper --- */
+.bg-white\/5 { background: rgba(185,28,28,0.03) !important; }
+.bg-white\/10 { background: rgba(185,28,28,0.05) !important; }
+.bg-surface-container\/20 { background: var(--paper-2) !important; }
+.bg-surface-container\/30 { background: var(--paper-2) !important; }
+
+/* --- Shadow override --- */
+.shadow-md, .shadow-sm, .shadow-lg, .shadow-xl, .shadow-2xl {
+  box-shadow: var(--shadow-card) !important;
+}
+
+/* --- Placeholder colors in dark inputs --- */
+.placeholder-outline\/60::placeholder { color: var(--ink-300) !important; }
+
+/* --- Focus ring recolor --- */
+.focus\:ring-primary:focus { --tw-ring-color: rgba(185,28,28,0.30) !important; }
+.focus\:ring-secondary-container\/50:focus { --tw-ring-color: rgba(185,28,28,0.20) !important; }
+.focus\:ring-outline:focus { --tw-ring-color: rgba(185,28,28,0.15) !important; }
+.focus\:ring-error:focus { --tw-ring-color: rgba(185,28,28,0.30) !important; }
+.focus\:border-secondary-container:focus { border-color: var(--cand-red) !important; }
+
+/* --- Link colors --- */
+a.text-primary:hover { color: var(--cand-red-deep) !important; }
+.hover\:text-white:hover { color: var(--ink-900) !important; }
+.hover\:text-error:hover { color: var(--cand-red) !important; }
+.hover\:text-primary-fixed:hover { color: var(--cand-red-deep) !important; }
+
+/* --- Scrollbar for light theme --- */
+.main::-webkit-scrollbar { width: 6px; }
+.main::-webkit-scrollbar-track { background: var(--paper); }
+.main::-webkit-scrollbar-thumb { background: var(--ink-200); border-radius: 3px; }
+.main::-webkit-scrollbar-thumb:hover { background: var(--ink-300); }
+
+/* ===========================================================
+   FIX: Contrast & Padding — 2026-05-20
+   1. Ensure all labels/headings are dark enough on white bg
+   2. Input/select/textarea padding for readability
+   3. Light-on-white text issues
+   =========================================================== */
+
+/* --- Labels & small text: ensure dark enough --- */
+label,
+.field__label,
+.text-label-caps,
+legend,
+th,
+dt,
+.text-xs,
+.text-sm {
+  color: var(--ink-700) !important;
+}
+h1, h2, h3, h4, h5, h6,
+.font-bold,
+.font-semibold,
+.text-lg, .text-xl, .text-2xl, .text-3xl {
+  color: var(--ink-900) !important;
+}
+/* Paragraphs and general body text */
+p, li, dd, td, span:not(.ico):not(.material-symbols-outlined):not(.badge):not(.pill):not(.badge-sec) {
+  color: inherit;
+}
+
+/* --- Ensure section headers on white cards are visible --- */
+.card h3, .card h4, .card .font-bold,
+.glass-card h3, .glass-card h4, .glass-card .font-bold,
+.glass-card-dark h3, .glass-card-dark h4 {
+  color: var(--ink-900) !important;
+}
+.card .text-on-surface-variant,
+.glass-card .text-on-surface-variant,
+.glass-card-dark .text-on-surface-variant {
+  color: var(--ink-500) !important;
+}
+
+/* --- Subtext / description that was white-alpha → ensure visible --- */
+.text-white\/60, .text-white\/70, .text-white\/80, .text-white\/90 {
+  color: var(--ink-500) !important;
+}
+.text-white\/40, .text-white\/50 {
+  color: var(--ink-300) !important;
+}
+
+/* --- Form field spacing (global) — text not touching border --- */
+.main input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="submit"]):not([type="button"]),
+.main select,
+.main textarea {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  padding-right: 14px !important;
+}
+/* Only set padding-left when no icon prefix (pl-*) is present */
+.main input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):not([class*="pl-"]),
+.main select,
+.main textarea {
+  padding-left: 14px !important;
+}
+.main select {
+  padding-right: 32px !important;
+}
+/* Inputs with search icon prefix — preserve enough left padding */
+.main input.pl-7  { padding-left: 34px !important; }
+.main input.pl-8  { padding-left: 38px !important; }
+.main input.pl-9  { padding-left: 42px !important; }
+.main input.pl-10 { padding-left: 46px !important; }
+
+/* ===========================================================
+   FIX: Slate color overrides — dark→light (2026-05-20)
+   Slate classes are from the old dark theme. Remap them all
+   to CAND light equivalents so every page looks right.
+   =========================================================== */
+
+/* --- Text: slate → ink --- */
+.text-slate-100, .text-slate-200 { color: var(--ink-900) !important; }
+.text-slate-300 { color: var(--ink-700) !important; }
+.text-slate-400 { color: var(--ink-500) !important; }
+.text-slate-500 { color: var(--ink-500) !important; }
+.text-slate-600 { color: var(--ink-700) !important; }
+.text-slate-700 { color: var(--ink-700) !important; }
+
+/* --- Background: slate (dark panels/dropdowns) → light card --- */
+.bg-slate-600 { background: var(--paper-2) !important; }
+.bg-slate-700 { background: var(--paper-2) !important; }
+.bg-slate-800 { background: var(--card) !important; }
+.bg-slate-900 { background: var(--paper-2) !important; }
+.bg-surface-700 { background: var(--paper-2) !important; }
+.bg-surface-900 { background: var(--paper-2) !important; }
+.bg-primary-700 { background: var(--cand-red) !important; }
+.bg-black\/20 { background: var(--paper-2) !important; }
+
+/* --- Border: slate → line --- */
+.border-slate-600 { border-color: var(--line) !important; }
+.border-slate-700 { border-color: var(--line) !important; }
+.border-slate-500 { border-color: var(--line-2) !important; }
+
+/* --- Hover states: slate → CAND light hover --- */
+.hover\:bg-slate-600:hover { background: var(--line) !important; }
+.hover\:bg-slate-700:hover { background: rgba(185,28,28,0.06) !important; }
+.hover\:text-slate-200:hover { color: var(--ink-900) !important; }
+.hover\:text-slate-700:hover { color: var(--ink-900) !important; }
+
+/* --- Dropdown / Autocomplete result items --- */
+.bg-slate-800.border.border-slate-600,
+[class*="bg-slate-800"][class*="border-slate-600"] {
+  background: var(--card) !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--shadow-pop) !important;
+}
+.bg-slate-800 button,
+[class*="bg-slate-800"] button {
+  color: var(--ink-900) !important;
+}
+.bg-slate-800 button:hover,
+[class*="bg-slate-800"] button:hover {
+  background: rgba(185,28,28,0.06) !important;
+}
+.bg-slate-800 .text-slate-200,
+[class*="bg-slate-800"] .text-slate-200 {
+  color: var(--ink-900) !important;
+}
+.bg-slate-800 .text-slate-400,
+[class*="bg-slate-800"] .text-slate-400,
+.bg-slate-800 .font-mono,
+[class*="bg-slate-800"] .font-mono {
+  color: var(--ink-500) !important;
+}
+
+/* --- Modal overlays (profile delete confirm, etc.) --- */
+.bg-slate-800.rounded-xl,
+[class*="bg-slate-800"][class*="rounded-xl"] {
+  background: var(--card) !important;
+  border-color: var(--line) !important;
+}
+
+/* --- Search icon inside inputs — handled above in .main input.pl-* rules --- */
+
+/* --- code/pre tag bg fix --- */
+code.bg-surface-900, code[class*="bg-surface"] {
+  background: var(--paper-2) !important;
+  color: var(--cand-red) !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+}

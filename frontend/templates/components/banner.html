@@ -1,0 +1,170 @@
+{# ============================================================
+   BANNER COMPONENT — CAND Theme
+   Dùng trong: base.html qua {% include "components/banner.html" %}
+   Biến cần có: user, request
+   ============================================================ #}
+<div class="banner">
+  <div class="banner__logo"></div>
+  <div class="banner__titles">
+    <div class="banner__eyebrow">Công an tỉnh Phú Thọ</div>
+    <div class="banner__title">Cơ sở dữ liệu người Việt Nam có yếu tố nước ngoài</div>
+  </div>
+  <div class="banner__spacer"></div>
+
+  {# Notification bell — GIỮ NGUYÊN logic Alpine.js từ header.html #}
+  <div x-data="vcfeHeader()" x-init="loadNotifications()" class="relative flex items-center">
+    <button @click="togglePanel()"
+            class="relative p-2 hover:opacity-80 transition-opacity focus:outline-none"
+            style="color:rgba(255,255,255,0.85);"
+            aria-label="Thông báo sự kiện sắp đến hạn">
+      <span class="material-symbols-outlined" style="font-size:22px;">notifications</span>
+      <span x-show="count > 0"
+            x-text="count > 9 ? '9+' : count"
+            style="position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 4px;
+                   background:#E8C04D;color:#5B3F0F;font-size:10px;font-weight:700;border-radius:999px;
+                   display:flex;align-items:center;justify-content:center;line-height:1;">
+      </span>
+    </button>
+
+    {# Dropdown Panel #}
+    <div x-show="panelOpen"
+         x-cloak
+         @click.outside="panelOpen = false"
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 scale-95 translate-y-1"
+         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+         x-transition:leave-end="opacity-0 scale-95 translate-y-1"
+         style="position:absolute;right:0;top:100%;margin-top:8px;width:384px;max-height:480px;
+                overflow-y:auto;background:var(--card);border:1px solid var(--line);
+                border-radius:12px;box-shadow:var(--shadow-pop);z-index:50;">
+
+      {# Header Panel #}
+      <div style="position:sticky;top:0;padding:12px 16px;border-bottom:1px solid var(--line);
+                  background:var(--paper-2);display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="material-symbols-outlined" style="font-size:18px;color:var(--cand-gold);">event_upcoming</span>
+          <span style="font-size:13px;font-weight:700;color:var(--ink-900);">Sự kiện sắp đến hạn</span>
+          <span x-show="count > 0" x-text="'(' + count + ')'" style="font-size:12px;color:var(--cand-red);"></span>
+        </div>
+        <a href="/lich-su-kien" style="font-size:12px;color:var(--cand-red);font-weight:600;text-decoration:none;display:flex;align-items:center;gap:4px;">
+          <span class="material-symbols-outlined" style="font-size:14px;">calendar_month</span>
+          Xem lịch
+        </a>
+      </div>
+
+      {# Danh sách thông báo #}
+      <div>
+        <template x-if="loading">
+          <div style="padding:24px 16px;text-align:center;color:var(--ink-500);font-size:13px;">
+            <span class="material-symbols-outlined cand-spin" style="font-size:20px;display:block;margin:0 auto 8px;">progress_activity</span>
+            Đang tải...
+          </div>
+        </template>
+
+        <template x-if="!loading && events.length === 0">
+          <div style="padding:32px 16px;text-align:center;">
+            <span class="material-symbols-outlined" style="font-size:36px;color:var(--cand-green);display:block;margin:0 auto 8px;">check_circle</span>
+            <p style="font-size:13px;color:var(--ink-500);">Không có sự kiện nào trong 7 ngày tới</p>
+          </div>
+        </template>
+
+        <template x-for="ev in events" :key="ev.id">
+          <a :href="'/profile/' + ev.cccd + '?tab=qua-trinh'"
+             style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;text-decoration:none;
+                    border-bottom:1px solid var(--line);transition:background 0.15s;"
+             onmouseover="this.style.background='var(--paper-2)'" onmouseout="this.style.background='transparent'">
+            <div style="flex-shrink:0;margin-top:2px;">
+              <span x-show="ev.is_today"
+                    class="material-symbols-outlined" style="font-size:18px;color:var(--cand-red);font-variation-settings:'FILL' 1;">alarm</span>
+              <span x-show="!ev.is_today && ev.days_left <= 3"
+                    class="material-symbols-outlined" style="font-size:18px;color:var(--cand-gold);font-variation-settings:'FILL' 1;">warning</span>
+              <span x-show="!ev.is_today && ev.days_left > 3"
+                    class="material-symbols-outlined" style="font-size:18px;color:var(--ink-500);font-variation-settings:'FILL' 1;">event</span>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <p style="font-size:13px;font-weight:600;color:var(--ink-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                 x-text="ev.ho_ten"></p>
+              <p style="font-size:12px;color:var(--ink-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;"
+                 x-text="ev.noi_dung"></p>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                <span style="font-size:11px;color:var(--ink-500);">Đến: <span style="color:var(--cand-red);font-weight:600;" x-text="ev.ngay_ket_thuc"></span></span>
+                <span x-show="ev.is_today"
+                      class="pill pill-red" style="font-size:10px;padding:1px 6px;">Hôm nay!</span>
+                <span x-show="!ev.is_today"
+                      class="pill pill-gold" style="font-size:10px;padding:1px 6px;"
+                      x-text="'Còn ' + ev.days_left + ' ngày'"></span>
+              </div>
+            </div>
+          </a>
+        </template>
+      </div>
+
+      {# Footer #}
+      <div x-show="events.length > 0"
+           style="position:sticky;bottom:0;padding:8px 16px;border-top:1px solid var(--line);
+                  background:var(--paper-2);text-align:center;">
+        <a href="/lich-su-kien" style="font-size:12px;color:var(--cand-red);font-weight:600;text-decoration:none;">
+          Xem tất cả trên lịch →
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="banner__divider"></div>
+
+  {# User info #}
+  {% if user %}
+  <div class="banner__user">
+    <div class="avatar">{{ user.ho_ten[0] if user.ho_ten else 'U' }}</div>
+    <div class="info">
+      <div class="name">{{ user.ho_ten }}</div>
+      <div class="role">{{ user.role }}</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function vcfeHeader() {
+  return {
+    count: 0,
+    events: [],
+    panelOpen: false,
+    loading: false,
+
+    async loadNotifications() {
+      try {
+        const res = await fetch('/api/events/count');
+        if (res.ok) {
+          const data = await res.json();
+          this.count = data.count || 0;
+        }
+      } catch (e) {}
+    },
+
+    async togglePanel() {
+      this.panelOpen = !this.panelOpen;
+      if (this.panelOpen && this.events.length === 0) {
+        await this.loadEvents();
+      }
+    },
+
+    async loadEvents() {
+      this.loading = true;
+      try {
+        const res = await fetch('/api/events/notifications');
+        if (res.ok) {
+          const data = await res.json();
+          this.events = data.events || [];
+        }
+      } catch (e) {
+        this.events = [];
+      } finally {
+        this.loading = false;
+      }
+    },
+  };
+}
+</script>

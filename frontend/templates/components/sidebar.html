@@ -1,5 +1,5 @@
 {# ============================================================
-   SIDEBAR COMPONENT — VCFE Database
+   SIDEBAR COMPONENT — CAND Theme
    Dùng trong: base.html qua {% include "components/sidebar.html" %}
    Biến cần có: request (để kiểm tra URL active), user
    ============================================================ #}
@@ -15,72 +15,59 @@
   { 'href': '/lich-su-kien',    'icon': 'calendar_month',   'label': 'Lịch sự kiện' },
 ] %}
 
-<nav class="fixed left-0 top-0 h-full flex flex-col z-50 w-72 border-r border-white/10
-            shadow-[0_0_20px_rgba(0,0,0,0.5)] glass-panel">
+<nav class="sidebar cand-ui">
 
-  {# ── Brand Header ── #}
-  <div class="p-8 border-b border-white/10 flex items-center gap-4 shrink-0">
-    <div style="width: 56px; height: 56px; flex-shrink: 0;">
-      <img src="/static/img/logo.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">
-    </div>
-    <div>
-      <h1 class="font-h3 text-h3 text-white uppercase tracking-tighter leading-none">VCFED</h1>
+  {# ── Search Box ── #}
+  <div class="sidebar__top">
+    <div class="sidebar__search-wrap">
+      <span class="ico">search</span>
+      <input type="text" class="sidebar__search" placeholder="Tìm chức năng..." />
     </div>
   </div>
 
   {# ── Navigation Links ── #}
-  <div class="flex-1 overflow-y-auto py-6 flex flex-col gap-1 px-4">
+  <div class="sidebar__nav">
+    <div class="nav-group__label">Nghiệp vụ</div>
     {% for link in nav_links %}
       {% set is_active = request.url.path.startswith(link.href) %}
       <a href="{{ link.href }}"
-         class="nav-item {{ 'nav-item-active' if is_active else '' }}"
+         class="nav-item {{ 'nav-item--active' if is_active else '' }}"
          aria-current="{{ 'page' if is_active else 'false' }}">
-        <span class="material-symbols-outlined text-[20px]"
-              style="font-variation-settings:'FILL' {{ '1' if is_active else '0' }};">{{ link.icon }}</span>
-        <span class="text-body-md">{{ link.label }}</span>
+        <span class="ico" style="font-variation-settings:'FILL' {{ '1' if is_active else '0' }};">{{ link.icon }}</span>
+        {{ link.label }}
       </a>
     {% endfor %}
 
     {# ── Admin-only section ── #}
     {% if user and user.role == 'super_admin' %}
-    <div class="pt-3 mt-3 border-t border-white/5">
-      <p class="px-4 font-label-caps text-label-caps text-outline uppercase tracking-widest mb-2">Quản trị</p>
-      {% set admin_links = [
-        { 'href': '/quan-ly-user',    'icon': 'manage_accounts', 'label': 'Tài khoản' },
-        { 'href': '/nguon-du-lieu',   'icon': 'database',        'label': 'Nguồn dữ liệu' },
-        { 'href': '/audit-log',       'icon': 'history',         'label': 'Nhật ký kiểm tra' },
-      ] %}
-      {% for link in admin_links %}
-        {% set is_active = request.url.path.startswith(link.href) %}
-        <a href="{{ link.href }}"
-           class="nav-item {{ 'nav-item-active' if is_active else '' }}">
-          <span class="material-symbols-outlined text-[20px]"
-                style="font-variation-settings:'FILL' {{ '1' if is_active else '0' }};">{{ link.icon }}</span>
-          <span class="text-body-md">{{ link.label }}</span>
-        </a>
-      {% endfor %}
-    </div>
+    <div class="nav-group__label" style="margin-top:8px;">Quản trị</div>
+    {% set admin_links = [
+      { 'href': '/quan-ly-user',    'icon': 'manage_accounts', 'label': 'Tài khoản' },
+      { 'href': '/nguon-du-lieu',   'icon': 'database',        'label': 'Nguồn dữ liệu' },
+      { 'href': '/audit-log',       'icon': 'history',         'label': 'Nhật ký kiểm tra' },
+    ] %}
+    {% for link in admin_links %}
+      {% set is_active = request.url.path.startswith(link.href) %}
+      <a href="{{ link.href }}"
+         class="nav-item {{ 'nav-item--active' if is_active else '' }}">
+        <span class="ico" style="font-variation-settings:'FILL' {{ '1' if is_active else '0' }};">{{ link.icon }}</span>
+        {{ link.label }}
+      </a>
+    {% endfor %}
     {% endif %}
   </div>
 
-  {# ── User Profile Area ── #}
+  {# ── Sidebar Footer — Logout ── #}
   {% if user %}
-  <div class="p-5 border-t border-white/10 shrink-0 glass-panel mt-auto">
-    <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-full bg-primary-container border border-white/20 flex items-center justify-center shrink-0">
-        <span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings:'FILL' 1;">person</span>
-      </div>
-      <div class="min-w-0">
-        <p class="text-body-md font-semibold text-white truncate">{{ user.ho_ten }}</p>
-        <p class="font-label-caps text-label-caps text-primary">{{ user.role }}</p>
-      </div>
-      <form action="/auth/logout" method="post" class="ml-auto shrink-0">
-        <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}"/>
-        <button type="submit" class="text-outline hover:text-error transition-colors" title="Đăng xuất">
-          <span class="material-symbols-outlined text-[18px]">logout</span>
-        </button>
-      </form>
-    </div>
+  <div class="sidebar__foot">
+    <span class="badge-sec">AES-256</span>
+    <span style="flex:1;">Mã hóa toàn phần</span>
+    <form action="/auth/logout" method="post" style="margin:0;">
+      <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}"/>
+      <button type="submit" style="background:none;border:none;cursor:pointer;color:var(--ink-500);padding:4px;display:flex;align-items:center;" title="Đăng xuất">
+        <span class="material-symbols-outlined" style="font-size:18px;">logout</span>
+      </button>
+    </form>
   </div>
   {% endif %}
 </nav>
