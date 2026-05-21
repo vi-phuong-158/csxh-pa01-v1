@@ -4,91 +4,80 @@
 {% block page_title %}Danh bạ Liên lạc &amp; Tài chính{% endblock %}
 
 {% block content %}
-<div x-data="{ activeTab: 'phone' }" class="space-y-4">
-
-  <!-- ===== SEARCH CARD ===== -->
-  <div class="card">
-    <div class="flex items-start justify-between mb-4">
-      <div>
-        <h2 class="text-base font-semibold text-slate-800">Tìm kiếm toàn cục</h2>
-        <p class="text-xs text-slate-400 mt-0.5">Tra cứu SĐT và STK trên toàn bộ cơ sở dữ liệu</p>
-      </div>
-      <span class="badge badge-blue">Live Search</span>
+<div x-data="{ activeTab: 'phone' }" class="cand-ui">
+  <div class="page-header">
+    <div>
+      <div class="eyebrow">Tra cứu toàn cục</div>
+      <h1>Danh bạ liên lạc và tài chính</h1>
+      <div class="sub">Rà soát số điện thoại và tài khoản ngân hàng trên toàn bộ hồ sơ chính thức.</div>
     </div>
-
-    <!-- Tabs -->
-    <div class="flex gap-1 border-b border-slate-200 mb-4">
-      <button
-        type="button"
-        :class="activeTab === 'phone' ? 'tab-btn tab-btn-active' : 'tab-btn'"
-        @click="activeTab = 'phone'; $nextTick(() => htmx.trigger(document.body, 'tabSearch'))"
-      >
-        <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-        </svg>
-        Số điện thoại
-      </button>
-      <button
-        type="button"
-        :class="activeTab === 'bank' ? 'tab-btn tab-btn-active' : 'tab-btn'"
-        @click="activeTab = 'bank'; $nextTick(() => htmx.trigger(document.body, 'tabSearch'))"
-      >
-        <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-        </svg>
-        Tài khoản ngân hàng
-      </button>
+    <div class="page-header__actions">
+      <span class="pill pill-blue"><span class="dot"></span>Delay search 500ms</span>
     </div>
-
-    <!-- Search input -->
-    <div class="relative">
-      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-      </svg>
-      <input
-        id="danh-ba-input"
-        type="text"
-        name="query"
-        autocomplete="off"
-        class="input pl-9 pr-9"
-        :placeholder="activeTab === 'phone'
-          ? 'Nhập số điện thoại (vd: 0912 345 678)...'
-          : 'Nhập số tài khoản ngân hàng...'"
-        hx-get="/danh-ba/search"
-        hx-trigger="keyup changed delay:500ms, tabSearch from:body"
-        hx-include="#search-type"
-        hx-target="#danh-ba-results"
-        hx-swap="innerHTML"
-        hx-indicator="#search-spinner"
-      />
-      <!-- Loading spinner (shown while HTMX request is in-flight) -->
-      <div id="search-spinner" class="htmx-indicator absolute right-3 top-1/2 -translate-y-1/2">
-        <svg class="w-4 h-4 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-        </svg>
-      </div>
-    </div>
-
-    <!-- Hidden input synced with Alpine tab state — included in every HTMX request -->
-    <input type="hidden" id="search-type" name="type" :value="activeTab" />
   </div>
 
-  <!-- ===== RESULTS CARD ===== -->
-  <div class="card p-0 overflow-hidden">
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card__head">
+      <h3><span class="ico">contacts</span> Điều kiện tra cứu</h3>
+      <div style="display:flex;gap:6px;">
+        <button type="button"
+                :class="activeTab === 'phone' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'"
+                @click="activeTab = 'phone'; $nextTick(() => htmx.trigger(document.body, 'tabSearch'))">
+          <span class="ico">call</span>
+          Số điện thoại
+        </button>
+        <button type="button"
+                :class="activeTab === 'bank' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'"
+                @click="activeTab = 'bank'; $nextTick(() => htmx.trigger(document.body, 'tabSearch'))">
+          <span class="ico">account_balance</span>
+          Tài khoản ngân hàng
+        </button>
+      </div>
+    </div>
 
-    <!-- Card header -->
-    <div class="px-5 py-3 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
-      <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Kết quả tra cứu</span>
+    <div class="card__body">
+      <div class="filter-bar" style="margin-bottom:0;">
+        <div class="search-box" style="flex:1;min-width:320px;">
+          <span class="ico">search</span>
+          <input
+            id="danh-ba-input"
+            type="search"
+            name="query"
+            autocomplete="off"
+            class="field__input"
+            :placeholder="activeTab === 'phone'
+              ? 'Nhập số điện thoại, ví dụ 0912 345 678...'
+              : 'Nhập số tài khoản ngân hàng...'"
+            hx-get="/danh-ba/search"
+            hx-trigger="keyup changed delay:500ms, tabSearch from:body"
+            hx-include="#search-type"
+            hx-target="#danh-ba-results"
+            hx-swap="innerHTML"
+            hx-indicator="#search-spinner"
+          />
+        </div>
+
+        <div id="search-spinner" class="htmx-indicator" style="display:flex;align-items:center;gap:6px;color:var(--cand-red);font-size:12px;">
+          <span class="ico cand-spin" style="font-size:18px;">progress_activity</span>
+          Đang tìm
+        </div>
+      </div>
+
+      <input type="hidden" id="search-type" name="type" :value="activeTab" />
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="card__head">
+      <h3><span class="ico">table_view</span> Kết quả tra cứu</h3>
       <span
-        :class="activeTab === 'phone' ? 'badge badge-blue' : 'badge badge-green'"
-        x-text="activeTab === 'phone' ? 'Số điện thoại' : 'Tài khoản ngân hàng'"
+        :class="activeTab === 'phone' ? 'pill pill-blue' : 'pill pill-green'"
+        x-html="'<span class=&quot;dot&quot;></span>' + (activeTab === 'phone' ? 'Số điện thoại' : 'Tài khoản ngân hàng')"
       ></span>
     </div>
 
-    <!-- Table -->
-    <div class="overflow-x-auto">
-      <table class="table-auto w-full">
+    <div style="overflow-x:auto;">
+      <table class="tbl">
         <thead>
           <tr>
             <th x-text="activeTab === 'phone' ? 'Số điện thoại' : 'Số tài khoản'">Số điện thoại</th>
@@ -96,24 +85,20 @@
             <th>Chủ sở hữu</th>
             <th>CCCD</th>
             <th>Ghi chú</th>
-            <th class="text-center">Hồ sơ</th>
+            <th style="text-align:center;">Hồ sơ</th>
           </tr>
         </thead>
         <tbody id="danh-ba-results">
-          <!-- Default empty state; replaced by HTMX on every search -->
           <tr>
-            <td colspan="6" class="py-14 text-center">
-              <svg class="w-10 h-10 mx-auto mb-3 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-              </svg>
-              <p class="text-sm text-slate-400">Nhập từ khóa để bắt đầu tìm kiếm</p>
-              <p class="text-xs text-slate-300 mt-1">Hỗ trợ khớp một phần — vd: nhập "091" để tìm tất cả SĐT bắt đầu bằng 091</p>
+            <td colspan="6" class="empty-state" style="padding:44px 16px;">
+              <span class="ico">contact_phone</span>
+              <p>Nhập từ khóa để bắt đầu tìm kiếm</p>
+              <p style="font-size:12px;color:var(--ink-500);margin-top:4px;">Hỗ trợ khớp một phần, ví dụ nhập 091 để tìm các số bắt đầu bằng 091.</p>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-
   </div>
 </div>
 {% endblock %}

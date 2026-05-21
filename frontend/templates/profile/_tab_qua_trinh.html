@@ -6,40 +6,40 @@
       {# Cột thời gian + badge trạng thái #}
       <div class="shrink-0 w-36">
         {% if qt.ngay_bat_dau or qt.ngay_ket_thuc %}
-          <div class="text-xs text-slate-400 leading-tight">
+          <div class="field__hint leading-tight">
             {% if qt.ngay_bat_dau %}
-              <span class="block">Từ: <span class="text-slate-200">{{ qt.ngay_bat_dau }}</span></span>
+              <span class="block">Từ: <span style="color:var(--ink-900);font-weight:600;">{{ qt.ngay_bat_dau }}</span></span>
             {% endif %}
             {% if qt.ngay_ket_thuc %}
-              <span class="block">Đến: <span class="text-amber-300 font-semibold">{{ qt.ngay_ket_thuc }}</span></span>
+              <span class="block">Đến: <span style="color:var(--cand-gold);font-weight:700;">{{ qt.ngay_ket_thuc }}</span></span>
             {% endif %}
           </div>
         {% elif qt.thoi_gian %}
-          <div class="text-xs text-slate-400">{{ qt.thoi_gian }}</div>
+          <div class="field__hint">{{ qt.thoi_gian }}</div>
         {% else %}
-          <div class="text-xs text-slate-600">—</div>
+          <div class="field__hint">—</div>
         {% endif %}
       </div>
 
       {# Nội dung chính #}
       <div class="flex-1 min-w-0">
-        <p class="text-sm text-slate-200 break-words">{{ qt.noi_dung or '—' }}</p>
-        {% if qt.ghi_chu %}<p class="text-xs text-slate-400 mt-0.5">{{ qt.ghi_chu }}</p>{% endif %}
+        <p class="text-sm break-words">{{ qt.noi_dung or '—' }}</p>
+        {% if qt.ghi_chu %}<p class="field__hint mt-0.5">{{ qt.ghi_chu }}</p>{% endif %}
       </div>
 
       {# Nút xóa #}
       <button hx-delete="/profile/{{ profile.cccd }}/qua-trinh/{{ qt.id }}"
               hx-target="#dynamic-tab-content" hx-swap="innerHTML" hx-confirm="Xóa sự kiện này?"
-              class="text-red-400 hover:text-red-300 text-xs shrink-0 mt-0.5">Xóa</button>
+              class="btn btn-danger btn-xs shrink-0 mt-0.5">Xóa</button>
     </div>
     {% endfor %}
   </div>
   {% else %}
-  <div class="text-center py-8 text-slate-500 text-sm">Chưa có sự kiện nào được ghi nhận.</div>
+  <div class="empty-state">Chưa có sự kiện nào được ghi nhận.</div>
   {% endif %}
 
   <div class="card" x-data="{open:false, mode:'date'}">
-    <button @click="open=!open" class="btn-secondary text-xs w-full justify-center">+ Thêm sự kiện</button>
+    <button @click="open=!open" class="btn btn-secondary w-full justify-center">+ Thêm sự kiện</button>
     <form x-show="open" x-cloak
           hx-post="/profile/{{ profile.cccd }}/qua-trinh"
           hx-target="#dynamic-tab-content" hx-swap="innerHTML"
@@ -47,48 +47,48 @@
 
       {# Toggle chế độ nhập thời gian #}
       <div class="flex items-center gap-2">
-        <span class="text-xs text-slate-400">Thời gian:</span>
+        <span class="field__label">Thời gian:</span>
         <button type="button" @click="mode='date'"
                 :class="mode==='date' ? 'btn-primary' : 'btn-ghost'"
-                class="text-xs px-3 py-1">Ngày cụ thể</button>
+                class="btn btn-sm">Ngày cụ thể</button>
         <button type="button" @click="mode='text'"
                 :class="mode==='text' ? 'btn-primary' : 'btn-ghost'"
-                class="text-xs px-3 py-1">Mô tả khoảng thời gian</button>
+                class="btn btn-sm">Mô tả khoảng thời gian</button>
       </div>
 
       {# Chế độ ngày cụ thể #}
       <div x-show="mode === 'date'" class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
-          <label class="label">Từ ngày</label>
-          <input name="ngay_bat_dau" type="date" class="input" :disabled="mode !== 'date'" />
+          <label class="field__label">Từ ngày</label>
+          <input name="ngay_bat_dau" type="date" class="field__input" :disabled="mode !== 'date'" />
         </div>
         <div>
-          <label class="label">Đến ngày <span class="text-slate-500 text-xs font-normal">(sẽ thông báo khi đến hạn)</span></label>
-          <input name="ngay_ket_thuc" type="date" class="input" :disabled="mode !== 'date'" />
+          <label class="field__label">Đến ngày <span class="field__hint" style="text-transform:none;letter-spacing:normal;font-weight:400;">(sẽ thông báo khi đến hạn)</span></label>
+          <input name="ngay_ket_thuc" type="date" class="field__input" :disabled="mode !== 'date'" />
         </div>
       </div>
 
       {# Chế độ mô tả #}
       <div x-show="mode === 'text'">
-        <label class="label">Mô tả thời gian</label>
-        <input name="thoi_gian" type="text" class="input" :disabled="mode !== 'text'"
+        <label class="field__label">Mô tả thời gian</label>
+        <input name="thoi_gian" type="text" class="field__input" :disabled="mode !== 'text'"
                placeholder="VD: Q3/2024, Năm 2023, Tháng 6/2024…" />
       </div>
 
       {# Nội dung + Ghi chú #}
       <div>
-        <label class="label">Nội dung sự kiện <span class="text-red-400">*</span></label>
-        <textarea name="noi_dung" rows="3" class="input resize-none" required
+        <label class="field__label">Nội dung sự kiện <span class="req">*</span></label>
+        <textarea name="noi_dung" rows="3" class="field__textarea resize-none" required
                   placeholder="Mô tả nội dung sự kiện..."></textarea>
       </div>
       <div>
-        <label class="label">Ghi chú</label>
-        <input name="ghi_chu" type="text" class="input" placeholder="Ghi chú thêm (không bắt buộc)" />
+        <label class="field__label">Ghi chú</label>
+        <input name="ghi_chu" type="text" class="field__input" placeholder="Ghi chú thêm (không bắt buộc)" />
       </div>
 
       <div class="flex gap-2 justify-end pt-1">
-        <button type="button" @click="open=false" class="btn-ghost text-xs">Hủy</button>
-        <button type="submit" class="btn-primary text-xs">Lưu sự kiện</button>
+        <button type="button" @click="open=false" class="btn btn-ghost btn-sm">Hủy</button>
+        <button type="submit" class="btn btn-primary btn-sm">Lưu sự kiện</button>
       </div>
     </form>
   </div>

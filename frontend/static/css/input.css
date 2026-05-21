@@ -4,7 +4,8 @@
 
 /* ============================================================
    VCFE DATABASE — GLOBAL STYLES
-   Nguồn màu và thiết kế: DESIGN.md
+   Theme: Paper CAND (nền giấy kem, banner đỏ, viền vàng gold)
+   File override chi tiết: cand-theme.css (load SAU output.css)
    ============================================================ */
 
 @layer base {
@@ -12,94 +13,23 @@
     @apply text-sm;
   }
   body {
-    background-color: #13140f;
-    color: #e5e2db;
-    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Be Vietnam Pro', 'Inter', ui-sans-serif, system-ui, sans-serif;
     position: relative;
     overflow-x: hidden;
   }
 }
 
-/* ============================================================
-   BACKGROUND ORBS (Hình cầu phát sáng)
-   ============================================================ */
-.orb-1 {
-  position: fixed;
-  top: -10%;
-  left: -5%;
-  width: 40vw;
-  height: 40vw;
-  background: radial-gradient(circle, rgba(75, 83, 32, 0.15) 0%, rgba(19, 20, 15, 0) 70%);
-  border-radius: 50%;
-  filter: blur(60px);
-  z-index: -1;
-  pointer-events: none;
-}
-
-.orb-2 {
-  position: fixed;
-  bottom: -20%;
-  right: -10%;
-  width: 50vw;
-  height: 50vw;
-  background: radial-gradient(circle, rgba(255, 219, 60, 0.05) 0%, rgba(19, 20, 15, 0) 70%);
-  border-radius: 50%;
-  filter: blur(80px);
-  z-index: -1;
-  pointer-events: none;
-}
-
-/* ============================================================
-   GLASSMORPHISM COMPONENTS
-   ============================================================ */
 @layer components {
-  /* Panel kính mờ (Sidebar, Header) */
-  .glass-panel {
-    background: rgba(32, 32, 27, 0.4);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  /* Thẻ kính xanh Olive nhạt — dành cho các metric card nổi bật */
-  .glass-card {
-    background: rgba(75, 83, 32, 0.15);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  }
-
-  /* Thẻ kính tối — dành cho bảng biểu và biểu đồ */
-  .glass-card-dark {
-    background: rgba(32, 32, 27, 0.25);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  }
-
   /* ============================================================
      NAVIGATION
      ============================================================ */
   .nav-item {
-    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant
-           hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer;
-  }
-
-  .nav-item-active {
-    @apply text-amber-400 font-bold bg-white/10 border-r-4 border-amber-400;
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg
+           transition-all duration-300 cursor-pointer;
   }
 
   /* ============================================================
-     STATUS GLOW
-     ============================================================ */
-  .status-glow-active  { box-shadow: 0 0 8px #c3cc8c; }
-  .status-glow-warning { box-shadow: 0 0 8px #ffdb3c; }
-  .status-glow-alert   { box-shadow: 0 0 8px #ffb4ab; }
-
-  /* ============================================================
-     BUTTONS (Kế thừa hệ thống cũ, nay dùng dark palette)
+     BUTTONS
      ============================================================ */
   .btn {
     @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm
@@ -107,79 +37,17 @@
            disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 active:scale-95;
   }
   .btn-primary {
-    @apply btn bg-primary-container text-primary hover:bg-primary-container/80
-           focus:ring-primary border border-white/20 shadow-md;
+    @apply btn shadow-md;
   }
   .btn-secondary {
-    @apply btn bg-surface-container-high border border-white/10 text-on-surface
-           hover:bg-surface-container-highest focus:ring-outline shadow-sm;
+    @apply btn shadow-sm;
   }
   .btn-danger {
-    @apply btn bg-error-container text-on-error-container hover:opacity-80
-           focus:ring-error shadow-md border border-error/20;
+    @apply btn shadow-md;
   }
   .btn-ghost {
-    @apply btn bg-transparent text-outline hover:bg-white/5 focus:ring-outline;
+    @apply btn bg-transparent;
   }
-
-  /* ============================================================
-     FORM INPUT (dark theme)
-     ============================================================ */
-  .input {
-    @apply w-full px-3 py-2 bg-surface-container-lowest/80 backdrop-blur-sm
-           border border-white/5 rounded-lg text-on-surface
-           placeholder-outline/60 focus:outline-none focus:ring-2
-           focus:ring-secondary-container/50 focus:border-secondary-container
-           transition-all duration-200;
-  }
-  .input-error {
-    @apply border-error focus:ring-error/50;
-  }
-  .label {
-    @apply block text-label-caps font-bold text-on-surface-variant uppercase tracking-[0.1em] mb-1;
-  }
-
-  /* ============================================================
-     TABLE (dark theme)
-     ============================================================ */
-  .table-auto th {
-    @apply p-4 font-label-caps text-label-caps text-on-surface-variant
-           uppercase tracking-wider bg-surface-container/20;
-  }
-  .table-auto td {
-    @apply p-4 text-body-md text-on-surface border-t border-white/5;
-  }
-  .table-auto tr:hover td {
-    @apply bg-white/5;
-  }
-
-  /* ============================================================
-     TAB
-     ============================================================ */
-  .tab-btn {
-    @apply px-4 py-2.5 text-sm font-medium text-outline border-b-2 border-transparent
-           hover:text-on-surface hover:border-outline-variant
-           transition-all duration-200 whitespace-nowrap;
-  }
-  .tab-btn-active {
-    @apply text-primary border-primary;
-  }
-
-  /* ============================================================
-     BADGE / STATUS PILL
-     ============================================================ */
-  .badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded-full text-label-caps font-bold;
-  }
-  .badge-active  { @apply badge bg-primary/20 text-primary border border-primary/30; }
-  .badge-warning { @apply badge bg-secondary-container/20 text-secondary-container border border-secondary-container/30; }
-  .badge-alert   { @apply badge bg-error/20 text-error border border-error/30; }
-  .badge-gray    { @apply badge bg-surface-container-high text-on-surface-variant border border-white/10; }
-  /* Compat với màn cũ */
-  .badge-blue    { @apply badge-active; }
-  .badge-green   { @apply badge bg-primary-container/30 text-primary border border-primary/20; }
-  .badge-red     { @apply badge-alert; }
-  .badge-yellow  { @apply badge-warning; }
 
   /* ============================================================
      HTMX LOADING INDICATOR

@@ -3,24 +3,43 @@
 {% block page_title %}Rà soát hồ sơ{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl space-y-4">
-  <div class="card">
-    <h2 class="text-sm font-semibold text-white mb-2">Upload file Excel để rà soát</h2>
-    <p class="text-xs text-slate-400 mb-4">File phải có cột <code class="bg-surface-900 px-1 rounded">ho_ten</code>. Hệ thống sẽ so sánh với database bằng fuzzy matching.</p>
-
-    <form hx-post="/ra-soat/api/upload"
-          hx-target="#ra-soat-results"
-          hx-swap="innerHTML"
-          hx-encoding="multipart/form-data"
-          class="space-y-3">
-      <input type="file" name="file" accept=".xlsx,.xls" class="input" required />
-      <button type="submit" class="btn-primary">
-        <span class="htmx-indicator animate-spin">⏳</span>
-        Tải lên & Rà soát
-      </button>
-    </form>
+<div class="cand-ui">
+  <div class="page-header">
+    <div>
+      <div class="eyebrow">Nghiệp vụ</div>
+      <h1>Rà soát hồ sơ</h1>
+      <div class="sub">So sánh danh sách từ file Excel với cơ sở dữ liệu bằng fuzzy matching.</div>
+    </div>
   </div>
 
-  <div id="ra-soat-results"></div>
+  <div style="max-width:680px;">
+    <div class="card card--accent">
+      <div class="card__head" style="padding-left:0;padding-right:0;padding-top:0;">
+        <h3><span class="ico">fact_check</span> Upload file Excel để rà soát</h3>
+        <span class="pill pill-gold"><span class="dot"></span>.xlsx / .xls</span>
+      </div>
+
+      <div style="padding-top:18px;">
+        <p style="font-size:13px;color:var(--ink-500);margin-bottom:16px;">
+          File phải có cột <code>ho_ten</code>. Hệ thống sẽ so sánh với database bằng fuzzy matching.
+        </p>
+
+        <form hx-post="/ra-soat/api/upload"
+              hx-target="#ra-soat-results"
+              hx-swap="innerHTML"
+              hx-encoding="multipart/form-data"
+              class="space-y-3">
+          <input type="file" name="file" accept=".xlsx,.xls" class="field__input" required />
+          <button type="submit" class="btn btn-primary">
+            <span class="htmx-indicator cand-spin">⏳</span>
+            <span class="ico">verified</span>
+            Tải lên &amp; Rà soát
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div id="ra-soat-results"></div>
+  </div>
 </div>
 {% endblock %}

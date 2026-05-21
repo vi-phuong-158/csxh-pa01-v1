@@ -3,51 +3,58 @@
 {% block page_title %}Nhập liệu: {{ profile.cccd }}{% endblock %}
 
 {% block content %}
-<div x-data="{ activeTab: 'basic' }" class="space-y-4">
+<div x-data="{ activeTab: 'basic', showCancelDraft: false }" class="cand-ui">
 
-  <!-- Progress header -->
-  <div class="card flex items-center justify-between">
+  <div class="page-header">
     <div>
-      <p class="text-xs text-slate-400">CCCD: <span class="font-mono text-slate-200">{{ profile.cccd }}</span></p>
-      <p class="text-sm font-semibold text-white mt-0.5">{{ profile.ho_ten or '(Chưa điền tên)' }}</p>
+      <div class="eyebrow">Bản ghi nháp</div>
+      <h1>Nhập liệu hồ sơ</h1>
+      <div class="sub">
+        CCCD: <span class="mono" style="font-weight:700;color:var(--ink-900);">{{ profile.cccd }}</span>
+        · {{ profile.ho_ten or 'Chưa điền họ tên' }}
+      </div>
     </div>
-    <div class="flex gap-2">
-      <button hx-delete="/nhap-lieu/{{ profile.cccd }}"
-              hx-confirm="Hủy và xóa bản ghi nháp này?"
-              hx-push-url="/nhap-lieu"
-              class="btn-ghost text-xs">Hủy</button>
+    <div class="page-header__actions">
+      <button type="button" @click="showCancelDraft = true" class="btn btn-danger">
+        <span class="ico">delete</span>
+        Hủy nháp
+      </button>
       <button hx-post="/nhap-lieu/{{ profile.cccd }}/commit"
               hx-confirm="Hoàn tất nhập liệu? Hồ sơ sẽ được lưu chính thức."
-              class="btn-primary text-xs">✓ Hoàn tất</button>
+              class="btn btn-primary">
+        <span class="ico">check_circle</span>
+        Hoàn tất
+      </button>
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="border-b border-slate-700 flex overflow-x-auto">
-    {% set tabs = [('basic','Thông tin cơ bản'),('nhan-than','Nhân thân'),('lien-he','Liên hệ'),('tai-chinh','Tài chính'),('phuong-tien','Phương tiện'),('ho-so-dac-thu','Hồ sơ đặc thù'),('qua-trinh','Quá trình')] %}
-    {% for id, label in tabs %}
-    <button type="button"
-      {% if id != 'basic' %}
-      hx-get="/profile/{{ profile.cccd }}/tab/{{ id }}"
-      hx-target="#dynamic-tab-content"
-      hx-swap="innerHTML"
-      {% endif %}
-      @click="
-        if (activeTab === 'basic' && '{{ id }}' !== 'basic') {
-          const basicForm = document.querySelector('#basic-tab-form');
-          if (basicForm) {
-            if (!basicForm.checkValidity()) {
-              basicForm.reportValidity();
-              return; // Stop switching tab if basic form is invalid
+  <div class="card" style="padding:0;margin-bottom:20px;overflow:hidden;">
+    <div class="tabs" style="margin-bottom:0;padding:0 12px;">
+      {% set tabs = [('basic','Thông tin cơ bản'),('nhan-than','Nhân thân'),('lien-he','Liên hệ'),('tai-chinh','Tài chính'),('phuong-tien','Phương tiện'),('ho-so-dac-thu','Hồ sơ đặc thù'),('qua-trinh','Quá trình')] %}
+      {% for id, label in tabs %}
+      <button type="button"
+        {% if id != 'basic' %}
+        hx-get="/profile/{{ profile.cccd }}/tab/{{ id }}"
+        hx-target="#dynamic-tab-content"
+        hx-swap="innerHTML"
+        {% endif %}
+        @click="
+          if (activeTab === 'basic' && '{{ id }}' !== 'basic') {
+            const basicForm = document.querySelector('#basic-tab-form');
+            if (basicForm) {
+              if (!basicForm.checkValidity()) {
+                basicForm.reportValidity();
+                return;
+              }
+              htmx.trigger(basicForm, 'submit');
             }
-            htmx.trigger(basicForm, 'submit');
           }
-        }
-        activeTab='{{ id }}';
-      "
-      :class="activeTab==='{{ id }}' ? 'tab-btn-active' : ''"
-      class="tab-btn">{{ label }}</button>
-    {% endfor %}
+          activeTab='{{ id }}';
+        "
+        :class="activeTab==='{{ id }}' ? 'is-active' : ''"
+        class="tab">{{ label }}</button>
+      {% endfor %}
+    </div>
   </div>
 
   <div id="tab-content">
@@ -55,9 +62,36 @@
       {% include "profile/_tab_basic.html" %}
     </div>
 
-    <!-- Other tabs loaded via HTMX on click -->
     <div x-show="activeTab !== 'basic'" id="dynamic-tab-content">
-      <!-- Dynamic content will be injected here -->
+      <div class="card empty-state">
+        <span class="ico">tab</span>
+        <p>Chọn một tab để tải nội dung nghiệp vụ.</p>
+      </div>
+    </div>
+  </div>
+
+  <div x-show="showCancelDraft"
+       x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center"
+       style="background:rgba(26,24,20,0.45);backdrop-filter:blur(6px);">
+    <div class="card" style="width:min(440px,calc(100vw - 32px));box-shadow:var(--shadow-pop);">
+      <div class="card__head" style="padding-left:0;padding-right:0;padding-top:0;">
+        <h3><span class="ico">warning</span> Xóa bản ghi nháp?</h3>
+      </div>
+      <div style="padding-top:16px;">
+        <p style="font-size:13px;color:var(--ink-700);">
+          Hồ sơ nháp CCCD <strong class="mono">{{ profile.cccd }}</strong> sẽ bị xóa. Thao tác này không thể hoàn tác.
+        </p>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+          <button type="button" @click="showCancelDraft = false" class="btn btn-secondary">Giữ lại</button>
+          <button hx-delete="/nhap-lieu/{{ profile.cccd }}"
+                  hx-push-url="/nhap-lieu"
+                  class="btn btn-danger">
+            <span class="ico">delete_forever</span>
+            Xóa nháp
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

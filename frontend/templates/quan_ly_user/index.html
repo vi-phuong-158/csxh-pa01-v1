@@ -3,73 +3,77 @@
 {% block page_title %}Quản lý tài khoản{% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+<div class="cand-ui grid grid-cols-1 lg:grid-cols-3 gap-5">
 
   <!-- User list -->
-  <div class="lg:col-span-2 card overflow-x-auto">
-    {% if success %}<div class="mb-3 text-green-400 text-sm">{{ success }}</div>{% endif %}
-    {% if error %}<div class="mb-3 text-red-400 text-sm">{{ error }}</div>{% endif %}
-    <p class="text-sm font-semibold text-white mb-3">Danh sách tài khoản ({{ users | length }})</p>
-    <table class="table-auto w-full">
-      <thead><tr><th>Username</th><th>Họ tên</th><th>Vai trò</th><th>Đăng nhập lần cuối</th><th></th></tr></thead>
-      <tbody>
-        {% for u in users %}
-        <tr>
-          <td class="font-mono text-xs">{{ u.username }}</td>
-          <td>{{ u.ho_ten or '—' }}</td>
-          <td>
-            {% if u.role == 'super_admin' %}
-            <span class="badge badge-red">Super Admin</span>
-            {% else %}
-            <span class="badge badge-gray">User</span>
-            {% endif %}
-          </td>
-          <td class="text-slate-400">{{ u.last_login.strftime('%d/%m/%Y %H:%M') if u.last_login else '—' }}</td>
-          <td>
-            {% if u.id != user.id %}
-            <button hx-post="/quan-ly-user/{{ u.id }}/delete"
-                    hx-confirm="Vô hiệu hóa tài khoản {{ u.username }}?"
-                    hx-target="closest tr" hx-swap="outerHTML"
-                    class="text-red-400 hover:text-red-300 text-xs">Xóa</button>
-            {% else %}
-            <span class="text-slate-600 text-xs">Tài khoản hiện tại</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="lg:col-span-2 card" style="padding:0;overflow:hidden;">
+    <div style="padding:24px 24px 0 24px;">
+      {% if success %}<div class="mb-3 text-sm" style="color:var(--cand-green-deep);">{{ success }}</div>{% endif %}
+      {% if error %}<div class="mb-3 text-sm" style="color:var(--cand-red-deep);">{{ error }}</div>{% endif %}
+      <p class="text-sm font-semibold mb-3" style="color:var(--ink-900);">Danh sách tài khoản ({{ users | length }})</p>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="tbl">
+        <thead><tr><th>Username</th><th>Họ tên</th><th>Vai trò</th><th>Đăng nhập lần cuối</th><th></th></tr></thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td class="text-xs mono">{{ u.username }}</td>
+            <td>{{ u.ho_ten or '—' }}</td>
+            <td>
+              {% if u.role == 'super_admin' %}
+              <span class="pill pill-red"><span class="dot"></span>Super Admin</span>
+              {% else %}
+              <span class="pill pill-gray"><span class="dot"></span>User</span>
+              {% endif %}
+            </td>
+            <td style="color:var(--ink-500);">{{ u.last_login.strftime('%d/%m/%Y %H:%M') if u.last_login else '—' }}</td>
+            <td>
+              {% if u.id != user.id %}
+              <button hx-post="/quan-ly-user/{{ u.id }}/delete"
+                      hx-confirm="Vô hiệu hóa tài khoản {{ u.username }}?"
+                      hx-target="closest tr" hx-swap="outerHTML"
+                      class="btn btn-danger btn-xs">Xóa</button>
+              {% else %}
+              <span class="text-xs" style="color:var(--ink-300);">Tài khoản hiện tại</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Create user form -->
   <div class="card">
-    <p class="text-sm font-semibold text-white mb-4">Tạo tài khoản mới</p>
+    <p class="text-sm font-semibold mb-4" style="color:var(--ink-900);">Tạo tài khoản mới</p>
     <form action="/quan-ly-user/create" method="post" class="space-y-3">
       <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}"/>
       <div>
-        <label class="label">Username</label>
-        <input name="username" type="text" class="input" required />
+        <label class="field__label">Username</label>
+        <input name="username" type="text" class="field__input" required />
       </div>
       <div>
-        <label class="label">Họ tên</label>
-        <input name="ho_ten" type="text" class="input uppercase" oninput="this.value = this.value.toUpperCase()" />
+        <label class="field__label">Họ tên</label>
+        <input name="ho_ten" type="text" class="field__input uppercase" oninput="this.value = this.value.toUpperCase()" />
       </div>
       <div>
-        <label class="label">Mật khẩu</label>
-        <input name="password" type="password" class="input" required />
+        <label class="field__label">Mật khẩu</label>
+        <input name="password" type="password" class="field__input" required />
       </div>
       <div>
-        <label class="label">Vai trò</label>
-        <select name="role" class="input">
+        <label class="field__label">Vai trò</label>
+        <select name="role" class="field__select">
           <option value="user">User</option>
           <option value="super_admin">Super Admin</option>
         </select>
       </div>
       <div class="flex items-center gap-2">
         <input type="checkbox" name="must_change_password" value="on" checked id="mcp" class="rounded" />
-        <label for="mcp" class="text-xs text-slate-400">Yêu cầu đổi mật khẩu khi đăng nhập lần đầu</label>
+        <label for="mcp" class="field__hint">Yêu cầu đổi mật khẩu khi đăng nhập lần đầu</label>
       </div>
-      <button type="submit" class="btn-primary w-full justify-center text-xs">Tạo tài khoản</button>
+      <button type="submit" class="btn btn-primary w-full justify-center">Tạo tài khoản</button>
     </form>
   </div>
 </div>

@@ -2,16 +2,16 @@
   {% if profile.ho_so_dac_thu %}
   <div class="space-y-3">
     {% for hsd in profile.ho_so_dac_thu %}
-    <div class="card border-l-4 border-yellow-500">
+    <div class="card" style="border-left:4px solid var(--cand-gold);">
       <div class="flex items-start justify-between gap-3">
         <div>
-          <span class="badge badge-yellow mb-2">{{ loai_hinh_dac_thu.get(hsd.loai_hinh, hsd.loai_hinh) }}</span>
-          <p class="text-sm text-slate-200 whitespace-pre-wrap">{{ hsd.noi_dung or '—' }}</p>
-          {% if hsd.ghi_chu %}<p class="text-xs text-slate-400 mt-1">{{ hsd.ghi_chu }}</p>{% endif %}
+          <span class="pill pill-gold" style="margin-bottom:8px;">{{ loai_hinh_dac_thu.get(hsd.loai_hinh, hsd.loai_hinh) }}</span>
+          <p class="text-sm whitespace-pre-wrap">{{ hsd.noi_dung or '—' }}</p>
+          {% if hsd.ghi_chu %}<p class="field__hint mt-1">{{ hsd.ghi_chu }}</p>{% endif %}
         </div>
         <button hx-delete="/profile/{{ profile.cccd }}/ho-so-dac-thu/{{ hsd.id }}"
                 hx-target="#dynamic-tab-content" hx-swap="innerHTML" hx-confirm="Xóa?"
-                class="text-red-400 hover:text-red-300 text-xs shrink-0">Xóa</button>
+                class="btn btn-danger btn-xs shrink-0">Xóa</button>
       </div>
     </div>
     {% endfor %}
@@ -19,14 +19,14 @@
   {% endif %}
 
   <div class="card" x-data="{open:false, loai_hinh: ''}">
-    <button @click="open=!open" class="btn-secondary text-xs w-full justify-center">+ Thêm hồ sơ đặc thù</button>
+    <button @click="open=!open" class="btn btn-secondary w-full justify-center">+ Thêm hồ sơ đặc thù</button>
     <form x-show="open" x-cloak
           hx-post="/profile/{{ profile.cccd }}/ho-so-dac-thu"
           hx-target="#dynamic-tab-content" hx-swap="innerHTML"
           class="mt-4 space-y-3">
       <div>
-        <label class="label">Loại hình</label>
-        <select name="loai_hinh" x-model="loai_hinh" class="input" required>
+        <label class="field__label">Loại hình</label>
+        <select name="loai_hinh" x-model="loai_hinh" class="field__select" required>
           <option value="">-- Chọn loại hình --</option>
           {% for key, val in loai_hinh_dac_thu.items() %}
           <option value="{{ key }}">{{ val }}</option>
@@ -35,40 +35,40 @@
       </div>
 
       <!-- Dynamic fields based on loai_hinh -->
-      <div x-show="loai_hinh === 'Hon_Nhan_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
-        <div><label class="label">Họ tên đối tác</label><input name="hn_ten" type="text" class="input" /></div>
+      <div x-show="loai_hinh === 'Hon_Nhan_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3" style="background:var(--paper-2);border:1px solid var(--line);border-radius:8px;padding:12px;">
+        <div><label class="field__label">Họ tên đối tác</label><input name="hn_ten" type="text" class="field__input" /></div>
         <div>
-          <label class="label">Quốc tịch</label>
-          <input name="hn_qt" list="list-quoc-gia" class="input" placeholder="Tìm quốc tịch..." />
+          <label class="field__label">Quốc tịch</label>
+          <input name="hn_qt" list="list-quoc-gia" class="field__input" placeholder="Tìm quốc tịch..." />
         </div>
-        <div><label class="label">Số hộ chiếu</label><input name="hn_hc" type="text" class="input font-mono uppercase" /></div>
+        <div><label class="field__label">Số hộ chiếu</label><input name="hn_hc" type="text" class="field__input uppercase" style="font-family:'JetBrains Mono',monospace;" /></div>
         <div>
-          <label class="label">Tình trạng</label>
-          <select name="hn_tt" class="input">
+          <label class="field__label">Tình trạng</label>
+          <select name="hn_tt" class="field__select">
             <option value="Kết hôn hợp pháp">Kết hôn hợp pháp</option>
             <option value="Sinh sống như vợ chồng">Sinh sống như vợ chồng</option>
             <option value="Đã ly hôn">Đã ly hôn</option>
             <option value="Đã qua đời">Đã qua đời</option>
           </select>
         </div>
-        <div class="md:col-span-2"><label class="label">Địa chỉ hiện tại</label><input name="hn_dc_ht" type="text" class="input" placeholder="Địa chỉ đang sinh sống..." /></div>
-        <div class="md:col-span-2"><label class="label">Nơi thường trú</label><input name="hn_ntr" type="text" class="input" placeholder="Địa chỉ thường trú..." /></div>
-        <div><label class="label">Nghề nghiệp</label><input name="hn_nghe" type="text" class="input" /></div>
-        <div><label class="label">Nơi làm việc</label><input name="hn_nlv" type="text" class="input" /></div>
-        <div><label class="label">Chức vụ/Vị trí</label><input name="hn_cv" type="text" class="input" /></div>
+        <div class="md:col-span-2"><label class="field__label">Địa chỉ hiện tại</label><input name="hn_dc_ht" type="text" class="field__input" placeholder="Địa chỉ đang sinh sống..." /></div>
+        <div class="md:col-span-2"><label class="field__label">Nơi thường trú</label><input name="hn_ntr" type="text" class="field__input" placeholder="Địa chỉ thường trú..." /></div>
+        <div><label class="field__label">Nghề nghiệp</label><input name="hn_nghe" type="text" class="field__input" /></div>
+        <div><label class="field__label">Nơi làm việc</label><input name="hn_nlv" type="text" class="field__input" /></div>
+        <div><label class="field__label">Chức vụ/Vị trí</label><input name="hn_cv" type="text" class="field__input" /></div>
       </div>
 
-      <div x-show="loai_hinh === 'Lam_Viec_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
-        <div class="md:col-span-2"><label class="label">Tên tổ chức NGO/FDI</label><input name="lv_tc" type="text" class="input" /></div>
-        <div><label class="label">Chức vụ</label><input name="lv_cv" type="text" class="input" /></div>
-        <div><label class="label">Thời gian làm việc</label><input name="lv_tg" type="text" class="input" /></div>
-        <div class="md:col-span-2"><label class="label">Địa điểm làm việc</label><input name="lv_dd" type="text" class="input" /></div>
+      <div x-show="loai_hinh === 'Lam_Viec_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3" style="background:var(--paper-2);border:1px solid var(--line);border-radius:8px;padding:12px;">
+        <div class="md:col-span-2"><label class="field__label">Tên tổ chức NGO/FDI</label><input name="lv_tc" type="text" class="field__input" /></div>
+        <div><label class="field__label">Chức vụ</label><input name="lv_cv" type="text" class="field__input" /></div>
+        <div><label class="field__label">Thời gian làm việc</label><input name="lv_tg" type="text" class="field__input" /></div>
+        <div class="md:col-span-2"><label class="field__label">Địa điểm làm việc</label><input name="lv_dd" type="text" class="field__input" /></div>
       </div>
 
-      <div x-show="loai_hinh === 'Hoc_Tap_Cong_Tac_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
+      <div x-show="loai_hinh === 'Hoc_Tap_Cong_Tac_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3" style="background:var(--paper-2);border:1px solid var(--line);border-radius:8px;padding:12px;">
         <div>
-          <label class="label">Diện đi</label>
-          <select name="ht_dien" class="input">
+          <label class="field__label">Diện đi</label>
+          <select name="ht_dien" class="field__select">
             <option value="Du học tự túc">Du học tự túc</option>
             <option value="Du học ngân sách">Du học ngân sách</option>
             <option value="Công tác">Công tác</option>
@@ -77,54 +77,54 @@
           </select>
         </div>
         <div>
-          <label class="label">Quốc gia</label>
-          <input name="ht_qg" list="list-quoc-gia" class="input" placeholder="Tìm quốc gia..." />
+          <label class="field__label">Quốc gia</label>
+          <input name="ht_qg" list="list-quoc-gia" class="field__input" placeholder="Tìm quốc gia..." />
         </div>
-        <div><label class="label">Thời gian đi</label><input name="ht_tgd" type="text" class="input" /></div>
-        <div><label class="label">Thời gian về</label><input name="ht_tgv" type="text" class="input" /></div>
-        <div class="md:col-span-2"><label class="label">Nghề nghiệp sau khi về</label><input name="ht_nghe" type="text" class="input" /></div>
-        <div class="md:col-span-2"><label class="label">Địa chỉ cụ thể nơi du học/công tác</label><input name="ht_dc" type="text" class="input" placeholder="Tên trường, công ty, địa chỉ cụ thể..." /></div>
+        <div><label class="field__label">Thời gian đi</label><input name="ht_tgd" type="text" class="field__input" /></div>
+        <div><label class="field__label">Thời gian về</label><input name="ht_tgv" type="text" class="field__input" /></div>
+        <div class="md:col-span-2"><label class="field__label">Nghề nghiệp sau khi về</label><input name="ht_nghe" type="text" class="field__input" /></div>
+        <div class="md:col-span-2"><label class="field__label">Địa chỉ cụ thể nơi du học/công tác</label><input name="ht_dc" type="text" class="field__input" placeholder="Tên trường, công ty, địa chỉ cụ thể..." /></div>
       </div>
 
-      <div x-show="loai_hinh === 'Vi_Pham_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
+      <div x-show="loai_hinh === 'Vi_Pham_NN'" class="grid grid-cols-1 md:grid-cols-2 gap-3" style="background:var(--paper-2);border:1px solid var(--line);border-radius:8px;padding:12px;">
         <div>
-          <label class="label">Quốc gia vi phạm</label>
-          <input name="vp_qg" list="list-quoc-gia" class="input" placeholder="Tìm quốc gia..." />
+          <label class="field__label">Quốc gia vi phạm</label>
+          <input name="vp_qg" list="list-quoc-gia" class="field__input" placeholder="Tìm quốc gia..." />
         </div>
-        <div><label class="label">Cơ quan bắt giữ</label><input name="vp_cq" type="text" class="input" /></div>
-        <div><label class="label">Ngày vi phạm</label><input name="vp_tg" type="date" class="input" /></div>
-        <div><label class="label">Hình thức xử lý</label><input name="vp_ht" type="text" class="input" /></div>
-        <div class="md:col-span-2"><label class="label">Nội dung vi phạm</label><textarea name="vp_nd" rows="2" class="input resize-none"></textarea></div>
+        <div><label class="field__label">Cơ quan bắt giữ</label><input name="vp_cq" type="text" class="field__input" /></div>
+        <div><label class="field__label">Ngày vi phạm</label><input name="vp_tg" type="date" class="field__input" /></div>
+        <div><label class="field__label">Hình thức xử lý</label><input name="vp_ht" type="text" class="field__input" /></div>
+        <div class="md:col-span-2"><label class="field__label">Nội dung vi phạm</label><textarea name="vp_nd" rows="2" class="field__textarea resize-none"></textarea></div>
       </div>
 
-      <div x-show="loai_hinh === 'Xac_Minh'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-surface-900/50 rounded border border-slate-700/50">
-        <div><label class="label">Cơ quan xác minh</label><input name="xm_cq" type="text" class="input" /></div>
-        <div><label class="label">Ngày xác minh</label><input name="xm_tg" type="date" class="input" /></div>
+      <div x-show="loai_hinh === 'Xac_Minh'" class="grid grid-cols-1 md:grid-cols-2 gap-3" style="background:var(--paper-2);border:1px solid var(--line);border-radius:8px;padding:12px;">
+        <div><label class="field__label">Cơ quan xác minh</label><input name="xm_cq" type="text" class="field__input" /></div>
+        <div><label class="field__label">Ngày xác minh</label><input name="xm_tg" type="date" class="field__input" /></div>
         <div class="md:col-span-2">
-          <label class="label">Kết quả</label>
-          <select name="xm_kq" class="input">
+          <label class="field__label">Kết quả</label>
+          <select name="xm_kq" class="field__select">
             <option value="Đủ điều kiện">Đủ điều kiện</option>
             <option value="Không đủ điều kiện">Không đủ điều kiện</option>
             <option value="Đang xác minh">Đang xác minh</option>
             <option value="Khác">Khác</option>
           </select>
         </div>
-        <div class="md:col-span-2"><label class="label">Nội dung xác minh</label><textarea name="xm_nd" rows="2" class="input resize-none"></textarea></div>
+        <div class="md:col-span-2"><label class="field__label">Nội dung xác minh</label><textarea name="xm_nd" rows="2" class="field__textarea resize-none"></textarea></div>
       </div>
-      
+
       <!-- Fallback text area for other types or custom input -->
       <div x-show="loai_hinh === ''">
-        <label class="label">Nội dung chi tiết (nhập tự do)</label>
-        <textarea name="noi_dung_chi_tiet" rows="4" class="input resize-none" placeholder="Nhập thông tin chi tiết nếu có..."></textarea>
+        <label class="field__label">Nội dung chi tiết (nhập tự do)</label>
+        <textarea name="noi_dung_chi_tiet" rows="4" class="field__textarea resize-none" placeholder="Nhập thông tin chi tiết nếu có..."></textarea>
       </div>
 
       <div>
-        <label class="label">Ghi chú thêm</label>
-        <input name="ghi_chu" type="text" class="input" />
+        <label class="field__label">Ghi chú thêm</label>
+        <input name="ghi_chu" type="text" class="field__input" />
       </div>
       <div class="flex gap-2 justify-end">
-        <button type="button" @click="open=false" class="btn-ghost text-xs">Hủy</button>
-        <button type="submit" class="btn-primary text-xs">Lưu</button>
+        <button type="button" @click="open=false" class="btn btn-ghost btn-sm">Hủy</button>
+        <button type="submit" class="btn btn-primary btn-sm">Lưu</button>
       </div>
     </form>
   </div>

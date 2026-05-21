@@ -3,30 +3,68 @@
 {% block page_title %}Nhập dữ liệu từ Excel{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl space-y-4">
-  <div class="card">
-    <h2 class="text-sm font-semibold text-white mb-2">Upload file Excel</h2>
-    <p class="text-xs text-slate-400 mb-3">File Excel phải theo đúng template. Hệ thống sẽ xác thực và hiển thị preview trước khi import chính thức.</p>
-
-    <a href="/nhap-excel/download-template"
-       class="inline-flex items-center gap-1.5 text-xs text-primary-400 hover:text-primary-300 mb-4 transition-colors">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-      📥 Tải file mẫu Excel (mau_ho_so_csxh.xlsx)
-    </a>
-
-    <form hx-post="/nhap-excel/upload"
-          hx-target="#upload-result"
-          hx-swap="innerHTML"
-          hx-encoding="multipart/form-data"
-          class="space-y-3">
-      <input type="file" name="file" accept=".xlsx,.xls" class="input" required />
-      <button type="submit" class="btn-primary">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-        Tải lên & Xác thực
-      </button>
-    </form>
+<div class="cand-ui">
+  <div class="page-header">
+    <div>
+      <div class="eyebrow">Bulk import</div>
+      <h1>Nhập dữ liệu từ Excel</h1>
+      <div class="sub">Tải file theo mẫu chuẩn để hệ thống kiểm tra và ghi nhận hồ sơ hàng loạt.</div>
+    </div>
+    <div class="page-header__actions">
+      <a href="/nhap-excel/download-template" class="btn btn-secondary">
+        <span class="ico">download</span>
+        Tải file mẫu
+      </a>
+    </div>
   </div>
 
-  <div id="upload-result"></div>
+  <div style="max-width:760px;">
+    <div class="card card--accent">
+      <div class="card__head" style="padding-left:0;padding-right:0;padding-top:0;">
+        <h3><span class="ico">upload_file</span> Upload file Excel</h3>
+        <span class="pill pill-gold"><span class="dot"></span>.xlsx / .xls</span>
+      </div>
+
+      <div style="padding-top:18px;">
+        <p style="font-size:13px;color:var(--ink-500);margin-bottom:16px;">
+          File Excel cần có tối thiểu các cột <strong>cccd</strong> và <strong>ho_ten</strong>. Kết quả xử lý sẽ hiển thị ngay bên dưới sau khi upload.
+        </p>
+
+        <form hx-post="/nhap-excel/upload"
+              hx-target="#upload-result"
+              hx-swap="innerHTML"
+              hx-encoding="multipart/form-data"
+              x-data="{ fileName: '' }"
+              class="form-grid"
+              style="grid-template-columns:1fr;">
+          <label for="excel-file" class="drop-zone" style="position:relative;cursor:pointer;">
+            <span class="ico">cloud_upload</span>
+            <h4 x-text="fileName || 'Chọn hoặc kéo thả file Excel'"></h4>
+            <p>Hỗ trợ định dạng .xlsx và .xls, dùng đúng file mẫu để hạn chế lỗi dòng.</p>
+            <input id="excel-file"
+                   type="file"
+                   name="file"
+                   accept=".xlsx,.xls"
+                   required
+                   @change="fileName = $event.target.files.length ? $event.target.files[0].name : ''"
+                   style="position:absolute;inset:0;opacity:0;cursor:pointer;" />
+          </label>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <a href="/nhap-excel/download-template" class="btn btn-ghost">
+              <span class="ico">description</span>
+              mau_ho_so_csxh.xlsx
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <span class="ico">verified</span>
+              Tải lên và xác thực
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="upload-result" style="margin-top:20px;"></div>
+  </div>
 </div>
 {% endblock %}

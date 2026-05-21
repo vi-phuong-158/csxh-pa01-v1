@@ -7,60 +7,120 @@
 {% endblock %}
 
 {% block content %}
-<div x-data="{mode: 'normal'}" class="space-y-4">
+<div x-data="{ mode: 'normal' }" class="cand-ui">
 
-  <!-- Search bar -->
-  <div class="card">
-    <div class="flex items-center gap-3 mb-3">
-      <div class="flex rounded-lg overflow-hidden border border-slate-600 text-sm">
-        <button @click="mode='normal'" :class="mode==='normal' ? 'bg-primary-700 text-white' : 'bg-surface-900 text-slate-400 hover:text-white'" class="px-3 py-1.5 transition-colors">Tìm kiếm thường</button>
-        <button @click="mode='fuzzy'"  :class="mode==='fuzzy'  ? 'bg-primary-700 text-white' : 'bg-surface-900 text-slate-400 hover:text-white'" class="px-3 py-1.5 transition-colors">Tìm kiếm mờ</button>
-      </div>
+  <div class="page-header">
+    <div>
+      <div class="eyebrow">Tra cứu nghiệp vụ</div>
+      <h1>Tra cứu hồ sơ</h1>
+      <div class="sub">Tìm theo CCCD, họ tên, số điện thoại hoặc tài khoản ngân hàng.</div>
     </div>
-
-    <!-- Normal search -->
-    <div x-show="mode==='normal'" class="space-y-3">
-      <div class="flex gap-2">
-        <input id="searchInput" type="text" class="input flex-1" placeholder="CCCD, Họ tên, hoặc SĐT, STK (có thể dán nhiều, cách nhau bằng dấu phẩy)..." />
-        <button onclick="loadResults()" class="btn-primary shrink-0">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          Tìm kiếm
-        </button>
-      </div>
-      <div class="flex items-center gap-5 text-sm text-slate-300 ml-1">
-        <span class="text-slate-500 font-medium text-xs uppercase tracking-wider">Phạm vi tìm:</span>
-        <label class="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-          <input type="checkbox" name="searchField" value="name" checked class="rounded border-slate-600 bg-surface-900 text-primary-500 focus:ring-primary-500 focus:ring-offset-surface-900">
-          <span>Tên</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-          <input type="checkbox" name="searchField" value="cccd" checked class="rounded border-slate-600 bg-surface-900 text-primary-500 focus:ring-primary-500 focus:ring-offset-surface-900">
-          <span>Số CCCD</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-          <input type="checkbox" name="searchField" value="phone" checked class="rounded border-slate-600 bg-surface-900 text-primary-500 focus:ring-primary-500 focus:ring-offset-surface-900">
-          <span>Số điện thoại</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-          <input type="checkbox" name="searchField" value="bank" checked class="rounded border-slate-600 bg-surface-900 text-primary-500 focus:ring-primary-500 focus:ring-offset-surface-900">
-          <span>Tài khoản NH</span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Fuzzy search -->
-    <div x-show="mode==='fuzzy'" class="flex gap-2">
-      <input id="fuzzyInput" type="text" class="input flex-1" placeholder="Nhập tên (tìm kiếm gần đúng)..." />
-      <button onclick="loadFuzzy()" class="btn-primary">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        Rà soát
-      </button>
+    <div class="page-header__actions">
+      <a href="/nhap-lieu" class="btn btn-secondary">
+        <span class="ico">person_add</span>
+        Nhập hồ sơ mới
+      </a>
     </div>
   </div>
 
-  <!-- Results -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card__head">
+      <h3><span class="ico">manage_search</span> Điều kiện tìm kiếm</h3>
+      <div style="display:flex;gap:6px;">
+        <button type="button"
+                @click="mode='normal'"
+                :class="mode === 'normal' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'">
+          <span class="ico">search</span>
+          Tìm thường
+        </button>
+        <button type="button"
+                @click="mode='fuzzy'"
+                :class="mode === 'fuzzy' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'">
+          <span class="ico">bolt</span>
+          Tìm mờ
+        </button>
+      </div>
+    </div>
+
+    <div class="card__body">
+      <form id="normalSearchForm"
+            x-show="mode === 'normal'"
+            hx-get="/tra-cuu/api/search"
+            hx-target="#results-container"
+            hx-swap="none"
+            data-search-kind="normal">
+        <input type="hidden" name="fields" id="searchFields" value="name,cccd,phone,bank" />
+        <input type="hidden" name="page_size" value="100" />
+
+        <div class="filter-bar">
+          <div class="search-box" style="flex:1;min-width:320px;">
+            <span class="ico" style="color:var(--ink-500);">search</span>
+            <input id="searchInput"
+                   name="q"
+                   type="search"
+                   class="field__input"
+                   autocomplete="off"
+                   placeholder="CCCD, họ tên, SĐT, STK; có thể dán nhiều giá trị cách nhau bằng dấu phẩy..."
+                   autofocus />
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <span class="ico">search</span>
+            Tìm kiếm
+          </button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <span class="field__label">Phạm vi tìm</span>
+          <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-700);cursor:pointer;">
+            <input type="checkbox" data-search-field value="name" checked>
+            <span>Tên</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-700);cursor:pointer;">
+            <input type="checkbox" data-search-field value="cccd" checked>
+            <span>Số CCCD</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-700);cursor:pointer;">
+            <input type="checkbox" data-search-field value="phone" checked>
+            <span>Số điện thoại</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-700);cursor:pointer;">
+            <input type="checkbox" data-search-field value="bank" checked>
+            <span>Tài khoản NH</span>
+          </label>
+        </div>
+      </form>
+
+      <form id="fuzzySearchForm"
+            x-show="mode === 'fuzzy'"
+            hx-get="/tra-cuu/api/fuzzy"
+            hx-target="#results-container"
+            hx-swap="none"
+            data-search-kind="fuzzy">
+        <div class="filter-bar" style="margin-bottom:0;">
+          <div class="search-box" style="flex:1;min-width:320px;">
+            <span class="ico">person_search</span>
+            <input id="fuzzyInput"
+                   name="q"
+                   type="search"
+                   class="field__input"
+                   autocomplete="off"
+                   placeholder="Nhập tên để tìm kiếm gần đúng..." />
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <span class="ico">bolt</span>
+            Rà soát
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="results-container">
-    <div class="card text-center text-slate-500 text-sm py-10">Nhập từ khóa để tìm kiếm hồ sơ</div>
+    <div class="card empty-state">
+      <span class="ico">travel_explore</span>
+      <p>Nhập từ khóa để tìm kiếm hồ sơ</p>
+      <p style="font-size:12px;color:var(--ink-500);margin-top:4px;">Kết quả sẽ hiển thị tại đây sau khi truy vấn.</p>
+    </div>
   </div>
 </div>
 {% endblock %}
@@ -70,68 +130,120 @@
 <script src="/static/js/vendor/jquery.min.js"></script>
 <script src="/static/js/vendor/jquery.dataTables.min.js"></script>
 <script>
-async function loadResults() {
-  const q = document.getElementById('searchInput').value.trim();
-  const searchFields = Array.from(document.querySelectorAll('input[name="searchField"]:checked'))
-                            .map(cb => cb.value).join(',');
-                            
-  const container = document.getElementById('results-container');
-  container.innerHTML = '<div class="card text-center text-slate-400 text-sm py-6">Đang tìm kiếm...</div>';
+const VCFE_DT_LANG = {
+  search: 'Lọc trong kết quả:',
+  zeroRecords: 'Không có dữ liệu phù hợp',
+  emptyTable: 'Không có dữ liệu',
+  paginate: { first: 'Đầu', previous: 'Trước', next: 'Sau', last: 'Cuối' },
+};
 
-  const res = await fetch(`/tra-cuu/api/search?q=${encodeURIComponent(q)}&fields=${encodeURIComponent(searchFields)}&page_size=100`);
-  const data = await res.json();
-  renderResults(data.results, data.total);
+function isSearchForm(elt) {
+  return elt && (elt.id === 'normalSearchForm' || elt.id === 'fuzzySearchForm');
 }
 
-async function loadFuzzy() {
-  const q = document.getElementById('fuzzyInput').value.trim();
-  if (!q) return;
-  const container = document.getElementById('results-container');
-  container.innerHTML = '<div class="card text-center text-slate-400 text-sm py-6">Đang rà soát...</div>';
-
-  const res = await fetch(`/tra-cuu/api/fuzzy?q=${encodeURIComponent(q)}`);
-  const data = await res.json();
-  renderResults(data, data.length, true);
-}
-
-function renderResults(rows, total, fuzzy=false) {
-  const container = document.getElementById('results-container');
-  if (!rows.length) {
-    container.innerHTML = '<div class="card text-center text-slate-500 text-sm py-10">Không tìm thấy kết quả</div>';
-    return;
-  }
-  let html = `<div class="card">
-    <p class="text-xs text-slate-400 mb-3">Tìm thấy <strong class="text-slate-200">${total}</strong> kết quả</p>
-    <div class="overflow-x-auto"><table id="resultsTable" class="table-auto w-full text-sm">
-    <thead><tr class="text-left border-b border-slate-700"><th>CCCD</th><th>Họ tên</th><th>Ngày sinh</th><th>Giới tính</th><th>Địa bàn</th><th>Nghề nghiệp</th>${fuzzy ? '<th>Độ khớp</th>' : ''}</tr></thead><tbody>`;
-  for (const r of rows) {
-    html += `<tr class="border-b border-slate-700/50 hover:bg-surface-700/30">
-      <td class="py-2"><a href="/profile/${r.cccd}" class="text-primary-400 hover:underline font-mono text-xs">${r.cccd}</a></td>
-      <td class="font-medium">${r.ho_ten || '—'}</td>
-      <td>${r.ngay_sinh || '—'}</td>
-      <td>${r.gioi_tinh || '—'}</td>
-      <td>${r.dia_chi_xa || '—'}</td>
-      <td>${r.nghe_nghiep || '—'}</td>
-      ${fuzzy ? `<td><span class="badge ${r.score>=95?'badge-green':r.score>=80?'badge-yellow':'badge-gray'}">${r.score}%</span></td>` : ''}
-    </tr>`;
-  }
-  html += '</tbody></table></div></div>';
-  container.innerHTML = html;
-  
-  // Khởi tạo DataTables sau khi chèn HTML
-  $('#resultsTable').DataTable({
-    language: {
-      url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json',
-    },
-    pageLength: 10,
-    bLengthChange: false,
-    info: false,
-    order: fuzzy ? [[6, 'desc']] : [],
-    dom: '<"flex justify-between items-center mb-4"f>rt<"flex justify-between items-center mt-4"p>'
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, function (ch) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
   });
 }
 
-document.getElementById('searchInput')?.addEventListener('keydown', e => e.key==='Enter' && loadResults());
-document.getElementById('fuzzyInput')?.addEventListener('keydown', e => e.key==='Enter' && loadFuzzy());
+function selectedSearchFields() {
+  return Array.from(document.querySelectorAll('[data-search-field]:checked'))
+    .map(function (cb) { return cb.value; })
+    .join(',');
+}
+
+function renderState(icon, title, subtitle) {
+  document.getElementById('results-container').innerHTML =
+    '<div class="card empty-state">' +
+      '<span class="ico">' + escapeHtml(icon) + '</span>' +
+      '<p>' + escapeHtml(title) + '</p>' +
+      (subtitle ? '<p style="font-size:12px;color:var(--ink-500);margin-top:4px;">' + escapeHtml(subtitle) + '</p>' : '') +
+    '</div>';
+}
+
+function renderResults(rows, total, fuzzy) {
+  const container = document.getElementById('results-container');
+  if (!rows || !rows.length) {
+    renderState('search_off', 'Không tìm thấy kết quả', 'Thử rút gọn từ khóa hoặc đổi phạm vi tìm kiếm.');
+    return;
+  }
+
+  let html = '<div class="card" style="padding:0;overflow:hidden;">' +
+    '<div class="card__head">' +
+      '<h3><span class="ico">table_rows</span> Kết quả tra cứu</h3>' +
+      '<span class="pill pill-green"><span class="dot"></span>Tìm thấy ' + escapeHtml(total) + ' kết quả</span>' +
+    '</div>' +
+    '<div style="overflow-x:auto;">' +
+    '<table id="resultsTable" class="tbl">' +
+    '<thead><tr>' +
+      '<th>CCCD</th><th>Họ tên</th><th>Ngày sinh</th><th>Giới tính</th><th>Địa bàn</th><th>Nghề nghiệp</th>' +
+      (fuzzy ? '<th>Độ khớp</th>' : '') +
+    '</tr></thead><tbody>';
+
+  rows.forEach(function (r) {
+    const cccd = r.cccd || '';
+    const score = Number(r.score || 0);
+    html += '<tr>' +
+      '<td><a href="/profile/' + encodeURIComponent(cccd) + '" class="mono" style="color:var(--cand-red);font-weight:700;">' + escapeHtml(cccd) + '</a></td>' +
+      '<td><span class="row-name">' + escapeHtml(r.ho_ten || '—') + '</span></td>' +
+      '<td class="mono">' + escapeHtml(r.ngay_sinh || '—') + '</td>' +
+      '<td>' + escapeHtml(r.gioi_tinh || '—') + '</td>' +
+      '<td>' + escapeHtml(r.dia_chi_xa || '—') + '</td>' +
+      '<td><span class="pill pill-gray"><span class="dot"></span>' + escapeHtml(r.nghe_nghiep || '—') + '</span></td>' +
+      (fuzzy ? '<td><span class="pill ' + (score >= 95 ? 'pill-green' : score >= 80 ? 'pill-gold' : 'pill-gray') + '"><span class="dot"></span>' + escapeHtml(score) + '%</span></td>' : '') +
+    '</tr>';
+  });
+
+  html += '</tbody></table></div></div>';
+  container.innerHTML = html;
+
+  if (window.jQuery && jQuery.fn && jQuery.fn.DataTable) {
+    jQuery('#resultsTable').DataTable({
+      language: VCFE_DT_LANG,
+      pageLength: 10,
+      bLengthChange: false,
+      info: false,
+      order: fuzzy ? [[6, 'desc']] : [],
+      dom: '<"flex justify-between items-center mb-4"f>rt<"flex justify-between items-center mt-4"p>'
+    });
+  }
+}
+
+document.body.addEventListener('htmx:configRequest', function (evt) {
+  if (!isSearchForm(evt.detail.elt)) return;
+  if (evt.detail.elt.id === 'normalSearchForm') {
+    const fields = selectedSearchFields();
+    document.getElementById('searchFields').value = fields;
+    evt.detail.parameters.fields = fields;
+    evt.detail.parameters.page_size = '100';
+  }
+});
+
+document.body.addEventListener('htmx:beforeRequest', function (evt) {
+  if (!isSearchForm(evt.detail.elt)) return;
+  const kind = evt.detail.elt.dataset.searchKind;
+  renderState(kind === 'fuzzy' ? 'progress_activity' : 'search', kind === 'fuzzy' ? 'Đang rà soát...' : 'Đang tìm kiếm...', 'Vui lòng chờ trong giây lát.');
+});
+
+document.body.addEventListener('htmx:afterRequest', function (evt) {
+  if (!isSearchForm(evt.detail.elt)) return;
+  if (!evt.detail.successful) return;
+  try {
+    const payload = JSON.parse(evt.detail.xhr.responseText || '{}');
+    if (evt.detail.elt.id === 'fuzzySearchForm') {
+      renderResults(payload, payload.length, true);
+    } else {
+      renderResults(payload.results || [], payload.total || 0, false);
+    }
+  } catch (err) {
+    renderState('error', 'Không đọc được kết quả trả về', 'Vui lòng thử lại hoặc kiểm tra dữ liệu tìm kiếm.');
+  }
+});
+
+document.body.addEventListener('htmx:responseError', function (evt) {
+  if (!isSearchForm(evt.detail.elt)) return;
+  renderState('error', 'Truy vấn không thành công', 'Máy chủ chưa trả về kết quả hợp lệ.');
+});
 </script>
 {% endblock %}
