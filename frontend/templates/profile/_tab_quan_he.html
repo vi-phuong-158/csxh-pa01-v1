@@ -15,78 +15,79 @@
   }">
 
   <!-- Modal xác nhận xóa -->
-  <div x-show="showDeleteModal" x-cloak
-       class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-    <div class="bg-slate-800 border border-slate-600 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
-      <p class="text-white font-semibold mb-2">Xác nhận xóa quan hệ</p>
-      <p class="text-slate-400 text-sm mb-5">Hành động này không thể hoàn tác.</p>
-      <div class="flex gap-3 justify-end">
-        <button type="button" @click="showDeleteModal=false" class="btn-ghost text-sm">Hủy</button>
-        <button type="button" @click="confirmDelete()" class="btn-danger text-sm">Xóa</button>
+  <div x-show="showDeleteModal" x-cloak class="modal-backdrop">
+    <div class="modal">
+      <h3>Xác nhận xóa quan hệ</h3>
+      <p>Hành động này không thể hoàn tác.</p>
+      <div class="modal__actions">
+        <button type="button" @click="showDeleteModal=false" class="btn btn-ghost btn-sm">Hủy</button>
+        <button type="button" @click="confirmDelete()" class="btn btn-danger btn-sm">Xóa</button>
       </div>
     </div>
   </div>
 
   <!-- Bảng danh sách quan hệ -->
   {% if profile.quan_he %}
-  <div class="card overflow-x-auto">
-    <table class="table-auto w-full text-sm">
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="overflow-x:auto;">
+    <table class="tbl">
       <thead>
         <tr>
-          <th class="text-left py-2 px-3">Quan hệ</th>
-          <th class="text-left py-2 px-3">Họ tên</th>
-          <th class="text-left py-2 px-3">CCCD</th>
-          <th class="text-left py-2 px-3">Loại</th>
-          <th class="py-2 px-3"></th>
+          <th>Quan hệ</th>
+          <th>Họ tên</th>
+          <th>CCCD</th>
+          <th>Loại</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
         {% for item in profile.quan_he %}
-        <tr class="border-t border-slate-700/50">
-          <td class="py-2 px-3">
-            <span class="badge badge-blue">{{ item.label }}</span>
+        <tr>
+          <td>
+            <span class="pill pill-blue"><span class="dot"></span>{{ item.label }}</span>
           </td>
-          <td class="py-2 px-3 font-medium">
+          <td class="font-medium">
             {% if item.type == 'graph' and item.cccd_doi_tac %}
-              <a href="/profile/{{ item.cccd_doi_tac }}" class="text-primary-300 hover:text-primary-200">
+              <a href="/profile/{{ item.cccd_doi_tac }}" style="color:var(--cand-red);font-weight:600;">
                 {{ item.ho_ten or '(Chưa có tên)' }}
               </a>
-              {% if item.is_draft %}<span class="badge badge-yellow text-xs ml-1">Nháp</span>{% endif %}
+              {% if item.is_draft %}<span class="pill pill-gold ml-1">Nháp</span>{% endif %}
             {% else %}
               {{ item.ho_ten or '—' }}
             {% endif %}
           </td>
-          <td class="py-2 px-3 font-mono text-xs text-slate-400">
+          <td class="mono">
             {{ item.cccd_doi_tac or '—' }}
           </td>
-          <td class="py-2 px-3">
+          <td>
             {% if item.type == 'graph' %}
-              <span class="text-xs text-emerald-400">🔗 Hồ sơ</span>
+              <span class="pill pill-green"><span class="dot"></span>Hồ sơ</span>
             {% else %}
-              <span class="text-xs text-slate-400">📝 Ghi chú</span>
+              <span class="pill pill-gray"><span class="dot"></span>Ghi chú</span>
             {% endif %}
           </td>
-          <td class="py-2 px-3 text-right">
+          <td class="text-right">
             {% if item.type == 'graph' %}
               <button type="button"
                       @click="openDelete('graph', {{ item.edge_id }})"
-                      class="text-red-400 hover:text-red-300 text-xs">Xóa</button>
+                      class="btn btn-danger btn-xs">Xóa</button>
             {% else %}
               <button type="button"
                       @click="openDelete('satellite', {{ item.item_id }})"
-                      class="text-red-400 hover:text-red-300 text-xs">Xóa</button>
+                      class="btn btn-danger btn-xs">Xóa</button>
             {% endif %}
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
   {% endif %}
 
   <!-- Form thêm quan hệ -->
   <div class="card" x-data="{open: false, preview: ''}">
-    <button type="button" @click="open=!open" class="btn-secondary text-xs w-full justify-center">
+    <button type="button" @click="open=!open" class="btn btn-secondary w-full justify-center">
       + Thêm quan hệ
     </button>
 
@@ -94,8 +95,8 @@
 
       <!-- Chọn loại quan hệ -->
       <div>
-        <label class="label">Loại quan hệ <span class="text-red-400">*</span></label>
-        <select name="loai_quan_he_common" class="input"
+        <label class="field__label">Loại quan hệ <span class="req">*</span></label>
+        <select name="loai_quan_he_common" class="field__select"
                 x-ref="loaiSelect"
                 @change="$refs.loaiSelectGraph.value = $event.target.value; $refs.loaiSelectSat.value = $event.target.value">
           <option value="">-- Chọn quan hệ --</option>
@@ -108,12 +109,12 @@
       <!-- Radio chọn mode -->
       <div class="flex gap-6">
         <label class="flex items-center gap-2 cursor-pointer">
-          <input type="radio" name="mode_chon" value="co_cccd" @change="mode='co_cccd'; preview=''" class="accent-emerald-500" />
-          <span class="text-sm text-slate-300">Có CCCD/CMND</span>
+          <input type="radio" name="mode_chon" value="co_cccd" @change="mode='co_cccd'; preview=''" />
+          <span class="text-sm">Có CCCD/CMND</span>
         </label>
         <label class="flex items-center gap-2 cursor-pointer">
-          <input type="radio" name="mode_chon" value="khong_cccd" @change="mode='khong_cccd'; preview=''" class="accent-amber-500" />
-          <span class="text-sm text-slate-300">Không có / không rõ</span>
+          <input type="radio" name="mode_chon" value="khong_cccd" @change="mode='khong_cccd'; preview=''" />
+          <span class="text-sm">Không có / không rõ</span>
         </label>
       </div>
 
@@ -126,9 +127,9 @@
         <input type="hidden" name="loai_quan_he" x-ref="loaiSelectGraph" :value="$refs.loaiSelect ? $refs.loaiSelect.value : ''" />
 
         <div>
-          <label class="label">CCCD/CMND <span class="text-red-400">*</span></label>
+          <label class="field__label">CCCD/CMND <span class="req">*</span></label>
           <input name="cccd_doi_tac" type="text" inputmode="numeric" maxlength="12"
-                 class="input font-mono"
+                 class="field__input" style="font-family:'JetBrains Mono',monospace;"
                  placeholder="Nhập 9 hoặc 12 số"
                  hx-get="/profile/{{ profile.cccd }}/quan-he/preview-cccd"
                  hx-trigger="blur changed"
@@ -139,79 +140,79 @@
         </div>
 
         <!-- Form mở rộng khi chưa có hồ sơ (user tự điền) -->
-        <details class="text-xs text-slate-400 cursor-pointer">
-          <summary class="hover:text-slate-200">▸ Bổ sung thông tin (nếu chưa có hồ sơ)</summary>
+        <details class="field__hint" style="cursor:pointer;">
+          <summary>▸ Bổ sung thông tin (nếu chưa có hồ sơ)</summary>
           <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label class="label">Họ tên</label>
-              <input name="ho_ten" type="text" class="input uppercase" oninput="this.value = this.value.toUpperCase()" />
+              <label class="field__label">Họ tên</label>
+              <input name="ho_ten" type="text" class="field__input uppercase" oninput="this.value = this.value.toUpperCase()" />
             </div>
             <div>
-              <label class="label">Ngày sinh</label>
-              <input name="ngay_sinh" type="date" class="input" />
+              <label class="field__label">Ngày sinh</label>
+              <input name="ngay_sinh" type="date" class="field__input" />
             </div>
             <div>
-              <label class="label">Giới tính</label>
-              <select name="gioi_tinh" class="input">
+              <label class="field__label">Giới tính</label>
+              <select name="gioi_tinh" class="field__select">
                 <option value="">--</option>
                 {% for g in ['Nam','Nữ','Khác'] %}<option>{{ g }}</option>{% endfor %}
               </select>
             </div>
             <div>
-              <label class="label">Dân tộc</label>
-              <select name="dan_toc" class="input">
+              <label class="field__label">Dân tộc</label>
+              <select name="dan_toc" class="field__select">
                 <option value="">-- Chọn --</option>
                 {% for dt_item in dan_toc %}<option>{{ dt_item }}</option>{% endfor %}
               </select>
             </div>
             <div>
-              <label class="label">Tôn giáo</label>
-              <select name="ton_giao" class="input">
+              <label class="field__label">Tôn giáo</label>
+              <select name="ton_giao" class="field__select">
                 <option value="">-- Chọn --</option>
                 {% for tg in ton_giao %}<option>{{ tg }}</option>{% endfor %}
               </select>
             </div>
             <div>
-              <label class="label">Quốc tịch</label>
-              <input name="quoc_tich" list="list-qg-qh" class="input" placeholder="Tìm quốc tịch..." />
+              <label class="field__label">Quốc tịch</label>
+              <input name="quoc_tich" list="list-qg-qh" class="field__input" placeholder="Tìm quốc tịch..." />
               <datalist id="list-qg-qh">
                 {% for qg in danh_sach_quoc_gia %}<option value="{{ qg }}">{% endfor %}
               </datalist>
             </div>
             <div>
-              <label class="label">Tỉnh/Thành</label>
-              <select name="dia_chi_tinh" class="input">
+              <label class="field__label">Tỉnh/Thành</label>
+              <select name="dia_chi_tinh" class="field__select">
                 {% for t in tinh_thanh %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
               </select>
             </div>
             <div>
-              <label class="label">Xã/Phường/Thị trấn</label>
-              <input name="dia_chi_xa" list="list-xa-graph" class="input" placeholder="Gõ để tìm kiếm..." />
+              <label class="field__label">Xã/Phường/Thị trấn</label>
+              <input name="dia_chi_xa" list="list-xa-graph" class="field__input" placeholder="Gõ để tìm kiếm..." />
               <datalist id="list-xa-graph">
                 {% for x in xa_phuong %}<option value="{{ x }}">{% endfor %}
               </datalist>
             </div>
             <div>
-              <label class="label">Nghề nghiệp</label>
-              <select name="phan_loai_nghe_nghiep" class="input">
+              <label class="field__label">Nghề nghiệp</label>
+              <select name="phan_loai_nghe_nghiep" class="field__select">
                 <option value="">-- Chọn --</option>
                 {% for nn in phan_loai_nghe_nghiep %}<option>{{ nn }}</option>{% endfor %}
               </select>
             </div>
             <div>
-              <label class="label">Chi tiết nơi làm việc</label>
-              <input name="chi_tiet_nghe_nghiep" type="text" class="input" placeholder="Tên cơ quan, địa chỉ..." />
+              <label class="field__label">Chi tiết nơi làm việc</label>
+              <input name="chi_tiet_nghe_nghiep" type="text" class="field__input" placeholder="Tên cơ quan, địa chỉ..." />
             </div>
           </div>
         </details>
 
         <div>
-          <label class="label">Mô tả quan hệ</label>
-          <input name="mo_ta" type="text" class="input" placeholder="Ghi chú thêm về mối quan hệ..." />
+          <label class="field__label">Mô tả quan hệ</label>
+          <input name="mo_ta" type="text" class="field__input" placeholder="Ghi chú thêm về mối quan hệ..." />
         </div>
         <div class="flex gap-2 justify-end">
-          <button type="button" @click="open=false; mode=''" class="btn-ghost text-xs">Hủy</button>
-          <button type="submit" class="btn-primary text-xs">Lưu</button>
+          <button type="button" @click="open=false; mode=''" class="btn btn-ghost btn-sm">Hủy</button>
+          <button type="submit" class="btn btn-primary btn-sm">Lưu</button>
         </div>
       </form>
 
@@ -223,54 +224,54 @@
             class="space-y-3">
         <input type="hidden" name="loai_quan_he" x-ref="loaiSelectSat" :value="$refs.loaiSelect ? $refs.loaiSelect.value : ''" />
 
-        <div class="p-2 rounded bg-amber-900/30 border border-amber-600/30 text-xs text-amber-300">
+        <div class="text-xs" style="padding:8px 10px;border-radius:6px;background:var(--cand-gold-soft);border:1px solid rgba(201,149,40,0.3);color:#7A5A12;">
           ⚠ Sẽ lưu dạng ghi chú — không thể vẽ mạng lưới hay liên kết hồ sơ.
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="label">Họ tên</label>
-            <input name="ho_ten" type="text" class="input uppercase" oninput="this.value = this.value.toUpperCase()" />
+            <label class="field__label">Họ tên</label>
+            <input name="ho_ten" type="text" class="field__input uppercase" oninput="this.value = this.value.toUpperCase()" />
           </div>
           <div>
-            <label class="label">Giới tính</label>
-            <select name="gioi_tinh" class="input">
+            <label class="field__label">Giới tính</label>
+            <select name="gioi_tinh" class="field__select">
               <option value="">--</option>
               {% for g in ['Nam','Nữ','Khác'] %}<option>{{ g }}</option>{% endfor %}
             </select>
           </div>
           <div>
-            <label class="label">Quốc tịch</label>
-            <input name="quoc_tich" list="list-qg-sat" class="input" placeholder="Tìm quốc tịch..." />
+            <label class="field__label">Quốc tịch</label>
+            <input name="quoc_tich" list="list-qg-sat" class="field__input" placeholder="Tìm quốc tịch..." />
             <datalist id="list-qg-sat">
               {% for qg in danh_sach_quoc_gia %}<option value="{{ qg }}">{% endfor %}
             </datalist>
           </div>
           <div>
-            <label class="label">Tỉnh/Thành</label>
-            <select name="dia_chi_tinh" class="input">
+            <label class="field__label">Tỉnh/Thành</label>
+            <select name="dia_chi_tinh" class="field__select">
               <option value="">-- Chọn --</option>
               {% for t in tinh_thanh %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
             </select>
           </div>
           <div class="md:col-span-2">
-            <label class="label">Xã/Phường/Thị trấn</label>
-            <input name="dia_chi_xa" list="list-xa-sat" class="input" placeholder="Gõ để tìm kiếm..." />
+            <label class="field__label">Xã/Phường/Thị trấn</label>
+            <input name="dia_chi_xa" list="list-xa-sat" class="field__input" placeholder="Gõ để tìm kiếm..." />
             <datalist id="list-xa-sat">
               {% for x in xa_phuong %}<option value="{{ x }}">{% endfor %}
             </datalist>
           </div>
           <div class="md:col-span-2">
-            <label class="label">Nghề nghiệp / đặc điểm</label>
-            <input name="nghe_nghiep" type="text" class="input" placeholder="Nghề nghiệp hoặc đặc điểm nhận dạng..." />
+            <label class="field__label">Nghề nghiệp / đặc điểm</label>
+            <input name="nghe_nghiep" type="text" class="field__input" placeholder="Nghề nghiệp hoặc đặc điểm nhận dạng..." />
           </div>
         </div>
         <div>
-          <label class="label">Ghi chú</label>
-          <input name="mo_ta" type="text" class="input" placeholder="Thông tin bổ sung thêm..." />
+          <label class="field__label">Ghi chú</label>
+          <input name="mo_ta" type="text" class="field__input" placeholder="Thông tin bổ sung thêm..." />
         </div>
         <div class="flex gap-2 justify-end">
-          <button type="button" @click="open=false; mode=''" class="btn-ghost text-xs">Hủy</button>
-          <button type="submit" class="btn-primary text-xs">Lưu</button>
+          <button type="button" @click="open=false; mode=''" class="btn btn-ghost btn-sm">Hủy</button>
+          <button type="submit" class="btn btn-primary btn-sm">Lưu</button>
         </div>
       </form>
 

@@ -183,7 +183,7 @@
 }
 .sidebar__search {
   width: 100%;
-  padding: 8px 10px 8px 32px;
+  padding: 8px 10px 8px 40px;
   border: 1px solid var(--line-2);
   background: #fff;
   border-radius: 6px;
@@ -199,7 +199,7 @@
 .sidebar__search-wrap { position: relative; }
 .sidebar__search-wrap .ico {
   position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
-  color: var(--ink-500); font-size: 18px;
+  color: var(--ink-500); font-size: 18px; pointer-events: none;
 }
 .sidebar__nav {
   flex: 1;
@@ -595,7 +595,7 @@
   padding: 9px 11px;
   background: #fff;
   border: 1px solid var(--line-2);
-  border-radius: var(--radius);
+  border-radius: 10px;
   font-size: 13.5px;
   color: var(--ink-900);
   outline: none;
@@ -767,11 +767,11 @@
 }
 .login-brand h1 {
   margin: 0;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #FFE7B0;
+  color: #ffffff !important;
   line-height: 1.5;
 }
 .login-brand .login-sub {
@@ -816,7 +816,7 @@
 
 /* Login field overrides — tong toi */
 .login-card .field__label {
-  color: rgba(255,255,255,0.75);
+  color: #ffffff !important;
 }
 .login-card .field__input {
   background: rgba(0,0,0,0.25);
@@ -997,8 +997,9 @@
 .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
 .filter-bar .field__input { height: 36px; }
 .search-box { position: relative; min-width: 280px; }
-.search-box .ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--ink-500); font-size: 18px; }
-.search-box input { padding-left: 34px; }
+.search-box .ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--ink-500); font-size: 18px; pointer-events: none; }
+.search-box input { padding-left: 36px; }
+.search-box .field__input { padding-left: 36px; }
 
 /* Network graph placeholder */
 .network-stage { background: linear-gradient(180deg, #fff, var(--paper-2)); border: 1px solid var(--line); border-radius: var(--radius-lg); height: 520px; position: relative; overflow: hidden; }

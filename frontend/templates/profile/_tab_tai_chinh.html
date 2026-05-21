@@ -1,52 +1,54 @@
 <div class="space-y-4">
   {% if profile.tai_chinh %}
-  <div class="card overflow-x-auto">
-    <table class="table-auto w-full">
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="overflow-x:auto;">
+    <table class="tbl">
       <thead><tr><th>Ngân hàng</th><th>Số tài khoản</th><th>Chủ TK</th><th>Ghi chú</th><th></th></tr></thead>
       <tbody>
         {% for tc in profile.tai_chinh %}
         <tr>
-          <td><span class="badge badge-gray">{{ tc.ngan_hang }}</span></td>
-          <td class="font-mono text-xs">{{ tc.so_tai_khoan }}</td>
+          <td><span class="pill pill-gray"><span class="dot"></span>{{ tc.ngan_hang }}</span></td>
+          <td class="mono">{{ tc.so_tai_khoan }}</td>
           <td>{{ tc.chu or '—' }}</td>
-          <td class="text-slate-400">{{ tc.ghi_chu or '—' }}</td>
+          <td style="color:var(--ink-500);">{{ tc.ghi_chu or '—' }}</td>
           <td>
             <button hx-delete="/profile/{{ profile.cccd }}/tai-chinh/{{ tc.id }}"
                     hx-target="#dynamic-tab-content" hx-swap="innerHTML" hx-confirm="Xóa?"
-                    class="text-red-400 hover:text-red-300 text-xs">Xóa</button>
+                    class="btn btn-danger btn-xs">Xóa</button>
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
   {% endif %}
 
   <div class="card" x-data="{open:false}">
-    <button @click="open=!open" class="btn-secondary text-xs w-full justify-center">+ Thêm tài chính</button>
+    <button @click="open=!open" class="btn btn-secondary w-full justify-center">+ Thêm tài chính</button>
     <form x-show="open" x-cloak
           hx-post="/profile/{{ profile.cccd }}/tai-chinh"
           hx-target="#dynamic-tab-content" hx-swap="innerHTML"
           class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div>
-        <label class="label">Ngân hàng</label>
-        <input name="ngan_hang" list="list-ngan-hang" class="input" placeholder="Gõ để tìm ngân hàng..." />
+        <label class="field__label">Ngân hàng</label>
+        <input name="ngan_hang" list="list-ngan-hang" class="field__input" placeholder="Gõ để tìm ngân hàng..." />
       </div>
       <div>
-        <label class="label">Số tài khoản</label>
-        <input name="so_tai_khoan" type="text" class="input font-mono" required />
+        <label class="field__label">Số tài khoản</label>
+        <input name="so_tai_khoan" type="text" class="field__input" style="font-family:'JetBrains Mono',monospace;" required />
       </div>
       <div>
-        <label class="label">Chủ tài khoản</label>
-        <input name="chu_tai_khoan" type="text" class="input" />
+        <label class="field__label">Chủ tài khoản</label>
+        <input name="chu_tai_khoan" type="text" class="field__input" />
       </div>
       <div>
-        <label class="label">Ghi chú</label>
-        <input name="ghi_chu" type="text" class="input" />
+        <label class="field__label">Ghi chú</label>
+        <input name="ghi_chu" type="text" class="field__input" />
       </div>
       <div class="md:col-span-2 flex gap-2 justify-end">
-        <button type="button" @click="open=false" class="btn-ghost text-xs">Hủy</button>
-        <button type="submit" class="btn-primary text-xs">Lưu</button>
+        <button type="button" @click="open=false" class="btn btn-ghost btn-sm">Hủy</button>
+        <button type="submit" class="btn btn-primary btn-sm">Lưu</button>
       </div>
     </form>
   </div>

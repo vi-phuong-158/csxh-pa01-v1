@@ -3,98 +3,96 @@
 {% block title %}Lịch Sự kiện — VCFE Database{% endblock %}
 
 {% block content %}
-<div class="space-y-6" x-data="calendarPage()">
+<div class="cand-ui space-y-6" x-data="calendarPage()">
 
   {# ── Page Header ── #}
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-white flex items-center gap-3">
-        <span class="material-symbols-outlined text-amber-400 text-[28px]"
-              style="font-variation-settings:'FILL' 1;">calendar_month</span>
+      <h1 class="text-2xl font-bold flex items-center gap-3" style="color:var(--ink-900);">
+        <span class="ico" style="color:var(--cand-gold);font-size:28px;font-variation-settings:'FILL' 1;">calendar_month</span>
         Lịch Sự kiện
       </h1>
-      <p class="text-sm text-slate-400 mt-1">Theo dõi sự kiện sắp đến hạn của tất cả đối tượng</p>
+      <p class="text-sm mt-1" style="color:var(--ink-500);">Theo dõi sự kiện sắp đến hạn của tất cả đối tượng</p>
     </div>
 
     {# Nút điều hướng tháng #}
     <div class="flex items-center gap-3">
       <a href="/lich-su-kien?month={{ prev_month }}&year={{ prev_year }}"
-         class="btn-ghost text-sm flex items-center gap-1">
-        <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+         class="btn btn-ghost btn-sm flex items-center gap-1">
+        <span class="ico" style="font-size:18px;">chevron_left</span>
         Tháng trước
       </a>
-      <div class="px-4 py-2 glass-panel rounded-lg text-center min-w-[160px]">
-        <span class="text-white font-semibold">{{ month_name }} {{ year }}</span>
+      <div class="px-4 py-2 rounded-lg text-center min-w-[160px]" style="background:var(--card);border:1px solid var(--line);">
+        <span class="font-semibold" style="color:var(--ink-900);">{{ month_name }} {{ year }}</span>
       </div>
       <a href="/lich-su-kien?month={{ next_month }}&year={{ next_year }}"
-         class="btn-ghost text-sm flex items-center gap-1">
+         class="btn btn-ghost btn-sm flex items-center gap-1">
         Tháng sau
-        <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+        <span class="ico" style="font-size:18px;">chevron_right</span>
       </a>
     </div>
   </div>
 
   {# ── Calendar Grid ── #}
-  <div class="card p-0 overflow-hidden border border-slate-700/50 shadow-2xl">
+  <div class="card" style="padding:0;overflow:hidden;">
     {# Tiêu đề cột #}
-    <div class="bg-surface-800/80 border-b border-slate-700/50" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));">
+    <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--paper-2);border-bottom:1px solid var(--line);">
       {% for day_name in ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'] %}
-      <div class="py-3 text-center text-xs font-semibold uppercase tracking-wider
-                  {% if loop.index >= 6 %}text-amber-400{% else %}text-slate-400{% endif %}">
+      <div class="py-3 text-center text-xs font-semibold uppercase tracking-wider"
+           style="color:{% if loop.index >= 6 %}var(--cand-red){% else %}var(--ink-500){% endif %};">
         {{ day_name }}
       </div>
       {% endfor %}
     </div>
 
     {# Các tuần #}
-    <div class="bg-surface-900/30">
+    <div>
       {% for week in cal %}
-      <div class="border-b border-slate-700/50 last:border-0" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));">
+      <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--line);">
         {% for day in week %}
-        <div class="min-h-[140px] max-h-[140px] p-1 border-r border-slate-700/50 last:border-0 transition-colors hover:bg-white/[0.02]
-                    {% if day == 0 %}bg-surface-900/80{% endif %}
-                    {% if day == today_day %}bg-primary-900/10{% endif %}
-                    flex flex-col relative group">
+        <div class="min-h-[140px] max-h-[140px] p-1 flex flex-col relative group"
+             style="border-right:1px solid var(--line);{% if day == 0 %}background:var(--paper-2);{% elif day == today_day %}background:var(--cand-red-soft);{% endif %}">
           {% if day > 0 %}
           {# Số ngày #}
           <div class="flex justify-between items-start mb-1 px-1 mt-0.5">
             {% if day == today_day %}
-            <span class="text-xs font-bold text-white bg-primary-500 w-6 h-6 rounded-full flex items-center justify-center shadow-lg shadow-primary-500/40">
+            <span class="text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center"
+                  style="color:#fff;background:var(--cand-red);">
               {{ day }}
             </span>
-            <span class="text-[10px] text-primary-400 font-medium uppercase tracking-wide mt-1">Hôm nay</span>
+            <span class="text-[10px] font-medium uppercase tracking-wide mt-1" style="color:var(--cand-red);">Hôm nay</span>
             {% else %}
-            <span class="text-xs font-semibold text-slate-400 group-hover:text-slate-200 transition-colors mt-0.5">
+            <span class="text-xs font-semibold mt-0.5" style="color:var(--ink-500);">
               {{ day }}
             </span>
             {% endif %}
           </div>
 
           {# Danh sách sự kiện trong ngày #}
-          <div class="flex-1 overflow-y-auto space-y-1 pr-0.5 custom-scrollbar mt-1">
+          <div class="flex-1 overflow-y-auto space-y-1 pr-0.5 mt-1">
             {% if day in events_by_day %}
               {% for ev in events_by_day[day] %}
               <a href="/profile/{{ ev.cccd }}?tab=qua-trinh"
-                 class="block px-2 py-1.5 rounded-md text-[11px] leading-snug shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md
-                        {% if ev.status == 'overdue' %}bg-red-500/90 text-white hover:bg-red-400
-                        {% elif ev.status == 'upcoming' %}bg-amber-500 text-amber-950 hover:bg-amber-400
-                        {% else %}bg-slate-700 text-slate-200 hover:bg-slate-600{% endif %}"
+                 class="block px-2 py-1.5 rounded-md text-[11px] leading-snug transition-all hover:-translate-y-0.5"
+                 style="{% if ev.status == 'overdue' %}background:var(--cand-red);color:#fff;
+                        {% elif ev.status == 'upcoming' %}background:var(--cand-gold);color:#3A2E0A;
+                        {% else %}background:var(--paper-2);color:var(--ink-700);border:1px solid var(--line);{% endif %}"
                  title="{{ ev.ho_ten }}&#10;{{ ev.noi_dung }}&#10;Đến: {{ ev.ngay_ket_thuc_str }}">
                 {# Tên người #}
                 <div class="font-semibold truncate">{{ ev.ho_ten | truncate(18, True, '…') }}</div>
                 {# Nội dung sự kiện #}
                 {% if ev.noi_dung %}
-                <div class="truncate mt-0.5 text-[10px]
-                            {% if ev.status == 'overdue' %}opacity-90{% else %}opacity-75{% endif %}">
+                <div class="truncate mt-0.5 text-[10px]"
+                     style="{% if ev.status == 'overdue' %}opacity:0.9;{% else %}opacity:0.75;{% endif %}">
                   {{ ev.noi_dung | truncate(24, True, '…') }}
                 </div>
                 {% endif %}
                 {# Ngày kết thúc + badge trạng thái #}
-                <div class="flex items-center justify-between mt-1
-                            {% if ev.status == 'overdue' %}opacity-90{% else %}opacity-65{% endif %}">
+                <div class="flex items-center justify-between mt-1"
+                     style="{% if ev.status == 'overdue' %}opacity:0.9;{% else %}opacity:0.65;{% endif %}">
                   <span class="text-[10px]">{{ ev.ngay_ket_thuc_str }}</span>
                   {% if ev.status == 'overdue' %}
-                  <span class="text-[9px] font-bold tracking-wide bg-white/20 px-1 rounded">Quá hạn</span>
+                  <span class="text-[9px] font-bold tracking-wide px-1 rounded" style="background:rgba(255,255,255,0.22);">Quá hạn</span>
                   {% elif ev.days_left == 0 %}
                   <span class="text-[9px] font-bold tracking-wide">Hôm nay</span>
                   {% elif ev.days_left <= 3 %}
@@ -116,56 +114,50 @@
   {# ── Danh sách sự kiện sắp đến hạn (7 ngày tới) ── #}
   {% if upcoming_events %}
   <div class="card">
-    <h2 class="text-base font-semibold text-white mb-4 flex items-center gap-2">
-      <span class="material-symbols-outlined text-amber-400 text-[20px]"
-            style="font-variation-settings:'FILL' 1;">event_upcoming</span>
+    <h2 class="text-base font-semibold mb-4 flex items-center gap-2" style="color:var(--ink-900);">
+      <span class="ico" style="color:var(--cand-gold);font-size:20px;font-variation-settings:'FILL' 1;">event_upcoming</span>
       Sự kiện trong 7 ngày tới
-      <span class="ml-auto text-xs text-amber-400 font-normal bg-amber-400/10 px-2 py-0.5 rounded-full">
-        {{ upcoming_events | length }} sự kiện
-      </span>
+      <span class="pill pill-gold ml-auto"><span class="dot"></span>{{ upcoming_events | length }} sự kiện</span>
     </h2>
     <div class="space-y-2">
       {% for ev in upcoming_events %}
       <a href="/profile/{{ ev.cccd }}?tab=qua-trinh"
-         class="flex items-center gap-4 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group">
+         class="flex items-center gap-4 p-3 rounded-lg group" style="background:var(--paper-2);border:1px solid var(--line);">
         {# Countdown badge #}
         <div class="shrink-0 text-center w-14">
           {% if ev.is_today %}
-          <span class="text-xs font-bold text-red-400 bg-red-400/10 px-2 py-1 rounded-lg block">Hôm nay!</span>
+          <span class="text-xs font-bold px-2 py-1 rounded-lg block" style="color:var(--cand-red-deep);background:var(--cand-red-soft);">Hôm nay!</span>
           {% elif ev.days_left <= 3 %}
-          <span class="text-xs font-bold text-orange-400 bg-orange-400/10 px-2 py-1 rounded-lg block">{{ ev.days_left }}N</span>
+          <span class="text-xs font-bold px-2 py-1 rounded-lg block" style="color:var(--cand-red);background:var(--cand-red-soft);">{{ ev.days_left }}N</span>
           {% else %}
-          <span class="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-1 rounded-lg block">{{ ev.days_left }}N</span>
+          <span class="text-xs font-bold px-2 py-1 rounded-lg block" style="color:#7A5A12;background:var(--cand-gold-soft);">{{ ev.days_left }}N</span>
           {% endif %}
         </div>
 
         {# Thông tin #}
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-semibold text-white group-hover:text-amber-300 transition-colors">{{ ev.ho_ten }}</p>
-          <p class="text-xs text-slate-300 truncate">{{ ev.noi_dung or '—' }}</p>
+          <p class="text-sm font-semibold" style="color:var(--ink-900);">{{ ev.ho_ten }}</p>
+          <p class="text-xs truncate" style="color:var(--ink-500);">{{ ev.noi_dung or '—' }}</p>
         </div>
 
         {# Ngày #}
         <div class="shrink-0 text-right">
           {% if ev.ngay_bat_dau %}
-          <p class="text-[10px] text-slate-500">Từ: {{ ev.ngay_bat_dau }}</p>
+          <p class="text-[10px]" style="color:var(--ink-300);">Từ: {{ ev.ngay_bat_dau }}</p>
           {% endif %}
-          <p class="text-xs text-amber-300 font-medium">Đến: {{ ev.ngay_ket_thuc }}</p>
+          <p class="text-xs font-medium" style="color:#7A5A12;">Đến: {{ ev.ngay_ket_thuc }}</p>
         </div>
 
-        <span class="material-symbols-outlined text-slate-500 group-hover:text-amber-400 transition-colors text-[18px]">
-          arrow_forward_ios
-        </span>
+        <span class="ico" style="color:var(--ink-300);font-size:18px;">arrow_forward_ios</span>
       </a>
       {% endfor %}
     </div>
   </div>
   {% else %}
   <div class="card text-center py-10">
-    <span class="material-symbols-outlined text-green-400 text-[48px] block mx-auto mb-3"
-          style="font-variation-settings:'FILL' 1;">check_circle</span>
-    <p class="text-slate-300 font-medium">Không có sự kiện nào trong 7 ngày tới!</p>
-    <p class="text-slate-500 text-sm mt-1">Mọi hồ sơ đều đang ổn.</p>
+    <span class="ico block mx-auto mb-3" style="color:var(--cand-green);font-size:48px;font-variation-settings:'FILL' 1;">check_circle</span>
+    <p class="font-medium" style="color:var(--ink-700);">Không có sự kiện nào trong 7 ngày tới!</p>
+    <p class="text-sm mt-1" style="color:var(--ink-500);">Mọi hồ sơ đều đang ổn.</p>
   </div>
   {% endif %}
 

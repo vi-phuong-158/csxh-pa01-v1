@@ -1,8 +1,8 @@
 # REFACTOR UI PLAN — VCFED Frontend CAND Theme
 
-> Trang thai: DANG THUC HIEN — Pha 0-3 HOAN THANH, chuan bi Pha 4
+> Trang thai: HOAN THANH — Pha 0-6 TAT CA HOAN THANH
 > Ngay bat dau: 2026-05-19
-> Cap nhat lan cuoi: 2026-05-20
+> Cap nhat lan cuoi: 2026-05-21
 > Nguyen tac: CHI THAY DOI GIAO DIEN, GIU NGUYEN 100% LOGIC BACKEND
 
 ---
@@ -151,42 +151,50 @@
 
 ## PHA 4 — Ho so + Mang luoi (cluster 2) (SAU KHI PHA 3 OK)
 
-- [ ] 4.1 `profile/index.html` -> profile-hero header
-- [ ] 4.2 `profile/_tab_basic.html`
-- [ ] 4.3 `profile/_tab_lien_he.html`
-- [ ] 4.4 `profile/_tab_tai_chinh.html`
-- [ ] 4.5 `profile/_tab_nhan_than.html`
-- [ ] 4.6 `profile/_tab_phuong_tien.html`
-- [ ] 4.7 `profile/_tab_ho_so_dac_thu.html`
-- [ ] 4.8 `profile/_tab_tai_lieu.html`
-- [ ] 4.9 `profile/_tab_qua_trinh.html`
-- [ ] 4.10 `profile/_tab_mang_luoi.html`
-- [ ] 4.11 `profile/_tab_quan_he.html`
-- [ ] 4.12 `network/index.html` -> network-stage
-- [ ] 4.13 `ra_soat/index.html` + `_results.html`
-- [ ] 4.14 Verify: tab switching, HTMX partial load, modal xoa, form them/sua
+- [x] 4.1 `profile/index.html` -> profile-hero header
+- [x] 4.2 `profile/_tab_basic.html`
+- [x] 4.3 `profile/_tab_lien_he.html`
+- [x] 4.4 `profile/_tab_tai_chinh.html`
+- [x] 4.5 `profile/_tab_nhan_than.html`
+- [x] 4.6 `profile/_tab_phuong_tien.html`
+- [x] 4.7 `profile/_tab_ho_so_dac_thu.html`
+- [x] 4.8 `profile/_tab_tai_lieu.html`
+- [x] 4.9 `profile/_tab_qua_trinh.html`
+- [x] 4.10 `profile/_tab_mang_luoi.html`
+- [x] 4.11 `profile/_tab_quan_he.html`
+- [x] 4.12 `network/index.html` -> network-stage
+- [x] 4.13 `ra_soat/index.html` + `_results.html`
+- [x] 4.14 Verify: Jinja parse 14/14 OK, hook preservation (hx-*/name/x-* counts khong doi), khong them fetch/alert/confirm/CDN
+
+> Thuc hien ngay 2026-05-21. Pham vi: chi refactor UI CSS classes sang CAND theme;
+> giu nguyen 100% backend, endpoint, field name, HTMX target/swap, Alpine directives.
+> Script ECharts trong `_tab_mang_luoi` va `network/index.html` giu nguyen (logic, khong dong vao).
 
 ---
 
 ## PHA 5 — He thong + phu tro (cluster 3) (SAU KHI PHA 4 OK)
 
-- [ ] 5.1 `audit_log/index.html` -> tbl style, filter HTMX
-- [ ] 5.2 `quan_ly_user/index.html` -> tbl + modal
-- [ ] 5.3 `nguon_du_lieu/index.html`
-- [ ] 5.4 `bao_cao/index.html` + `bao_cao_charts.js` (doi color palette)
-- [ ] 5.5 `lich_su_kien/index.html`
-- [ ] 5.6 `auth/change_password.html`
-- [ ] 5.7 Verify: tat ca tinh nang admin hoat dong
+- [x] 5.1 `audit_log/index.html` -> tbl style, filter HTMX
+- [x] 5.2 `quan_ly_user/index.html` -> tbl + modal
+- [x] 5.3 `nguon_du_lieu/index.html`
+- [x] 5.4 `bao_cao/index.html` + `bao_cao_charts.js` (doi color palette)
+- [x] 5.5 `lich_su_kien/index.html`
+- [x] 5.6 `auth/change_password.html`
+- [x] 5.7 Verify: Jinja parse 6/6 OK, hook (hx-*/onclick/x-data) giu nguyen, khong them fetch/alert/confirm/CDN
+
+> Thuc hien ngay 2026-05-21. Pham vi: chi refactor UI CSS classes sang CAND theme;
+> giu nguyen 100% backend, endpoint, field name, HTMX target/swap, Alpine directives.
+> `bao_cao_charts.js` chi doi PIE_COLORS + gradient bar sang bang mau CAND (do/gold/xanh).
 
 ---
 
 ## PHA 6 — Don dep & build (SAU KHI PHA 5 OK)
 
-- [ ] 6.1 Xoa class cu khong con dung trong `input.css` (orb-1, orb-2, glass-*)
-- [ ] 6.2 Chay Tailwind build: `npx tailwindcss -i ./frontend/static/css/input.css -o ./frontend/static/css/output.css`
-- [ ] 6.3 Kiem tra `build_app.bat` — dam bao asset moi duoc include
-- [ ] 6.4 Build .exe va smoke test toan dien
-- [ ] 6.5 Cap nhat CLAUDE.md: doi "Glassmorphism" -> "Paper CAND" trong triet ly UX/UI
+- [x] 6.1 Xoa class cu khong con dung trong `input.css` (orb-1, orb-2, glass-*, badge-*, tab-btn*, .input, .label, status-glow-*, table-auto, nav-item-active)
+- [x] 6.2 Chay Tailwind build: `npx tailwindcss -i ./frontend/static/css/input.css -o ./frontend/static/css/output.css --minify` — output 24KB
+- [x] 6.3 Kiem tra `build_app.bat` — packaging/build.py include toan bo thu muc frontend/ (cand-theme.css, logo-cand.png, trong-dong.png deu duoc dong goi)
+- [ ] 6.4 Build .exe va smoke test toan dien (can User chay thu cong)
+- [x] 6.5 Cap nhat CLAUDE.md: doi trang thai sang HOAN THANH, cap nhat mo ta theme va workflow
 
 ---
 

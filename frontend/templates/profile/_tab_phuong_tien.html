@@ -1,54 +1,56 @@
 <div class="space-y-4">
   {% if profile.phuong_tien %}
-  <div class="card overflow-x-auto">
-    <table class="table-auto w-full">
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="overflow-x:auto;">
+    <table class="tbl">
       <thead><tr><th>Loại xe</th><th>Biển số</th><th>Tên xe</th><th>Ghi chú</th><th></th></tr></thead>
       <tbody>
         {% for pt in profile.phuong_tien %}
         <tr>
-          <td><span class="badge badge-gray">{{ pt.loai_xe }}</span></td>
-          <td class="font-mono font-bold text-yellow-300">{{ pt.bien }}</td>
+          <td><span class="pill pill-gray"><span class="dot"></span>{{ pt.loai_xe }}</span></td>
+          <td class="mono" style="font-weight:700;color:var(--cand-gold);">{{ pt.bien }}</td>
           <td>{{ pt.ten or '—' }}</td>
-          <td class="text-slate-400">{{ pt.ghi_chu or '—' }}</td>
+          <td style="color:var(--ink-500);">{{ pt.ghi_chu or '—' }}</td>
           <td>
             <button hx-delete="/profile/{{ profile.cccd }}/phuong-tien/{{ pt.id }}"
                     hx-target="#dynamic-tab-content" hx-swap="innerHTML" hx-confirm="Xóa?"
-                    class="text-red-400 hover:text-red-300 text-xs">Xóa</button>
+                    class="btn btn-danger btn-xs">Xóa</button>
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
   {% endif %}
 
   <div class="card" x-data="{open:false}">
-    <button @click="open=!open" class="btn-secondary text-xs w-full justify-center">+ Thêm phương tiện</button>
+    <button @click="open=!open" class="btn btn-secondary w-full justify-center">+ Thêm phương tiện</button>
     <form x-show="open" x-cloak
           hx-post="/profile/{{ profile.cccd }}/phuong-tien"
           hx-target="#dynamic-tab-content" hx-swap="innerHTML"
           class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div>
-        <label class="label">Loại xe</label>
-        <select name="loai_xe" class="input">
+        <label class="field__label">Loại xe</label>
+        <select name="loai_xe" class="field__select">
           {% for lx in loai_xe %}<option>{{ lx }}</option>{% endfor %}
         </select>
       </div>
       <div>
-        <label class="label">Biển kiểm soát</label>
-        <input name="bien_kiem_soat" type="text" class="input font-mono uppercase" />
+        <label class="field__label">Biển kiểm soát</label>
+        <input name="bien_kiem_soat" type="text" class="field__input uppercase" style="font-family:'JetBrains Mono',monospace;" />
       </div>
       <div>
-        <label class="label">Tên/Nhãn xe</label>
-        <input name="ten_phuong_tien" type="text" class="input" />
+        <label class="field__label">Tên/Nhãn xe</label>
+        <input name="ten_phuong_tien" type="text" class="field__input" />
       </div>
       <div>
-        <label class="label">Ghi chú</label>
-        <input name="ghi_chu" type="text" class="input" />
+        <label class="field__label">Ghi chú</label>
+        <input name="ghi_chu" type="text" class="field__input" />
       </div>
       <div class="md:col-span-2 flex gap-2 justify-end">
-        <button type="button" @click="open=false" class="btn-ghost text-xs">Hủy</button>
-        <button type="submit" class="btn-primary text-xs">Lưu</button>
+        <button type="button" @click="open=false" class="btn btn-ghost btn-sm">Hủy</button>
+        <button type="submit" class="btn btn-primary btn-sm">Lưu</button>
       </div>
     </form>
   </div>

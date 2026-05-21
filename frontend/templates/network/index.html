@@ -5,16 +5,18 @@
 {% endblock %}
 
 {% block content %}
+<div class="cand-ui">
 
 {# ── Page Header ── #}
-<div class="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
+<div class="page-header">
   <div>
-    <h2 class="font-h1 text-h1 text-white leading-tight">Mạng lưới quan hệ</h2>
-    <p class="text-body-md text-on-surface-variant mt-1">
-      Chọn đích danh 1 hoặc nhiều cá nhân để xem mạng lưới quan hệ
-    </p>
+    <div class="eyebrow">Phân tích nghiệp vụ</div>
+    <h1>Mạng lưới quan hệ</h1>
+    <div class="sub">Chọn đích danh 1 hoặc nhiều cá nhân để xem mạng lưới quan hệ</div>
   </div>
-  <span id="global-network-info" class="text-xs text-slate-400 self-end pb-1"></span>
+  <div class="page-header__actions">
+    <span id="global-network-info" class="field__hint"></span>
+  </div>
 </div>
 
 {# ── Search + Controls ── #}
@@ -76,36 +78,36 @@
     {# ── Search row ── #}
     <div class="flex flex-wrap gap-3 items-end">
       <div class="relative flex-1 min-w-[220px]" @click.away="showDropdown = false">
-        <label class="label">Tìm hồ sơ</label>
-        <div class="relative">
-          <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[16px] text-slate-400 pointer-events-none">search</span>
+        <label class="field__label">Tìm hồ sơ</label>
+        <div class="search-box" style="min-width:0;">
+          <span class="ico" style="color:var(--ink-500);">search</span>
           <input type="text"
                  x-model="query"
                  @input.debounce.300ms="searchProfiles()"
                  @focus="if (results.length) showDropdown = true"
                  placeholder="Gõ tên hoặc CCCD..."
-                 class="input text-xs py-1 h-8 pl-7 w-full" />
+                 class="field__input w-full" />
           <span x-show="searching"
-                class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[14px] text-slate-400 animate-spin">progress_activity</span>
+                class="ico cand-spin" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--ink-500);">progress_activity</span>
         </div>
         {# Dropdown #}
         <div x-show="showDropdown"
              x-cloak
-             class="absolute z-50 mt-1 w-full bg-slate-800 border border-slate-600 rounded-lg shadow-xl overflow-hidden">
+             class="card absolute z-50 mt-1 w-full overflow-hidden" style="padding:0;box-shadow:var(--shadow-pop);">
           <template x-for="person in results" :key="person.cccd">
             <button type="button"
                     @click="addPerson(person)"
-                    class="w-full flex items-center justify-between px-3 py-2 text-xs text-slate-200 hover:bg-slate-700 transition-colors text-left">
+                    class="w-full flex items-center justify-between px-3 py-2 text-xs text-left" style="background:transparent;">
               <span x-text="person.ho_ten"></span>
-              <span class="font-mono text-slate-400 text-[10px]" x-text="person.cccd"></span>
+              <span class="mono" style="font-size:10px;color:var(--ink-500);" x-text="person.cccd"></span>
             </button>
           </template>
         </div>
       </div>
 
       <div>
-        <label class="label">Độ sâu</label>
-        <select x-model="depth" class="input text-xs py-1 h-8 min-w-[100px]">
+        <label class="field__label">Độ sâu</label>
+        <select x-model="depth" class="field__select min-w-[100px]">
           <option value="1">1 lớp</option>
           <option value="2">2 lớp</option>
           <option value="3">3 lớp</option>
@@ -114,22 +116,22 @@
 
       <button @click="loadNetwork()"
               :disabled="loading || selected.length === 0"
-              class="btn-primary text-xs h-8 px-4 flex items-center gap-2 shrink-0">
-        <span class="material-symbols-outlined text-[16px]"
-              :class="loading ? 'animate-spin' : ''">hub</span>
+              class="btn btn-primary shrink-0">
+        <span class="ico"
+              :class="loading ? 'cand-spin' : ''">hub</span>
         <span x-text="loading ? 'Đang tải...' : 'Tải mạng lưới'"></span>
       </button>
     </div>
 
     {# ── Selected chips ── #}
     <div x-show="selected.length > 0" class="flex flex-wrap gap-2">
-      <span class="text-xs text-slate-400 self-center">Đã chọn:</span>
+      <span class="field__hint self-center">Đã chọn:</span>
       <template x-for="person in selected" :key="person.cccd">
-        <span class="inline-flex items-center gap-1 bg-primary/20 border border-primary/40 text-primary text-xs px-2 py-0.5 rounded-full">
+        <span class="pill pill-red">
           <span x-text="person.ho_ten"></span>
           <button type="button" @click="removePerson(person.cccd)"
-                  class="hover:text-error transition-colors ml-0.5">
-            <span class="material-symbols-outlined text-[12px]">close</span>
+                  class="ml-0.5" style="background:transparent;color:inherit;">
+            <span class="ico" style="font-size:12px;">close</span>
           </button>
         </span>
       </template>
@@ -137,15 +139,15 @@
   </div>
 
   {# ── Graph Area ── #}
-  <div class="card p-0 overflow-hidden relative">
+  <div class="network-stage" style="height:auto;">
     <div x-show="!loaded && !loading"
-         class="flex flex-col items-center justify-center text-slate-500 text-sm gap-3"
+         class="empty-state flex flex-col items-center justify-center gap-3"
          style="height: calc(100vh - 300px);">
-      <span class="material-symbols-outlined text-[48px] opacity-30">hub</span>
-      <p>Tìm và chọn hồ sơ, sau đó nhấn <b class="text-slate-400">Tải mạng lưới</b></p>
+      <span class="ico" style="font-size:48px;">hub</span>
+      <p>Tìm và chọn hồ sơ, sau đó nhấn <b>Tải mạng lưới</b></p>
     </div>
     <div x-show="loading && !loaded"
-         class="flex items-center justify-center text-slate-400 text-sm"
+         class="empty-state flex items-center justify-center"
          style="height: calc(100vh - 300px);">
       Đang tải dữ liệu...
     </div>
@@ -155,6 +157,7 @@
     </div>
   </div>
 
+</div>
 </div>
 
 <script>
@@ -184,7 +187,7 @@
       legend: {
         data: data.categories.map(function (c) { return c.name; }),
         bottom: 8,
-        textStyle: { color: '#94a3b8', fontSize: 11 }
+        textStyle: { color: '#6E6A5E', fontSize: 11 }
       },
       series: [{
         type: 'graph',
@@ -203,17 +206,17 @@
             source: l.source,
             target: l.target,
             value: l.label,
-            label: { 
+            label: {
               show: true,
               formatter: '{c}',
               fontSize: 10,
-              color: '#94a3b8'
+              color: '#6E6A5E'
             },
             lineStyle: {
               width: Math.max(1, (l.do_tin_cay || 50) / 25),
               curveness: 0.1,
-              color: '#475569',
-              opacity: 0.7
+              color: '#3C3A33',
+              opacity: 0.8
             }
           };
         }),
@@ -221,8 +224,8 @@
         roam: true,
         draggable: true,
         force: { repulsion: 220, gravity: 0.05, edgeLength: [60, 180] },
-        itemStyle: { borderWidth: 2, borderColor: '#1e293b' },
-        label: { color: '#e2e8f0', fontSize: 10, show: data.nodes.length <= 80 },
+        itemStyle: { borderWidth: 2, borderColor: '#3C3A33' },
+        label: { color: '#1A1814', fontSize: 10, show: data.nodes.length <= 80 },
         emphasis: { focus: 'adjacency', lineStyle: { width: 3 } }
       }]
     };

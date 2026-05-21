@@ -3,21 +3,21 @@
   {# ── Header + Controls ── #}
   <div class="flex items-center justify-between mb-1">
     <div class="flex items-center gap-3">
-      <p class="text-sm font-semibold text-slate-200">Mạng lưới quan hệ</p>
-      <span id="network-info-{{ profile.cccd }}" class="text-xs text-slate-400"></span>
+      <div class="section-eyebrow" style="margin-bottom:0;">Mạng lưới quan hệ</div>
+      <span id="network-info-{{ profile.cccd }}" class="field__hint"></span>
     </div>
     <div class="flex items-center gap-2">
       <select id="depth-select-{{ profile.cccd }}"
               x-model="depth"
               @change="window['loadGraph_{{ profile.cccd }}'](depth)"
-              class="input text-xs py-1 px-2 h-7">
+              class="field__select" style="width:auto;font-size:12.5px;">
         <option value="1">1 lớp</option>
         <option value="2" selected>2 lớp</option>
         <option value="3">3 lớp</option>
       </select>
       <select x-model="loai_filter"
               @change="window['filterGraph_{{ profile.cccd }}'](loai_filter)"
-              class="input text-xs py-1 px-2 h-7">
+              class="field__select" style="width:auto;font-size:12.5px;">
         <option value="">Tất cả loại QH</option>
         {% for loai in loai_quan_he_def %}
         <option value="{{ loai }}">{{ loai }}</option>
@@ -28,7 +28,7 @@
 
   {# ── ECharts Container ── #}
   <div id="network-chart-{{ profile.cccd }}"
-       class="w-full rounded-lg bg-black/20"
+       class="network-stage"
        style="height: 480px; min-height: 300px;">
   </div>
 

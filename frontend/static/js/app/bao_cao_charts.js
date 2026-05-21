@@ -1,10 +1,11 @@
 // File: frontend/static/js/app/bao_cao_charts.js
 // Advanced Analytics page — ECharts initialisation & live filter updates.
 
+// Bảng màu CAND — đỏ / vàng gold / xanh trầm dẫn đầu palette
 const PIE_COLORS = [
-  '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
-  '#8b5cf6', '#ec4899', '#06b6d4', '#f97316',
-  '#84cc16', '#64748b',
+  '#B91C1C', '#C99528', '#1F4936', '#7F1212',
+  '#E8C04D', '#14352A', '#8b5cf6', '#0891b2',
+  '#c2410c', '#64748b',
 ];
 
 let pieChart = null;
@@ -225,8 +226,8 @@ function initBarChart() {
         color: {
           type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [
-            { offset: 0, color: '#3b82f6' },
-            { offset: 1, color: '#6366f1' },
+            { offset: 0, color: '#B91C1C' },
+            { offset: 1, color: '#7F1212' },
           ],
         },
       },

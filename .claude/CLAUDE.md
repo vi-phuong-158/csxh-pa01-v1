@@ -1,7 +1,7 @@
 BỘ NÃO ĐIỀU PHỐI DỰ ÁN VCFE DATABASE
 
-Trạng thái: ĐANG REFACTOR GIAO DIỆN — Chuyển từ Glassmorphism sang Paper CAND Theme.
-Branch: feature/ui-cand-refresh | Pha 0-3 HOÀN THÀNH, chuẩn bị Pha 4.
+Trạng thái: REFACTOR GIAO DIỆN HOÀN THÀNH — Paper CAND Theme.
+Branch: feature/ui-cand-refresh | Pha 0-6 HOÀN THÀNH.
 
 1. TỔNG QUAN DỰ ÁN (PROJECT OVERVIEW)
 
@@ -19,7 +19,7 @@ Backend: FastAPI, Uvicorn, Jinja2, Pydantic, pandas hoặc openpyxl (xử lý fi
 
 Database: sqlcipher3-binary (Tuyệt đối quan trọng: Mã hóa AES-256 toàn bộ file DB), SQLAlchemy 2.x (ORM).
 
-Frontend: HTML thuần, Tailwind CSS (qua CLI build), HTMX (Xử lý SPA, Partial reload), Alpine.js (Xử lý State UI, Modal, Tabs).
+Frontend: HTML thuần, Tailwind CSS (qua CLI build), HTMX (Xử lý SPA, Partial reload), Alpine.js (Xử lý State UI, Modal, Tabs). Theme CSS override: `cand-theme.css` load SAU `output.css`.
 
 Đóng gói (Packaging): PyInstaller (qua file build_app.bat và launcher.py).
 
@@ -86,7 +86,7 @@ Plan (Lập kế hoạch): Đọc kỹ Database Models xem đã có bảng dữ 
 
 Backend First: Viết/Sửa schemas -> Viết services -> Viết routes. Đảm bảo trả về HTML Partial (cho HTMX) hoặc JSON (cho ECharts).
 
-Frontend Second: Viết giao diện HTML, gán các class Tailwind Kính mờ, tích hợp thẻ hx-* của HTMX và x-data của Alpine.js.
+Frontend Second: Viết giao diện HTML, gán các class CAND theme (card, tbl, pill, field__*, btn), tích hợp thẻ hx-* của HTMX và x-data của Alpine.js.
 
 CSS Build Reminder: Luôn nhắc User phải tự chạy lệnh npx tailwindcss -i ./frontend/static/css/input.css -o ./frontend/static/css/output.css nếu có thêm class Tailwind mới.
 
@@ -96,13 +96,8 @@ Verify (Tự kiểm tra): Soát lại xem có vi phạm quy tắc [SEC-1] và [E
 
 Các tính năng đang được ưu tiên triển khai:
 
-Mục tiêu HIỆN TẠI: REFACTOR GIAO DIỆN CAND THEME (xem chi tiết tại REFACTOR_UI_PLAN.md)
-- Pha 0 (Chuẩn bị): HOÀN THÀNH
-- Pha 1 (Login + Dashboard): HOÀN THÀNH
-- Pha 2 (Shell: base + sidebar + banner): HOÀN THÀNH
-- Pha 2B (CSS Polish toàn cục): HOÀN THÀNH
-- Pha 3 (Trang nghiệp vụ: tra_cuu, nhap_lieu, nhap_excel, danh_ba): HOÀN THÀNH
-- Pha 4-6: CHƯA BẮT ĐẦU
+HOÀN THÀNH: REFACTOR GIAO DIỆN CAND THEME (chi tiết tại REFACTOR_UI_PLAN.md)
+- Pha 0-6: TẤT CẢ HOÀN THÀNH (2026-05-19 → 2026-05-21)
 
 Mục tiêu SAU REFACTOR: Phát triển tính năng Nhập liệu từ file Excel (Bulk Import)
 

@@ -3,20 +3,20 @@
 {% block page_title %}Hồ sơ: {{ profile.ho_ten or profile.cccd }}{% endblock %}
 
 {% block content %}
-<div x-data="{ activeTab: 'basic' }" class="space-y-4">
+<div x-data="{ activeTab: 'basic' }" class="cand-ui space-y-4">
 
   <!-- Header card -->
-  <div class="card flex items-start gap-5">
+  <div class="profile-hero">
     <!-- Avatar -->
     <div id="avatar-wrap" class="shrink-0">
       {% if profile.anh_chan_dung %}
-      <img src="/static/{{ profile.anh_chan_dung }}" class="w-20 h-20 rounded-xl object-cover border-2 border-slate-600" />
+      <img src="/static/{{ profile.anh_chan_dung }}" class="avatar-lg" style="object-fit:cover;" />
       {% else %}
-      <div class="w-20 h-20 rounded-xl bg-primary-900 flex items-center justify-center text-3xl font-bold text-primary-300">
+      <div class="avatar-lg">
         {{ (profile.ho_ten or 'N')[0] | upper }}
       </div>
       {% endif %}
-      <label class="block mt-1 text-xs text-center text-slate-500 hover:text-primary-400 cursor-pointer">
+      <label class="block mt-1 text-xs text-center" style="color:var(--ink-500);cursor:pointer;">
         Đổi ảnh
         <input type="file" accept="image/*" class="hidden"
                hx-post="/profile/{{ profile.cccd }}/upload-avatar"
@@ -29,23 +29,23 @@
 
     <!-- Basic info -->
     <div class="flex-1 min-w-0">
-      <div class="flex items-center gap-2 mb-1">
-        <h2 class="text-lg font-bold text-white">{{ profile.ho_ten or '(Chưa có tên)' }}</h2>
-        {% if profile.is_draft %}<span class="badge badge-yellow">Draft</span>{% endif %}
+      <div class="flex items-center gap-2">
+        <div class="profile-hero__name">{{ profile.ho_ten or '(Chưa có tên)' }}</div>
+        {% if profile.is_draft %}<span class="pill pill-gold"><span class="dot"></span>Draft</span>{% endif %}
       </div>
-      <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
-        <span>CCCD: <span class="font-mono text-slate-200">{{ profile.cccd }}</span></span>
-        {% if profile.ngay_sinh %}<span>Ngày sinh: {{ profile.ngay_sinh }}</span>{% endif %}
-        {% if profile.gioi_tinh %}<span>{{ profile.gioi_tinh }}</span>{% endif %}
-        {% if profile.dia_chi_xa %}<span>{{ profile.dia_chi_xa }}{% if profile.dia_chi_tinh %}, {{ profile.dia_chi_tinh }}{% endif %}</span>{% endif %}
-        {% if profile.phan_loai_nghe_nghiep %}<span class="badge badge-blue">{{ profile.phan_loai_nghe_nghiep }}</span>{% endif %}
+      <div class="profile-hero__cccd">CCCD: {{ profile.cccd }}</div>
+      <div class="profile-hero__meta">
+        {% if profile.ngay_sinh %}<div class="meta-chip"><span class="k">Ngày sinh</span><span class="v">{{ profile.ngay_sinh }}</span></div>{% endif %}
+        {% if profile.gioi_tinh %}<div class="meta-chip"><span class="k">Giới tính</span><span class="v">{{ profile.gioi_tinh }}</span></div>{% endif %}
+        {% if profile.dia_chi_xa %}<div class="meta-chip"><span class="k">Địa bàn</span><span class="v">{{ profile.dia_chi_xa }}{% if profile.dia_chi_tinh %}, {{ profile.dia_chi_tinh }}{% endif %}</span></div>{% endif %}
+        {% if profile.phan_loai_nghe_nghiep %}<div class="meta-chip"><span class="k">Nghề nghiệp</span><span class="v">{{ profile.phan_loai_nghe_nghiep }}</span></div>{% endif %}
       </div>
     </div>
 
     <!-- Actions -->
-    <div class="flex gap-2 shrink-0">
+    <div class="page-header__actions shrink-0">
       <a href="/profile/{{ profile.cccd }}/export-docx"
-         class="btn-primary text-xs"
+         class="btn btn-primary btn-sm"
          title="Xuất báo cáo Word">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         Xuất DOCX
@@ -53,13 +53,13 @@
       {% if user.role == 'super_admin' %}
       <button hx-delete="/profile/{{ profile.cccd }}"
               hx-confirm="Xóa toàn bộ hồ sơ {{ profile.cccd }}? Không thể hoàn tác!"
-              class="btn-danger text-xs">Xóa hồ sơ</button>
+              class="btn btn-danger btn-sm">Xóa hồ sơ</button>
       {% endif %}
     </div>
   </div>
 
   <!-- Tabs nav -->
-  <div class="border-b border-slate-700 flex overflow-x-auto">
+  <div class="tabs">
     {% set tabs = [('basic','Thông tin cơ bản'),('quan-he','Quan hệ'),('mang-luoi','Mạng lưới'),('lien-he','Liên hệ'),('tai-chinh','Tài chính'),('phuong-tien','Phương tiện'),('ho-so-dac-thu','Hồ sơ đặc thù'),('tai-lieu','Tài liệu'),('qua-trinh','Quá trình')] %}
     {% for id, label in tabs %}
     <button type="button"
@@ -81,8 +81,8 @@
         }
         activeTab='{{ id }}';
       "
-      :class="activeTab==='{{ id }}' ? 'tab-btn-active' : ''"
-      class="tab-btn">{{ label }}</button>
+      :class="activeTab==='{{ id }}' ? 'is-active' : ''"
+      class="tab">{{ label }}</button>
     {% endfor %}
   </div>
 
@@ -92,7 +92,7 @@
     <div x-show="activeTab === 'basic'">
       {% include "profile/_tab_basic.html" %}
     </div>
-    
+
     <!-- Other tabs loaded via HTMX on click -->
     <div x-show="activeTab !== 'basic'" id="dynamic-tab-content">
       <!-- Dynamic content will be injected here -->
