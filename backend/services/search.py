@@ -158,10 +158,18 @@ def fuzzy_search(db: Session, ho_ten: str, threshold: int = 80) -> List[Dict]:
     name_list = [row[1] for row in all_rows]
     raw_matches = find_similar_names(ho_ten, name_list, threshold=threshold)
 
+    # Batch load 1 query IN(...) thay vì db.get() từng kết quả (N+1).
+    matched_cccd = [cccd_list[m["index"]] for m in raw_matches]
+    dt_map = {
+        dt.cccd: dt
+        for dt in db.execute(
+            select(DoiTuong).where(DoiTuong.cccd.in_(matched_cccd))
+        ).scalars()
+    } if matched_cccd else {}
+
     results = []
     for m in raw_matches:
-        cccd = cccd_list[m["index"]]
-        dt = db.get(DoiTuong, cccd)
+        dt = dt_map.get(cccd_list[m["index"]])
         if dt:
             results.append({
                 "cccd": dt.cccd,

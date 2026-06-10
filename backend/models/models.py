@@ -63,7 +63,7 @@ class LienHe(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     cccd: Mapped[str] = mapped_column(ForeignKey("doi_tuong.cccd", ondelete="CASCADE"))
     loai_lien_he: Mapped[Optional[str]] = mapped_column(String)
-    gia_tri: Mapped[Optional[str]] = mapped_column(String)
+    gia_tri: Mapped[Optional[str]] = mapped_column(String, index=True)
     ghi_chu: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
@@ -75,7 +75,7 @@ class TaiChinh(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     cccd: Mapped[str] = mapped_column(ForeignKey("doi_tuong.cccd", ondelete="CASCADE"))
     ngan_hang: Mapped[Optional[str]] = mapped_column(String)
-    so_tai_khoan: Mapped[Optional[str]] = mapped_column(String)
+    so_tai_khoan: Mapped[Optional[str]] = mapped_column(String, index=True)
     chu_tai_khoan: Mapped[Optional[str]] = mapped_column(String)
     ghi_chu: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

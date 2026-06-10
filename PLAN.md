@@ -27,18 +27,18 @@ File chính: `backend/routes/nhap_excel.py`, `frontend/templates/nhap_excel/inde
 
 ## Nhóm B — Hiệu năng (Ưu tiên 1)
 
-- [ ] **B1. Thêm index cho cột tra cứu chính**: `lien_he.gia_tri` (SĐT) và
+- [x] **B1. Thêm index cho cột tra cứu chính**: `lien_he.gia_tri` (SĐT) và
       `tai_chinh.so_tai_khoan` — bổ sung `index=True` trong `backend/models/models.py`
       + lệnh `CREATE INDEX IF NOT EXISTS` vào `_PENDING_INDEXES` (`backend/db/session.py`)
       để DB cũ được migrate tự động. *(Bắt buộc trước khi làm Danh bạ tra cứu toàn cục)*
-- [ ] **B2. Fix N+1 trong `fuzzy_search`** (`backend/services/search.py`): batch load
+- [x] **B2. Fix N+1 trong `fuzzy_search`** (`backend/services/search.py`): batch load
       hồ sơ khớp bằng 1 query `IN (...)` thay vì `db.get()` từng kết quả.
-- [ ] **B3. Fix N+1 trong `get_quan_he_full`** (`backend/services/quan_he.py`): batch load
+- [x] **B3. Fix N+1 trong `get_quan_he_full`** (`backend/services/quan_he.py`): batch load
       toàn bộ đối tác quan hệ bằng 1 query `IN (...)` thay vì `db.get()` từng cạnh.
 
 ## Nhóm C — Bảo mật (Ưu tiên 1)
 
-- [ ] **C1. Whitelist role trong `create_user`** (`backend/services/auth.py`): chỉ chấp nhận
+- [x] **C1. Whitelist role trong `create_user`** (`backend/services/auth.py`): chỉ chấp nhận
       `super_admin` / `user`, từ chối mọi giá trị role lạ gửi qua form.
 
 ## Nhóm D — Giao diện / Tuân thủ quy tắc [UI-1] (Ưu tiên 1)
@@ -67,6 +67,6 @@ File chính: `backend/routes/nhap_excel.py`, `frontend/templates/nhap_excel/inde
 | Nhóm | Hoàn thành |
 |------|-----------|
 | A — Nhập Excel | 7/7 ✅ |
-| B — Hiệu năng | 0/3 |
-| C — Bảo mật | 0/1 |
+| B — Hiệu năng | 3/3 ✅ |
+| C — Bảo mật | 1/1 ✅ |
 | D — Giao diện | 0/2 |

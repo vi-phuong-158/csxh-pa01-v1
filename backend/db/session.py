@@ -190,6 +190,9 @@ _PENDING_INDEXES: list[str] = [
     "CREATE INDEX IF NOT EXISTS ix_quan_he_cccd_2 ON quan_he_doi_tuong(cccd_2)",
     "CREATE INDEX IF NOT EXISTS ix_quan_he_loai ON quan_he_doi_tuong(loai_quan_he)",
     "CREATE UNIQUE INDEX IF NOT EXISTS uq_quan_he_cap ON quan_he_doi_tuong(cccd_1, cccd_2, loai_quan_he)",
+    # Cột tra cứu chính của Danh bạ (SĐT / số tài khoản) — tránh full scan
+    "CREATE INDEX IF NOT EXISTS ix_lien_he_gia_tri ON lien_he(gia_tri)",
+    "CREATE INDEX IF NOT EXISTS ix_tai_chinh_so_tai_khoan ON tai_chinh(so_tai_khoan)",
 ]
 
 

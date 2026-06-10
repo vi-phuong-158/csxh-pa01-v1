@@ -21,11 +21,23 @@ def get_quan_he_full(db: Session, cccd: str) -> List[Dict]:
         )
     ).scalars().all()
 
+    # Batch load toàn bộ đối tác bằng 1 query IN(...) thay vì db.get()
+    # từng cạnh (N+1) — hồ sơ nhiều quan hệ sẽ chậm rõ rệt.
+    doi_tac_cccds = {
+        edge.cccd_2 if edge.cccd_1 == cccd else edge.cccd_1 for edge in edges
+    }
+    doi_tac_map = {
+        dt.cccd: dt
+        for dt in db.execute(
+            select(DoiTuong).where(DoiTuong.cccd.in_(doi_tac_cccds))
+        ).scalars()
+    } if doi_tac_cccds else {}
+
     for edge in edges:
         is_cccd1 = edge.cccd_1 == cccd
         cccd_doi_tac = edge.cccd_2 if is_cccd1 else edge.cccd_1
         label = get_quan_he_label(edge.loai_quan_he, 1 if is_cccd1 else 2)
-        doi_tac = db.get(DoiTuong, cccd_doi_tac)
+        doi_tac = doi_tac_map.get(cccd_doi_tac)
         items.append({
             "type": "graph",
             "edge_id": edge.id,
