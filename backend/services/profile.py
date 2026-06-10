@@ -180,7 +180,13 @@ def delete_nhan_than(db: Session, item_id: int) -> bool:
 
 
 def add_lien_he(db: Session, cccd: str, data: Dict) -> Tuple[bool, str]:
-    db.add(LienHe(cccd=cccd, loai_lien_he=data.get("loai_lien_he"), gia_tri=data.get("gia_tri"), ghi_chu=data.get("ghi_chu")))
+    gia_tri = data.get("gia_tri")
+    # Chuẩn hóa SĐT ngay khi GHI để tra cứu Danh bạ khớp nhất quán
+    # (bỏ khoảng trắng/chấm/gạch, +84 -> 0). Loại khác giữ nguyên.
+    if data.get("loai_lien_he") == "SĐT":
+        from backend.utils.text_utils import normalize_phone
+        gia_tri = normalize_phone(gia_tri)
+    db.add(LienHe(cccd=cccd, loai_lien_he=data.get("loai_lien_he"), gia_tri=gia_tri, ghi_chu=data.get("ghi_chu")))
     db.commit()
     return True, "Đã thêm liên hệ"
 

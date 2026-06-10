@@ -32,6 +32,25 @@ def normalize_string(s):
     return re.sub(r'[^a-z0-9]', '', s)
 
 
+def normalize_phone(value):
+    """
+    Chuẩn hóa SĐT trước khi GHI vào DB (và chuẩn hóa query tra cứu):
+        - Bỏ khoảng trắng, dấu chấm, gạch ngang, ngoặc đơn.
+        - Đầu số quốc tế +84 / 0084 / 84 -> 0.
+    Giá trị không phải dạng số điện thoại (email, URL...) trả về nguyên vẹn.
+    Ví dụ: "+84 912.345-678" -> "0912345678"
+    """
+    if not value:
+        return value
+    v = re.sub(r'[\s.\-()]+', '', str(value).strip())
+    if not re.fullmatch(r'\+?\d+', v):
+        return value  # không phải SĐT thuần — giữ nguyên input gốc
+    m = re.fullmatch(r'(?:\+84|0084|84)(\d{8,10})', v)
+    if m:
+        return '0' + m.group(1)
+    return v
+
+
 def format_date_vn(date_str):
     """
     Format date string from yyyy-mm-dd to dd/mm/yyyy

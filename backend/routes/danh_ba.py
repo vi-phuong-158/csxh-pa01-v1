@@ -29,6 +29,11 @@ def danh_ba_search(
     results = []
 
     if q:
+        if type == "phone":
+            # Đồng bộ với chuẩn hóa lúc ghi (add_lien_he): cán bộ dán
+            # "0912 345 678" hay "+84912345678" vẫn khớp giá trị đã lưu.
+            from backend.utils.text_utils import normalize_phone
+            q = normalize_phone(q)
         if type == "bank":
             rows = (
                 db.query(TaiChinh, DoiTuong)

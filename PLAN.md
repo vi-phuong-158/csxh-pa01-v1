@@ -59,13 +59,29 @@ File chính: `backend/routes/nhap_excel.py`, `frontend/templates/nhap_excel/inde
       Ảnh hưởng cả tính năng Rà soát (`batch_screen`). Đã test: khớp có dấu/không dấu/sai
       1 ký tự đều trả kết quả đúng.
 
+## Nhóm F — Hoàn thiện UI/UX còn lại (đợt 2 — sau khi tạo PR #87)
+
+- [x] **F1. Validation inline cho form**: thêm ràng buộc HTML5 (`pattern`, `minlength`,
+      `title`) cho các trường quan trọng — CCCD mới (modal đổi CCCD), mật khẩu tạo user.
+      Route update profile đã trả lỗi inline vào `#save-msg` — giữ nguyên cơ chế.
+- [x] **F2. Chuẩn hóa empty-state**: tạo macro `_partials/empty_state.html`
+      (icon + message + hint) và thay cho các biến thể lệch chuẩn ở dashboard,
+      danh bạ, tra cứu, tab quá trình, form nhập liệu, network.
+- [x] **F3. Responsive tablet**: trang Quản lý user dùng `lg:grid-cols-3` → đổi sang
+      `md:` (class đã có sẵn trong output.css, KHÔNG cần rebuild Tailwind).
+- [x] **F4. Accessibility — ghép `label for=` / `id=`** cho form Thông tin cơ bản
+      (profile), form tạo tài khoản, modal đổi CCCD.
+      Ghi chú: 2 empty-state full-height của trang Network giữ nguyên (layout đặc thù).
+- [x] **F5. Chuẩn hóa SĐT khi ghi DB**: hàm `normalize_phone` (bỏ khoảng trắng/chấm/
+      gạch/ngoặc, `+84`/`84` → `0`) áp dụng khi thêm liên hệ loại SĐT + chuẩn hóa
+      query tra cứu Danh bạ tương ứng.
+
 ---
 
 ## Ghi chú phạm vi
 
-- **Không làm** trong đợt này (đã review, để đợt sau): lỗi validation inline dưới từng
-  trường form, chuẩn hóa empty-state partial, breakpoint `md:` cho tablet, ghép
-  `label for=`/`id=` (accessibility), chuẩn hóa số điện thoại khi ghi DB.
+- Các mục từng hoãn (validation inline, empty-state partial, breakpoint tablet,
+  label/id, chuẩn hóa SĐT) đã hoàn thành ở **Nhóm F** (đợt 2).
 - Phát hiện "echarts load trên mọi trang" trong review ban đầu là **không chính xác** —
   vendor JS đã được load theo từng trang qua `{% block %}`, không cần sửa.
 - Sau khi sửa xong nhóm B1, lần khởi động đầu tiên DB sẽ tự tạo index mới qua
@@ -80,8 +96,9 @@ File chính: `backend/routes/nhap_excel.py`, `frontend/templates/nhap_excel/inde
 | C — Bảo mật | 1/1 ✅ |
 | D — Giao diện | 2/2 ✅ |
 | E — Phát hiện thêm | 1/1 ✅ |
+| F — UI/UX đợt 2 | 5/5 ✅ |
 
-**Trạng thái: HOÀN THÀNH TOÀN BỘ (14/14 task) — đã test end-to-end.**
+**Trạng thái: HOÀN THÀNH TOÀN BỘ (19/19 task) — đã test end-to-end. PR: #87**
 
 ### Kết quả kiểm thử (TestClient + DB SQLCipher thật)
 

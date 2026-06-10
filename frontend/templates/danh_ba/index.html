@@ -91,9 +91,9 @@
         <tbody id="danh-ba-results">
           <tr>
             <td colspan="6" class="empty-state" style="padding:44px 16px;">
-              <span class="ico">contact_phone</span>
-              <p>Nhập từ khóa để bắt đầu tìm kiếm</p>
-              <p style="font-size:12px;color:var(--ink-500);margin-top:4px;">Hỗ trợ khớp một phần, ví dụ nhập 091 để tìm các số bắt đầu bằng 091.</p>
+              {% from "_partials/empty_state.html" import empty_state %}
+              {{ empty_state('contact_phone', 'Nhập từ khóa để bắt đầu tìm kiếm',
+                             'Hỗ trợ khớp một phần, ví dụ nhập 091 để tìm các số bắt đầu bằng 091.') }}
             </td>
           </tr>
         </tbody>
