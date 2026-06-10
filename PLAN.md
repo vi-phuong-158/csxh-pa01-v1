@@ -10,20 +10,20 @@
 
 File chính: `backend/routes/nhap_excel.py`, `frontend/templates/nhap_excel/index.html`
 
-- [ ] **A1. Giới hạn dung lượng file upload** theo `settings.MAX_UPLOAD_MB` (đọc tối đa
+- [x] **A1. Giới hạn dung lượng file upload** theo `settings.MAX_UPLOAD_MB` (đọc tối đa
       `max_bytes + 1`, vượt ngưỡng → báo lỗi 413 thân thiện). *(Fix bảo mật mức CAO)*
-- [ ] **A2. Validate format CCCD từng dòng** (đúng 9 hoặc 12 chữ số) — dòng sai bị từ chối
+- [x] **A2. Validate format CCCD từng dòng** (đúng 9 hoặc 12 chữ số) — dòng sai bị từ chối
       kèm thông báo rõ ràng, không chèn dữ liệu rác vào DB. *(Fix bảo mật mức TB)*
-- [ ] **A3. Check trùng CCCD theo batch**: 1 query `IN (...)` cho toàn bộ file thay vì
+- [x] **A3. Check trùng CCCD theo batch**: 1 query `IN (...)` cho toàn bộ file thay vì
       `db.get()` từng dòng (N+1); đồng thời phát hiện CCCD lặp ngay trong file Excel.
-- [ ] **A4. Commit theo chunk 100 dòng** — đúng yêu cầu Database Safety trong CLAUDE.md,
+- [x] **A4. Commit theo chunk 100 dòng** — đúng yêu cầu Database Safety trong CLAUDE.md,
       tránh transaction khổng lồ gây "database is locked".
-- [ ] **A5. Ghi audit log `BULK_IMPORT`** sau khi import (ai import, bao nhiêu dòng
+- [x] **A5. Ghi audit log `BULK_IMPORT`** sau khi import (ai import, bao nhiêu dòng
       thành công/lỗi, tên file). *(Fix bảo mật mức TB)*
-- [ ] **A6. Bỏ block event loop**: chuyển route upload từ `async def` sang `def` thường
+- [x] **A6. Bỏ block event loop**: chuyển route upload từ `async def` sang `def` thường
       để FastAPI tự chạy pandas + DB trong threadpool.
-- [ ] **A7. Frontend: spinner khi upload** (`hx-indicator` + disable nút submit) để cán bộ
-      biết hệ thống đang xử lý file.
+- [x] **A7. Frontend: spinner khi upload** (`hx-indicator` + disable nút submit qua
+      `hx-disabled-elt`, htmx 1.9.12 hỗ trợ) để cán bộ biết hệ thống đang xử lý file.
 
 ## Nhóm B — Hiệu năng (Ưu tiên 1)
 
@@ -66,7 +66,7 @@ File chính: `backend/routes/nhap_excel.py`, `frontend/templates/nhap_excel/inde
 
 | Nhóm | Hoàn thành |
 |------|-----------|
-| A — Nhập Excel | 0/7 |
+| A — Nhập Excel | 7/7 ✅ |
 | B — Hiệu năng | 0/3 |
 | C — Bảo mật | 0/1 |
 | D — Giao diện | 0/2 |
