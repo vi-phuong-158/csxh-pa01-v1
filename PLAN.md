@@ -43,12 +43,21 @@ File chính: `backend/routes/nhap_excel.py`, `frontend/templates/nhap_excel/inde
 
 ## Nhóm D — Giao diện / Tuân thủ quy tắc [UI-1] (Ưu tiên 1)
 
-- [ ] **D1. Modal xác nhận Alpine toàn cục thay `window.confirm()`**: chặn sự kiện
+- [x] **D1. Modal xác nhận Alpine toàn cục thay `window.confirm()`**: chặn sự kiện
       `htmx:confirm` trong `base.html`, hiển thị modal theo theme CAND (tái dùng pattern
       modal của `nhap_lieu/form.html`). Giữ nguyên các thuộc tính `hx-confirm` hiện có
       (10 chỗ) làm nguồn nội dung câu hỏi — không phải sửa từng template.
-- [ ] **D2. Xóa `components/header.html` (dead code)**: file không được include ở đâu —
+- [x] **D2. Xóa `components/header.html` (dead code)**: file không được include ở đâu —
       `base.html` đã dùng `banner.html` chứa logic chuông thông báo phiên bản mới.
+
+## Nhóm E — Phát hiện thêm trong quá trình test (ngoài review ban đầu)
+
+- [x] **E1. Fix fuzzy search hỏng hoàn toàn** (`backend/utils/fuzzy_matching.py`):
+      rapidfuzz không tự lowercase như thefuzz — từ khi họ tên bị chuẩn hóa về CHỮ HOA
+      (commit `47114b1`), `find_similar_names` luôn trả rỗng vì so query chữ thường với
+      candidates chữ hoa. Thêm `processor=normalize_vietnamese` vào `process.extract`.
+      Ảnh hưởng cả tính năng Rà soát (`batch_screen`). Đã test: khớp có dấu/không dấu/sai
+      1 ký tự đều trả kết quả đúng.
 
 ---
 
@@ -69,4 +78,18 @@ File chính: `backend/routes/nhap_excel.py`, `frontend/templates/nhap_excel/inde
 | A — Nhập Excel | 7/7 ✅ |
 | B — Hiệu năng | 3/3 ✅ |
 | C — Bảo mật | 1/1 ✅ |
-| D — Giao diện | 0/2 |
+| D — Giao diện | 2/2 ✅ |
+| E — Phát hiện thêm | 1/1 ✅ |
+
+**Trạng thái: HOÀN THÀNH TOÀN BỘ (14/14 task) — đã test end-to-end.**
+
+### Kết quả kiểm thử (TestClient + DB SQLCipher thật)
+
+- Upload Excel 6 dòng: 3 nhập thành công, 3 bị từ chối đúng lý do (CCCD sai format,
+  CCCD lặp trong file, thiếu họ tên).
+- Upload lại cùng file: toàn bộ bị báo "đã tồn tại" (batch check IN hoạt động).
+- File 11MB bị chặn với thông báo vượt ngưỡng 10MB.
+- Audit log `BULK_IMPORT` ghi đủ: người import, tên file, số dòng thành công/lỗi.
+- 2 index mới (`ix_lien_he_gia_tri`, `ix_tai_chinh_so_tai_khoan`) được auto-migrate tạo.
+- `get_quan_he_full` sau fix N+1 trả đúng quan hệ; `fuzzy_search` sau fix E1 khớp
+  có dấu/không dấu/sai 1 ký tự.

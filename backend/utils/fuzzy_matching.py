@@ -106,11 +106,15 @@ def find_similar_names(
     if not normalized_query:
         return []
 
-    # Sử dụng token_set_ratio - tốt nhất cho tiếng Việt
+    # Sử dụng token_set_ratio - tốt nhất cho tiếng Việt.
+    # processor BẮT BUỘC: rapidfuzz (khác thefuzz) không tự lowercase —
+    # thiếu nó, candidates CHỮ HOA trong DB không bao giờ khớp query
+    # đã normalize, fuzzy search luôn trả rỗng.
     results = process.extract(
         normalized_query,
         candidates,
         scorer=fuzz.token_set_ratio,
+        processor=normalize_vietnamese,
         limit=limit
     )
 
