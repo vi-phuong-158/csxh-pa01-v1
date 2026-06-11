@@ -83,6 +83,28 @@
     </template>
   </div>
 
+  {# ============================================================
+  CONFIRM MODAL — thay window.confirm() của hx-confirm (quy tắc UI-1)
+  ============================================================ #}
+  <div x-data="confirmManager()" x-on:show-confirm.window="open($event.detail)"
+    x-show="visible" x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center"
+    style="background:rgba(26,24,20,0.45);backdrop-filter:blur(6px);">
+    <div class="card" style="width:min(440px,calc(100vw - 32px));box-shadow:var(--shadow-pop);"
+      @click.outside="cancel()" @keydown.escape.window="cancel()">
+      <div class="card__head" style="padding-left:0;padding-right:0;padding-top:0;">
+        <h3><span class="ico">warning</span> Xác nhận thao tác</h3>
+      </div>
+      <div style="padding-top:16px;">
+        <p style="font-size:13px;color:var(--ink-700);" x-text="question"></p>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+          <button type="button" @click="cancel()" class="btn btn-secondary">Hủy</button>
+          <button type="button" @click="confirm()" class="btn btn-danger">Xác nhận</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // === F-10: Gắn CSRF token vào MỌI request HTMX ===
     document.body.addEventListener('htmx:configRequest', (evt) => {
@@ -91,6 +113,40 @@
         evt.detail.headers['X-CSRF-Token'] = meta.content;
       }
     });
+
+    // === [UI-1] hx-confirm -> modal Alpine thay window.confirm() ===
+    // htmx phát `htmx:confirm` trước mọi request; preventDefault rồi tự gọi
+    // issueRequest(true) khi cán bộ bấm Xác nhận (true = bỏ qua confirm gốc).
+    document.body.addEventListener('htmx:confirm', (evt) => {
+      if (!evt.detail.question) return; // phần tử không có hx-confirm
+      evt.preventDefault();
+      window.dispatchEvent(new CustomEvent('show-confirm', {
+        detail: { question: evt.detail.question, proceed: () => evt.detail.issueRequest(true) }
+      }));
+    });
+
+    function confirmManager() {
+      return {
+        visible: false,
+        question: '',
+        _proceed: null,
+        open(detail) {
+          this.question = detail.question;
+          this._proceed = detail.proceed;
+          this.visible = true;
+        },
+        cancel() {
+          this.visible = false;
+          this._proceed = null;
+        },
+        confirm() {
+          const p = this._proceed;
+          this.visible = false;
+          this._proceed = null;
+          if (p) p();
+        }
+      };
+    }
 
     // === Toast Manager ===
     function toastManager() {

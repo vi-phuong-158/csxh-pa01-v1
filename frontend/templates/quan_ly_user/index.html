@@ -3,10 +3,10 @@
 {% block page_title %}Quản lý tài khoản{% endblock %}
 
 {% block content %}
-<div class="cand-ui grid grid-cols-1 lg:grid-cols-3 gap-5">
+<div class="cand-ui grid grid-cols-1 md:grid-cols-3 gap-5">
 
   <!-- User list -->
-  <div class="lg:col-span-2 card" style="padding:0;overflow:hidden;">
+  <div class="md:col-span-2 card" style="padding:0;overflow:hidden;">
     <div style="padding:24px 24px 0 24px;">
       {% if success %}<div class="mb-3 text-sm" style="color:var(--cand-green-deep);">{{ success }}</div>{% endif %}
       {% if error %}<div class="mb-3 text-sm" style="color:var(--cand-red-deep);">{{ error }}</div>{% endif %}
@@ -51,20 +51,22 @@
     <form action="/quan-ly-user/create" method="post" class="space-y-3">
       <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}"/>
       <div>
-        <label class="field__label">Username</label>
-        <input name="username" type="text" class="field__input" required />
+        <label class="field__label" for="new-user-username">Username</label>
+        <input id="new-user-username" name="username" type="text" class="field__input" required />
       </div>
       <div>
-        <label class="field__label">Họ tên</label>
-        <input name="ho_ten" type="text" class="field__input uppercase" oninput="this.value = this.value.toUpperCase()" />
+        <label class="field__label" for="new-user-ho-ten">Họ tên</label>
+        <input id="new-user-ho-ten" name="ho_ten" type="text" class="field__input uppercase" oninput="this.value = this.value.toUpperCase()" />
       </div>
       <div>
-        <label class="field__label">Mật khẩu</label>
-        <input name="password" type="password" class="field__input" required />
+        <label class="field__label" for="new-user-password">Mật khẩu</label>
+        <input id="new-user-password" name="password" type="password" class="field__input" required
+               minlength="8" title="Tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, chữ số và ký tự đặc biệt" />
+        <p class="field__hint" style="margin-top:4px;">Tối thiểu 8 ký tự, gồm chữ hoa, thường, số và ký tự đặc biệt.</p>
       </div>
       <div>
-        <label class="field__label">Vai trò</label>
-        <select name="role" class="field__select">
+        <label class="field__label" for="new-user-role">Vai trò</label>
+        <select id="new-user-role" name="role" class="field__select">
           <option value="user">User</option>
           <option value="super_admin">Super Admin</option>
         </select>

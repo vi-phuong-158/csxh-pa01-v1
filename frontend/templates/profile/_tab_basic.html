@@ -20,16 +20,16 @@
     <div class="md:col-span-2 section-eyebrow" style="margin-top:4px;">Thông tin cá nhân</div>
 
     <div class="md:col-span-2">
-      <label class="field__label">Họ và tên <span class="req">*</span></label>
-      <input name="ho_ten" type="text" class="field__input uppercase" oninput="this.value = this.value.toUpperCase()" value="{{ profile.ho_ten or '' }}" required />
+      <label class="field__label" for="basic-ho-ten">Họ và tên <span class="req">*</span></label>
+      <input id="basic-ho-ten" name="ho_ten" type="text" class="field__input uppercase" oninput="this.value = this.value.toUpperCase()" value="{{ profile.ho_ten or '' }}" required />
     </div>
     <div>
-      <label class="field__label">Ngày sinh</label>
-      <input name="ngay_sinh" type="date" class="field__input" value="{{ profile.ngay_sinh or '' }}" />
+      <label class="field__label" for="basic-ngay-sinh">Ngày sinh</label>
+      <input id="basic-ngay-sinh" name="ngay_sinh" type="date" class="field__input" value="{{ profile.ngay_sinh or '' }}" />
     </div>
     <div>
-      <label class="field__label">Giới tính</label>
-      <select name="gioi_tinh" class="field__select">
+      <label class="field__label" for="basic-gioi-tinh">Giới tính</label>
+      <select id="basic-gioi-tinh" name="gioi_tinh" class="field__select">
         <option value="">-- Chọn --</option>
         {% for g in ['Nam', 'Nữ', 'Khác'] %}
         <option value="{{ g }}" {% if profile.gioi_tinh == g %}selected{% endif %}>{{ g }}</option>
@@ -37,8 +37,8 @@
       </select>
     </div>
     <div>
-      <label class="field__label">Dân tộc</label>
-      <select name="dan_toc" class="field__select">
+      <label class="field__label" for="basic-dan-toc">Dân tộc</label>
+      <select id="basic-dan-toc" name="dan_toc" class="field__select">
         <option value="">-- Chọn --</option>
         {% for dt_item in dan_toc %}
         <option value="{{ dt_item }}" {% if profile.dan_toc == dt_item %}selected{% endif %}>{{ dt_item }}</option>
@@ -46,8 +46,8 @@
       </select>
     </div>
     <div>
-      <label class="field__label">Tôn giáo</label>
-      <select name="ton_giao" class="field__select">
+      <label class="field__label" for="basic-ton-giao">Tôn giáo</label>
+      <select id="basic-ton-giao" name="ton_giao" class="field__select">
         <option value="">-- Chọn --</option>
         {% for tg_item in ton_giao %}
         <option value="{{ tg_item }}" {% if profile.ton_giao == tg_item %}selected{% endif %}>{{ tg_item }}</option>
@@ -55,8 +55,8 @@
       </select>
     </div>
     <div>
-      <label class="field__label">Quốc tịch</label>
-      <input name="quoc_tich" list="list-quoc-gia-basic" class="field__input"
+      <label class="field__label" for="basic-quoc-tich">Quốc tịch</label>
+      <input id="basic-quoc-tich" name="quoc_tich" list="list-quoc-gia-basic" class="field__input"
              placeholder="Tìm quốc tịch..." value="{{ profile.quoc_tich or '' }}" />
       <datalist id="list-quoc-gia-basic">
         {% for qg in danh_sach_quoc_gia %}
@@ -69,16 +69,16 @@
     <div class="md:col-span-2 section-eyebrow" style="margin-top:8px;">Địa chỉ</div>
 
     <div>
-      <label class="field__label">Tỉnh/Thành</label>
-      <select name="dia_chi_tinh" class="field__select">
+      <label class="field__label" for="basic-dia-chi-tinh">Tỉnh/Thành</label>
+      <select id="basic-dia-chi-tinh" name="dia_chi_tinh" class="field__select">
         {% for t in tinh_thanh %}
         <option value="{{ t }}" {% if profile.dia_chi_tinh == t %}selected{% endif %}>{{ t }}</option>
         {% endfor %}
       </select>
     </div>
     <div>
-      <label class="field__label">Xã/Phường</label>
-      <input name="dia_chi_xa" list="list-xa-phuong" class="field__input" placeholder="Gõ để tìm kiếm..." value="{{ profile.dia_chi_xa or '' }}" />
+      <label class="field__label" for="basic-dia-chi-xa">Xã/Phường</label>
+      <input id="basic-dia-chi-xa" name="dia_chi_xa" list="list-xa-phuong" class="field__input" placeholder="Gõ để tìm kiếm..." value="{{ profile.dia_chi_xa or '' }}" />
       <datalist id="list-xa-phuong">
         {% for x in xa_phuong %}
         <option value="{{ x }}">
@@ -86,20 +86,20 @@
       </datalist>
     </div>
     <div class="md:col-span-2">
-      <label class="field__label">Quê quán</label>
-      <input name="que_quan" type="text" class="field__input" placeholder="Tỉnh/Huyện/Xã quê quán..." value="{{ profile.que_quan or '' }}" />
+      <label class="field__label" for="basic-que-quan">Quê quán</label>
+      <input id="basic-que-quan" name="que_quan" type="text" class="field__input" placeholder="Tỉnh/Huyện/Xã quê quán..." value="{{ profile.que_quan or '' }}" />
     </div>
     <div class="md:col-span-2">
-      <label class="field__label">Nơi ở hiện nay</label>
-      <input name="noi_o_hien_nay" type="text" class="field__input" placeholder="Địa chỉ đầy đủ nơi ở hiện tại..." value="{{ profile.noi_o_hien_nay or '' }}" />
+      <label class="field__label" for="basic-noi-o">Nơi ở hiện nay</label>
+      <input id="basic-noi-o" name="noi_o_hien_nay" type="text" class="field__input" placeholder="Địa chỉ đầy đủ nơi ở hiện tại..." value="{{ profile.noi_o_hien_nay or '' }}" />
     </div>
 
     {# ── Nhóm 3: Nghề nghiệp & Ghi chú ── #}
     <div class="md:col-span-2 section-eyebrow" style="margin-top:8px;">Nghề nghiệp</div>
 
     <div>
-      <label class="field__label">Phân loại nghề nghiệp</label>
-      <select name="phan_loai_nghe_nghiep" class="field__select">
+      <label class="field__label" for="basic-phan-loai-nghe">Phân loại nghề nghiệp</label>
+      <select id="basic-phan-loai-nghe" name="phan_loai_nghe_nghiep" class="field__select">
         <option value="">-- Chọn --</option>
         {% for n in phan_loai_nghe_nghiep %}
         <option value="{{ n }}" {% if profile.phan_loai_nghe_nghiep == n %}selected{% endif %}>{{ n }}</option>
@@ -107,12 +107,12 @@
       </select>
     </div>
     <div>
-      <label class="field__label">Chi tiết nghề nghiệp</label>
-      <input name="chi_tiet_nghe_nghiep" type="text" class="field__input" value="{{ profile.chi_tiet_nghe_nghiep or '' }}" />
+      <label class="field__label" for="basic-chi-tiet-nghe">Chi tiết nghề nghiệp</label>
+      <input id="basic-chi-tiet-nghe" name="chi_tiet_nghe_nghiep" type="text" class="field__input" value="{{ profile.chi_tiet_nghe_nghiep or '' }}" />
     </div>
     <div class="md:col-span-2">
-      <label class="field__label">Ghi chú chung</label>
-      <textarea name="ghi_chu_chung" rows="3" class="field__textarea resize-none">{{ profile.ghi_chu_chung or '' }}</textarea>
+      <label class="field__label" for="basic-ghi-chu">Ghi chú chung</label>
+      <textarea id="basic-ghi-chu" name="ghi_chu_chung" rows="3" class="field__textarea resize-none">{{ profile.ghi_chu_chung or '' }}</textarea>
     </div>
 
   </div>
@@ -134,18 +134,20 @@
             hx-swap="innerHTML"
             class="space-y-3">
         <div>
-          <label class="field__label">CCCD mới <span class="req">*</span></label>
-          <input name="new_cccd" type="text" inputmode="numeric" maxlength="12"
+          <label class="field__label" for="change-cccd-new">CCCD mới <span class="req">*</span></label>
+          <input id="change-cccd-new" name="new_cccd" type="text" inputmode="numeric" maxlength="12"
+                 pattern="\d{9}|\d{12}" title="Đúng 9 hoặc 12 chữ số"
                  class="field__input" style="font-family:'JetBrains Mono',monospace;" placeholder="9 hoặc 12 số" required />
         </div>
         <div>
-          <label class="field__label">Xác nhận CCCD mới <span class="req">*</span></label>
-          <input name="confirm_cccd" type="text" inputmode="numeric" maxlength="12"
+          <label class="field__label" for="change-cccd-confirm">Xác nhận CCCD mới <span class="req">*</span></label>
+          <input id="change-cccd-confirm" name="confirm_cccd" type="text" inputmode="numeric" maxlength="12"
+                 pattern="\d{9}|\d{12}" title="Đúng 9 hoặc 12 chữ số"
                  class="field__input" style="font-family:'JetBrains Mono',monospace;" placeholder="Nhập lại để xác nhận" required />
         </div>
         <div>
-          <label class="field__label">Lý do</label>
-          <input name="ly_do" type="text" class="field__input" placeholder="Nhập sai / cập nhật CCCD mới..." />
+          <label class="field__label" for="change-cccd-ly-do">Lý do</label>
+          <input id="change-cccd-ly-do" name="ly_do" type="text" class="field__input" placeholder="Nhập sai / cập nhật CCCD mới..." />
         </div>
         <div id="cccd-change-msg"></div>
         <div class="modal__actions">

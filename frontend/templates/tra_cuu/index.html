@@ -117,9 +117,9 @@
 
   <div id="results-container">
     <div class="card empty-state">
-      <span class="ico">travel_explore</span>
-      <p>Nhập từ khóa để tìm kiếm hồ sơ</p>
-      <p style="font-size:12px;color:var(--ink-500);margin-top:4px;">Kết quả sẽ hiển thị tại đây sau khi truy vấn.</p>
+      {% from "_partials/empty_state.html" import empty_state %}
+      {{ empty_state('travel_explore', 'Nhập từ khóa để tìm kiếm hồ sơ',
+                     'Kết quả sẽ hiển thị tại đây sau khi truy vấn.') }}
     </div>
   </div>
 </div>

@@ -35,7 +35,10 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty-state">Chưa có sự kiện nào được ghi nhận.</div>
+  <div class="empty-state">
+    {% from "_partials/empty_state.html" import empty_state %}
+    {{ empty_state('history', 'Chưa có sự kiện nào được ghi nhận.') }}
+  </div>
   {% endif %}
 
   <div class="card" x-data="{open:false, mode:'date'}">

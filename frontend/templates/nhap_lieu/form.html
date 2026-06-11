@@ -64,8 +64,8 @@
 
     <div x-show="activeTab !== 'basic'" id="dynamic-tab-content">
       <div class="card empty-state">
-        <span class="ico">tab</span>
-        <p>Chọn một tab để tải nội dung nghiệp vụ.</p>
+        {% from "_partials/empty_state.html" import empty_state %}
+        {{ empty_state('tab', 'Chọn một tab để tải nội dung nghiệp vụ.') }}
       </div>
     </div>
   </div>

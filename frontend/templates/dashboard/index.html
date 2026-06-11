@@ -171,8 +171,8 @@
         {% else %}
         <tr>
           <td colspan="6" class="empty-state">
-            <span class="material-symbols-outlined" style="font-size:32px;display:block;margin-bottom:8px;opacity:0.3;">inbox</span>
-            Chưa có hồ sơ nào trong cơ sở dữ liệu.
+            {% from "_partials/empty_state.html" import empty_state %}
+            {{ empty_state('inbox', 'Chưa có hồ sơ nào trong cơ sở dữ liệu.') }}
           </td>
         </tr>
         {% endfor %}

@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 ROLE_SUPER_ADMIN = "super_admin"
 ROLE_USER = "user"
+# Whitelist role — mọi giá trị ngoài danh sách bị từ chối khi tạo user.
+# Thêm role mới: bổ sung vào đây VÀ rà lại toàn bộ permission check.
+ALLOWED_ROLES = {ROLE_SUPER_ADMIN, ROLE_USER}
 DEFAULT_ADMIN_USERNAME = "admin"
 MAX_FAILED_ATTEMPTS = 5
 LOCKOUT_MINUTES = 5
@@ -90,6 +93,8 @@ def create_user(
 ) -> Tuple[bool, str]:
     if not username or not password:
         return False, "Username và password không được trống"
+    if role not in ALLOWED_ROLES:
+        return False, "Vai trò không hợp lệ"
     ok, msg = validate_password_policy(password)
     if not ok:
         return False, msg
