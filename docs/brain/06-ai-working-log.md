@@ -18,6 +18,22 @@
 
 ---
 
+## [2026-06-20] P1 #3: Khôi phục quan hệ graph khi nhập Excel + cập nhật Review.md
+
+- **Agent:** Claude Code
+- **Thay đổi:** `_import_nhan_than` (`services/nhap_excel.py`) nay tạo cạnh `QuanHeDoiTuong`
+  khi dòng nhân thân có CCCD hợp lệ: tạo hồ sơ nháp (`is_draft=True`) cho CCCD nhân thân chưa
+  tồn tại (ràng buộc FK) rồi thêm cạnh. Thêm bảng ánh xạ `_NHAN_THAN_GRAPH` + `_build_quan_he_edge`
+  (Bố/Mẹ/Con/Vợ… → key graph Cha-Con/Mẹ-Con/Vợ chồng…, chuẩn hóa hướng theo giới tính ĐT chính,
+  đối xứng dùng min/max). Thêm helper preload `_load_genders` / `_load_edges_touching` (chống N+1,
+  chống vi phạm unique index `uq_quan_he_cap`). Viết lại `Review.md` (bản 2026-06-20).
+- **File đã sửa:** `backend/services/nhap_excel.py`, `Review.md`,
+  `docs/brain/03-decisions.md`, `docs/brain/04-current-tasks.md`.
+- **Lý do:** P1 #3 từ bản review — nhập Excel chỉ ghi bảng vệ tinh `NhanThan`, không tạo cạnh
+  quan hệ (thụt lùi so với module `bulk_import` cũ).
+- **Kiểm tra:** `python -m py_compile` sạch; test logic ánh xạ `_build_quan_he_edge` 9/9 case pass.
+- **Phạm vi:** KHÔNG đụng các sheet khác; dedup cho nhan_than/qua_trinh/dac_thu vẫn để P2.
+
 ## [2026-06-20] Sửa P1 bảo mật: IDOR (xoá item con) + Formula Injection (xuất Excel)
 
 - **Agent:** Claude Code
