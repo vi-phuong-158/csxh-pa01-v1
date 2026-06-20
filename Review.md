@@ -1,238 +1,97 @@
 # Review Dự Án: VCFE Database v2.0
 
-> Ngày review: 2026-05-18  
-> Reviewer: Claude Sonnet 4.6 (AI Code Review)  
-> Nhánh: `main`
+> Ngày review: **2026-06-20** (cập nhật) — bản trước: 2026-05-18
+> Reviewer: Claude Code (Opus 4.8) + fan-out agents
+> Nhánh: `fix/idor-formula-injection`
 
 ---
 
-## Tổng Quan Dự Án
+## Tổng Quan
 
-**VCFE Database** là hệ thống quản lý hồ sơ nội bộ chạy hoàn toàn offline/LAN, được xây dựng cho đơn vị PA01 - Công an tỉnh Phú Thọ. Mục đích: lưu trữ, tra cứu và phân tích thông tin về người Việt Nam có yếu tố nước ngoài.
+**VCFE Database** — hệ thống quản lý hồ sơ người Việt có yếu tố nước ngoài, chạy offline/LAN cho PA01 Công an tỉnh Phú Thọ. SQLCipher AES-256 + FastAPI + Jinja2/HTMX/Alpine.js.
 
-**Kiến trúc tổng thể:**
 ```
-run_server.py (Launcher)
-    └─> FastAPI (backend/) + Jinja2/HTMX/Alpine.js (frontend/)
-            └─> SQLCipher AES-256 (security_profile.db)
+run_server.py (Launcher: keyring, GUI password)
+   └─> FastAPI (backend/) + Jinja2/HTMX/Alpine.js (frontend/)
+          └─> SQLCipher AES-256 (security_profile.db)
 ```
-
----
 
 ## Đánh Giá Tổng Thể
 
-| Hạng mục | Điểm | Nhận xét |
-|----------|------|----------|
-| Bảo mật | 9/10 | CSRF, rate limit, mã hóa DB, audit log, phân quyền |
-| Kiến trúc | 8/10 | Phân tách routes/services/models rõ ràng |
-| Chất lượng code | 8/10 | Nhất quán, tuân thủ CLAUDE.md |
-| UX/Giao diện | 8/10 | Glassmorphism nhất quán, HTMX mượt mà |
-| Bảo trì (Maintainability) | **6/10** | Có module chết và import sai thế hệ |
+| Hạng mục | 05-18 | 06-20 | Nhận xét |
+|----------|-------|-------|----------|
+| Bảo mật | 9/10 | 8.5→9/10 | Phát hiện thêm IDOR + formula injection — **đã vá**. |
+| Kiến trúc | 8/10 | 8/10 | Phân tách routes/services/models rõ ràng. |
+| Chất lượng code | 8/10 | 8/10 | Nhất quán; nhập Excel viết lại sạch. |
+| UX/Giao diện | 8/10 | 8/10 | Tuân thủ modal Alpine; còn vài chỗ `fetch()` thuần. |
+| Bảo trì | 6/10 | 7/10 | `bulk_import` cũ vẫn là dead code (nên xóa). |
 
 ---
 
-## Điểm Mạnh
+## Trạng Thái Các Vấn Đề Từ Bản Review 2026-05-18
 
-- **SQLCipher AES-256**: File `.db` mã hóa toàn bộ — lấy cắp file không đọc được
-- **NullPool + PRAGMA key**: Đặt key mỗi request, tránh "Database is locked"  
-- **CSRF stateless**: Token ký bằng `SECRET_KEY`, không cần session store
-- **Fail-fast config**: Pydantic validate ngay khi khởi động, sai thì crash sớm
-- **Audit Log**: Mọi thao tác đọc/ghi đều được ghi lại, có thể truy vết
-- **Account lockout**: 5 lần sai → khóa 5 phút, tránh brute force
+- **VẤN ĐỀ 1 (bulk_import dead code + nhập Excel tối giản):** ✅ **Đã giải quyết.** Tính năng nhập Excel được viết lại hoàn chỉnh trong `backend/services/nhap_excel.py` (đa sheet, **chunked commit 100 dòng**, dedup, batch query chống N+1, báo lỗi từng dòng, trả partial HTMX). Module `backend/utils/bulk_import/` giờ là dead code thực sự (không nơi nào import; bản thân nó còn `from database import ...` kiểu Streamlit → không chạy được). **Khuyến nghị: xóa cả thư mục.**
+- **VẤN ĐỀ 2 (đổi mật khẩu DB kick session):** ⏳ Vẫn còn (KI-02) — đã document trong `docs/brain/03-decisions.md`. Nên thêm cảnh báo ở GUI đổi mật khẩu.
+- **VẤN ĐỀ 3 (`schemas/` trống):** ⏳ Vẫn vậy — chấp nhận được khi chưa có API JSON public.
 
 ---
 
-## Vấn Đề Quan Trọng Cần Khắc Phục
+## Phát Hiện Mới & Trạng Thái Xử Lý
+
+### ✅ Đã vá trong đợt review này
+
+**[P1] IDOR — xóa item con của hồ sơ khác** (`services/profile.py`, `routes/profile.py`)
+6 hàm `delete_*` xóa theo `item_id` thuần, không ràng buộc `cccd`. User phụ trách hồ sơ X có thể `DELETE /profile/<cccd_X>/lien-he/<id_của_Y>` để xóa dữ liệu hồ sơ Y.
+→ **Đã sửa:** thêm tham số `cccd`, chỉ xóa khi `item.cccd == cccd`. _(commit `f82e0fb`)_
+
+**[P1] Formula/CSV Injection — xuất báo cáo Excel** (`routes/bao_cao.py` `_build_xlsx`)
+Dữ liệu người dùng (họ tên, ghi chú…) ghi thẳng vào ô Excel; ô bắt đầu bằng `= + - @` có thể thành công thức thực thi khi mở. `sanitize_for_csv()` đã có sẵn nhưng không được gọi.
+→ **Đã sửa:** bọc `sanitize_for_csv()` tại chokepoint `_c()`. _(commit `f82e0fb`)_
+
+**[P1] Mất quan hệ graph khi nhập Excel** (`services/nhap_excel.py` `_import_nhan_than`)
+Sheet "Nhân thân" chỉ insert bảng vệ tinh `NhanThan`, không tạo cạnh `QuanHeDoiTuong` dù có cột CCCD nhân thân (thụt lùi so với module cũ).
+→ **Đã sửa:** khi nhân thân có CCCD hợp lệ, tạo hồ sơ nháp (`is_draft=True`) nếu chưa có (ràng buộc FK) rồi thêm cạnh `QuanHeDoiTuong`; có ánh xạ từ vựng "Bố/Mẹ/Con/Vợ…" → key graph "Cha-Con/Mẹ-Con/Vợ chồng…", chuẩn hóa hướng + dedup (preload chống trùng, không N+1). Có test 9/9 case ánh xạ.
+
+**[P2] Dedup không nhất quán khi nhập Excel** (`services/nhap_excel.py`)
+`nhan_than`/`qua_trinh`/`dac_thu` không chống trùng khi upload lại file (khác lien_he/tai_chinh/phuong_tien).
+→ **Đã sửa:** thêm khóa dedup qua `_load_satellite_keys` + check trong vòng lặp: nhân thân
+`(cccd, loại quan hệ, họ tên)`, quá trình `(cccd, nội dung, ngày bắt đầu)`, đặc thù
+`(cccd, loại hình, nội dung)`. Dòng trùng báo lỗi rõ thay vì nhân đôi.
+
+**[P2] `fetch()` thuần cho ECharts/đồ thị** (`network/index.html`, `profile/_tab_mang_luoi.html`, `bao_cao_charts.js`)
+→ **Đã xử lý (document):** chấp nhận ngoại lệ có chủ ý — HTMX swap HTML, không feed JSON cho
+thư viện vẽ JS. Ghi rõ trong `docs/brain/03-decisions.md`. Mọi CRUD/điều hướng khác vẫn dùng HTMX.
+
+**[P2] Hệ quả đổi mật khẩu DB (KI-02)**
+→ **Đã xử lý (document):** đổi mật khẩu DB diễn ra ngoài app (keyring/`run_server.py`), không có
+form trong app. Đã ghi ở `README(VCFE).md` và `docs/brain/03-decisions.md`.
+
+**[P3] Các cải thiện còn lại — Đã xử lý**
+
+| Vấn đề | Cách xử lý |
+|--------|-----------|
+| Zip-bomb upload `.xlsx` | `_check_xlsx_bomb` chặn theo tổng kích thước bung (đọc metadata ZIP, ngưỡng 200MB) trước khi pandas parse |
+| Rò rỉ chi tiết exception ra client | Thay bằng thông báo chung; chi tiết chỉ vào log (`routes/nhap_excel.py`, `routes/bao_cao.py`) |
+| `change_password` không hỏi mật khẩu cũ | Thêm `current_password` + verify trước khi đổi (`services/auth.py`, `routes/auth.py`, template) |
+| Dead code `bulk_import` | Đã xóa cả thư mục `backend/utils/bulk_import/` |
+| Nhập Excel partial-commit | Ghi rõ trong docstring `import_workbook` |
+
+### ⏳ Tồn đọng
+
+Không còn mục P1/P2/P3 nào từ bản review này. Xem "Khoảng Trống Chưa Review" bên dưới.
 
 ---
 
-### VẤN ĐỀ 1 (Nghiêm trọng): Module `bulk_import` là Dead Code hoàn toàn
+## Đã Xác Nhận An Toàn
 
-Đây là vấn đề phức tạp nhất trong dự án. Có **hai implementation cạnh tranh nhau** cho tính năng nhập Excel, và cả hai đều không hoàn chỉnh.
+SQL injection (ORM bind tham số), SQLCipher/PRAGMA key (escape + verify fail-fast + `cipher_compatibility=4`), path traversal khi serve file (`files.py` whitelist + `relative_to`), upload avatar/doc (magic bytes + cap 5MB + tên server-side UUID), CSRF toàn cục, open redirect (`safe_next_url`), phân quyền role + `require_profile_access`, redact secret khi log, `.gitignore` (đã bỏ `.env`/`*.db`/`dist/`), frontend dùng modal Alpine thay `confirm()`, không có `|safe` gây XSS.
 
-#### 1a. Cấu trúc thư mục bị lồng sai
+## Khoảng Trống Chưa Review
 
-```
-Hiện tại (SAI):
-backend/utils/bulk_import/              ← KHÔNG có __init__.py
-    └── bulk_import/                     ← lồng thêm 1 cấp thừa
-        ├── __init__.py
-        ├── constants.py
-        ├── exporters.py
-        ├── importers.py
-        ├── templates.py
-        └── validators.py
-
-Đúng phải là:
-backend/utils/bulk_import/              ← có __init__.py
-    ├── constants.py
-    ├── exporters.py
-    ├── importers.py
-    ├── templates.py
-    └── validators.py
-```
-
-**Hệ quả**: Outer folder `utils/bulk_import/` không có `__init__.py` nên Python không nhận ra đây là package. Import sẽ thất bại hoàn toàn với `ModuleNotFoundError`.
-
-#### 1b. Import sai thế hệ (Streamlit → FastAPI migration chưa hoàn tất)
-
-`importers.py` và `validators.py` vẫn dùng cú pháp kết nối DB từ thời Streamlit cũ:
-
-```python
-# importers.py dòng 6 — SAI (module này không tồn tại trong FastAPI project)
-from database import get_connection
-
-# validators.py dòng 7 — SAI (tương tự)
-from database import get_connection
-
-# constants.py dòng 5 — SAI (không phải backend.constants)
-from constants import DANH_SACH_XA_PHU_THO, GIOI_TINH_OPTIONS, ...
-```
-
-Trong khi đó, FastAPI project hiện tại dùng:
-```python
-# Cách đúng với SQLAlchemy ORM
-from backend.db.session import get_db
-from sqlalchemy.orm import Session
-```
-
-**Hệ quả**: Nếu ai cố import `bulk_import`, sẽ báo lỗi `ModuleNotFoundError: No module named 'database'` ngay lập tức.
-
-#### 1c. Route `nhap_excel.py` không dùng module trên
-
-Thay vì sử dụng `bulk_import`, route `nhap_excel.py` có **implementation riêng inline** (dòng 39–133) với nhiều giới hạn:
-
-| Tính năng | `utils/bulk_import/` (chết) | `nhap_excel.py` (đang dùng) |
-|-----------|----------------------------|------------------------------|
-| Đọc nhiều sheet | Có (7 sheets) | Không (chỉ 1 sheet) |
-| Validate đầy đủ | Có (CCCD, tỉnh, xã, nghề nghiệp) | Tối giản (chỉ check cccd + ho_ten) |
-| Quan hệ nhân thân | Có (graph + satellite) | Không |
-| Chunked commit | Không | Không (1 commit cho tất cả) |
-| Deduplication | Có | Không |
-
-**Chunked commit vi phạm CLAUDE.md**: Route hiện tại commit toàn bộ `N` dòng trong một lần (dòng 121):
-```python
-# nhap_excel.py dòng 121 — NGUY HIỂM với file lớn
-db.commit()  # Commit 1000 dòng cùng lúc → "Database is locked"
-```
-CLAUDE.md yêu cầu: *"Phải xử lý insert theo từng chunk 50-100 dòng một lần commit"*.
-
----
-
-#### Cách khắc phục (theo thứ tự ưu tiên)
-
-**Bước 1 — Sửa cấu trúc thư mục:**
-```
-# Di chuyển các file từ inner folder ra outer folder
-backend/utils/bulk_import/
-    __init__.py   ← tạo mới (copy từ inner/__init__.py)
-    constants.py
-    exporters.py
-    importers.py
-    templates.py
-    validators.py
-```
-Sau đó xóa thư mục `backend/utils/bulk_import/bulk_import/`.
-
-**Bước 2 — Cập nhật import trong `importers.py`:**
-```python
-# Xóa:
-from database import get_connection
-
-# Thêm:
-from sqlalchemy.orm import Session
-from backend.models.models import DoiTuong, LienHe, TaiChinh, PhuongTien, NhanThan
-
-# Đổi chữ ký hàm:
-def bulk_import_all(validated_data: dict, db: Session, ...) -> tuple:
-    # Dùng db.add() + db.flush() thay vì cursor.executemany()
-```
-
-**Bước 3 — Cập nhật import trong `validators.py`:**
-```python
-# Xóa:
-from database import get_connection
-
-# Thêm:
-from sqlalchemy.orm import Session
-from backend.models.models import DoiTuong
-
-# Đổi chữ ký hàm:
-def validate_excel_data(excel_file, db: Session, ...) -> dict:
-    existing_cccds = {row.cccd for row in db.query(DoiTuong.cccd).all()}
-```
-
-**Bước 4 — Sửa import constants:**
-```python
-# Xóa:
-from constants import DANH_SACH_XA_PHU_THO, ...
-
-# Thêm:
-from backend.constants import DANH_SACH_XA_PHU_THO, ...
-```
-
-**Bước 5 — Thêm chunked commit vào `importers.py`:**
-```python
-CHUNK_SIZE = 50
-
-def bulk_import_all(validated_data: dict, db: Session) -> tuple:
-    records = build_record_list(validated_data)  # list of ORM objects
-    
-    for i in range(0, len(records), CHUNK_SIZE):
-        chunk = records[i : i + CHUNK_SIZE]
-        db.add_all(chunk)
-        db.commit()  # Commit mỗi 50 dòng
-    
-    return True, f"Import thành công {len(records)} bản ghi", stats
-```
-
-**Bước 6 — Kết nối `nhap_excel.py` với module:**
-```python
-# nhap_excel.py — thay inline code bằng:
-from backend.utils.bulk_import import validate_excel_data, bulk_import_all
-
-@router.post("/upload")
-async def upload_excel(file, user, db):
-    validated = validate_excel_data(file, db)
-    ok, msg, stats = bulk_import_all(validated, db)
-    return templates.TemplateResponse(...)
-```
-
----
-
-### VẤN ĐỀ 2 (Nhỏ): Hệ quả đổi mật khẩu DB chưa được document
-
-`SECRET_KEY` được tạo ra từ `DB_PASSWORD` qua PBKDF2. Nếu admin đổi mật khẩu DB:
-- `SECRET_KEY` mới ≠ `SECRET_KEY` cũ
-- **Tất cả session đang hoạt động bị vô hiệu hóa ngay lập tức**
-- Cán bộ đang đăng nhập sẽ bị kick ra không báo trước
-
-Khắc phục: Thêm thông báo trong hướng dẫn sử dụng hoặc trong GUI lúc đổi mật khẩu.
-
----
-
-### VẤN ĐỀ 3 (Nhỏ): `schemas/` folder trống
-
-```
-backend/schemas/__init__.py  ← chỉ có file này, không có Pydantic schemas
-```
-
-Dự án chưa có Pydantic response/request schemas. Hiện tại các route trả về trực tiếp từ ORM models. Điều này ổn cho hệ thống internal, nhưng nếu sau này thêm API JSON public thì cần bổ sung.
-
----
-
-## Tóm Tắt Ưu Tiên Việc Cần Làm
-
-| Độ ưu tiên | Việc cần làm | File liên quan |
-|-----------|--------------|----------------|
-| P1 — Gấp | Sửa cấu trúc `bulk_import/` và import sai | `utils/bulk_import/**` |
-| P1 — Gấp | Thêm chunked commit vào nhập Excel | `routes/nhap_excel.py` |
-| P1 — Gấp | Kết nối route với module `bulk_import` | `routes/nhap_excel.py` |
-| P2 — Nên | Document hệ quả đổi mật khẩu DB | README, hướng dẫn |
-| P3 — Tùy | Bổ sung Pydantic schemas nếu cần API JSON | `schemas/` |
+Nhánh review logic backend chuyên sâu (search/fuzzy, network graph, dashboard, deduplication) bị gián đoạn do giới hạn phiên — chưa đánh giá N+1/transaction cho các service đó (ngoài `profile` và `nhap_excel` đã kiểm).
 
 ---
 
 ## Kết Luận
 
-Dự án có nền móng bảo mật rất vững chắc và kiến trúc rõ ràng. Vấn đề duy nhất đáng lo ngại là module `bulk_import` — một tính năng quan trọng đã được xây dựng khá hoàn chỉnh nhưng **bị ngắt khỏi hệ thống** trong quá trình chuyển đổi từ Streamlit sang FastAPI, dẫn đến dead code và tính năng nhập Excel hiện tại hoạt động ở mức tối giản. Khắc phục vấn đề này sẽ nâng mức độ hoàn thiện của hệ thống lên đáng kể.
+So với 05-18, dự án tiến bộ rõ: tính năng nhập Excel — điểm yếu lớn nhất — đã được viết lại đạt chuẩn CLAUDE.md và nay có cả quan hệ graph. Toàn bộ P1/P2/P3 từ bản review này đã được xử lý (vá 2 lỗ hổng bảo mật, khôi phục quan hệ graph, dedup, chống zip-bomb, ẩn chi tiết lỗi, yêu cầu mật khẩu cũ khi đổi, xóa dead code). Việc đáng làm tiếp theo nằm ngoài phạm vi đã soát: đánh giá chuyên sâu logic backend (search/network/dashboard) chưa được review.

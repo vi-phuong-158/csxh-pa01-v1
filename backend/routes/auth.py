@@ -91,6 +91,7 @@ def change_password_page(request: Request, user=Depends(require_login)):
 @router.post("/change-password")
 async def change_password_submit(
     request: Request,
+    current_password: str = Form(...),
     new_password: str = Form(...),
     confirm_password: str = Form(...),
     user: dict = Depends(require_login),
@@ -101,7 +102,7 @@ async def change_password_submit(
             request, "auth/change_password.html",
             {"user": user, "error": "Mật khẩu xác nhận không khớp", "success": None},
         )
-    ok, msg = auth_svc.change_password(db, user["id"], new_password)
+    ok, msg = auth_svc.change_password(db, user["id"], new_password, current_password)
     if not ok:
         return templates.TemplateResponse(
             request, "auth/change_password.html",

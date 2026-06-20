@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from backend.constants import LOAI_HINH_DAC_THU, PHAN_LOAI_NGHE_NGHIEP, get_quan_he_label
 from backend.db.session import get_db
 from backend.deps import require_login
+from backend.utils.security_utils import sanitize_for_csv
 from backend.models.models import (
     DoiTuong, LienHe, TaiChinh, HoSoDacThu,
     NhanThan, PhuongTien, QuaTrinhHoatDong, QuanHeDoiTuong,
@@ -180,7 +181,9 @@ def _build_xlsx(stats: dict, filter_lines: list, generated_at: datetime, detaile
     # ── Helper utilities ──────────────────────────────────────────────────────
     def _c(ws, row, col, value=None, *, font=None, fill=None, align=None,
            border=None, fmt=None):
-        cell = ws.cell(row=row, column=col, value=value)
+        # Chống formula injection: ô bắt đầu bằng = + - @ được prefix ' (xem
+        # sanitize_for_csv). Mọi giá trị do người dùng nhập đều đi qua _c.
+        cell = ws.cell(row=row, column=col, value=sanitize_for_csv(value))
         if font   is not None: cell.font      = font
         if fill   is not None: cell.fill      = fill
         if align  is not None: cell.alignment = align
@@ -629,7 +632,7 @@ def api_thong_ke(
         raise
     except Exception as exc:
         logger.error("Lỗi api_thong_ke: %s", exc, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Lỗi thống kê: {exc}")
+        raise HTTPException(status_code=500, detail="Lỗi tính thống kê (chi tiết đã ghi log).")
 
 
 @router.get("/export-xlsx")
@@ -710,4 +713,4 @@ def export_xlsx(
         raise
     except Exception as exc:
         logger.error("Lỗi export_xlsx: %s", exc, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Lỗi xuất Excel: {exc}")
+        raise HTTPException(status_code=500, detail="Lỗi xuất Excel (chi tiết đã ghi log).")

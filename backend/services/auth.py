@@ -132,14 +132,20 @@ def delete_user(db: Session, user_id: int) -> Tuple[bool, str]:
     return True, f"Đã vô hiệu hóa tài khoản '{user.username}'"
 
 
-def change_password(db: Session, user_id: int, new_password: str) -> Tuple[bool, str]:
-    ok, msg = validate_password_policy(new_password)
-    if not ok:
-        return False, msg
-
+def change_password(db: Session, user_id: int, new_password: str,
+                    current_password: str) -> Tuple[bool, str]:
     user = db.get(User, user_id)
     if not user:
         return False, "Không tìm thấy tài khoản"
+
+    # Xác minh mật khẩu hiện tại trước khi cho đổi — chống chiếm tài khoản khi
+    # người dùng rời máy chưa đăng xuất.
+    if not verify_password(current_password, user.password_hash):
+        return False, "Mật khẩu hiện tại không đúng"
+
+    ok, msg = validate_password_policy(new_password)
+    if not ok:
+        return False, msg
 
     user.password_hash = hash_password(new_password)
     user.must_change_password = 0
