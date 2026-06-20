@@ -86,12 +86,42 @@ Không còn mục P1/P2/P3 nào từ bản review này. Xem "Khoảng Trống Ch
 
 SQL injection (ORM bind tham số), SQLCipher/PRAGMA key (escape + verify fail-fast + `cipher_compatibility=4`), path traversal khi serve file (`files.py` whitelist + `relative_to`), upload avatar/doc (magic bytes + cap 5MB + tên server-side UUID), CSRF toàn cục, open redirect (`safe_next_url`), phân quyền role + `require_profile_access`, redact secret khi log, `.gitignore` (đã bỏ `.env`/`*.db`/`dist/`), frontend dùng modal Alpine thay `confirm()`, không có `|safe` gây XSS.
 
-## Khoảng Trống Chưa Review
+## Review Chuyên Sâu Logic Backend (2026-06-20)
 
-Nhánh review logic backend chuyên sâu (search/fuzzy, network graph, dashboard, deduplication) bị gián đoạn do giới hạn phiên — chưa đánh giá N+1/transaction cho các service đó (ngoài `profile` và `nhap_excel` đã kiểm).
+Đã soát search/fuzzy, network graph, dashboard/thống kê, deduplication, events. **Không có lỗ
+hổng bảo mật mới.** Phần lớn vấn đề là **hiệu năng O(n)/O(n²)** — hiện chấp nhận được ở quy mô
+~400 hồ sơ nhưng sẽ xấu đi khi dữ liệu tăng. Đã xác nhận tốt: GROUP BY SQL ở dashboard,
+`joinedload` chống N+1 khi export, Union-Find khử trùng, chống chu trình graph (`visited`),
+giới hạn depth/node graph, chuẩn hóa cạnh đối xứng nhất quán giữa nhập thủ công và nhập Excel.
+
+### Đáng sửa (bug logic / độ chính xác)
+| Mức | Vấn đề | File |
+|-----|--------|------|
+| TB | **Tìm SĐT ở tra cứu không chuẩn hóa** → lệch với cách ghi DB và với danh bạ, gõ `+84`/có dấu cách là sót kết quả | `services/search.py` (search_profiles) |
+| TB | **Cache dashboard không invalidate** sau ghi (TTL 300s) → sau nhập Excel/CRUD số liệu cũ tới 5 phút | `services/dashboard.py` |
+| TB | **Bỏ dấu chữ "Đ" lệch nhau** giữa query-side (NFKD, không đổi Đ) và SQL `unaccent_lower` (NFD + Đ→D) → sót tên bắt đầu bằng Đ | `utils/fuzzy_matching.py` vs `utils/text_utils.py` |
+| TB | `page`/`page_size` không chặn → offset âm / trả cả bảng | `routes/tra_cuu.py`, `services/search.py` |
+| TB | `get_multi_bfs` dedup link bỏ `loai_quan_he` → nuốt cạnh khi 2 người có nhiều loại quan hệ | `services/network.py` |
+
+### Hiệu năng (ổn ở 400 hồ sơ, lưu ý khi scale)
+| Vấn đề | File |
+|--------|------|
+| **N+1 trong BFS graph** (`db.get` từng node; `get_multi_bfs` BFS lại từ đầu mỗi gốc) — pattern fix đã có sẵn ở `quan_he.py` | `services/network.py` |
+| Tìm theo tên & fuzzy load toàn bảng vào RAM (không dùng index) | `services/search.py`, `routes/ra_soat.py` |
+| Khử trùng O(n²): block `unknown`/năm phổ biến quá lớn; `find_potential_duplicates` không blocking | `utils/deduplication.py`, `utils/fuzzy_matching.py` |
+| `count_upcoming_events` đếm bằng `len()` thay vì `func.count` | `services/events.py` |
+
+### Nhỏ
+- `dashboard.get_statistics` nuốt mọi exception → trả "0 hồ sơ" giả khi DB lỗi (nên báo lỗi rõ).
+- `ra_soat` echo `str(e)` ra UI (rò rỉ chi tiết — giống lỗi đã sửa ở `nhap_excel`).
+- Index `ngay_ket_thuc` khai 2 lần (model `index=True` + `_PENDING_INDEXES`).
+- `do_tin_cay` quan hệ luôn = 50 (không có đường nhập) — trường "chết" nếu không dùng.
+
+> Các mục này **chỉ mới review, chưa sửa** (theo yêu cầu). Đã đưa vào backlog
+> `docs/brain/04-current-tasks.md`. Không mục nào chặn vận hành ở quy mô hiện tại.
 
 ---
 
 ## Kết Luận
 
-So với 05-18, dự án tiến bộ rõ: tính năng nhập Excel — điểm yếu lớn nhất — đã được viết lại đạt chuẩn CLAUDE.md và nay có cả quan hệ graph. Toàn bộ P1/P2/P3 từ bản review này đã được xử lý (vá 2 lỗ hổng bảo mật, khôi phục quan hệ graph, dedup, chống zip-bomb, ẩn chi tiết lỗi, yêu cầu mật khẩu cũ khi đổi, xóa dead code). Việc đáng làm tiếp theo nằm ngoài phạm vi đã soát: đánh giá chuyên sâu logic backend (search/network/dashboard) chưa được review.
+So với 05-18, dự án tiến bộ rõ: tính năng nhập Excel — điểm yếu lớn nhất — đã được viết lại đạt chuẩn CLAUDE.md, có quan hệ graph và phản hồi UI theo từng sheet. Toàn bộ P1/P2/P3 đã xử lý. Review chuyên sâu backend không phát hiện lỗ hổng bảo mật mới; các vấn đề còn lại chủ yếu là hiệu năng chưa cấp thiết ở quy mô ~400 hồ sơ + vài bug logic nhỏ (đã ghi backlog).

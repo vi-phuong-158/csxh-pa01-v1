@@ -27,19 +27,40 @@
         </div>
       </div>
 
-      {% if errors %}
-      <div style="margin-top:16px;">
-        <div class="field__label" style="margin-bottom:8px;">Chi tiết lỗi</div>
-        <div style="max-height:220px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:var(--paper-2);">
+      {# ── Kết quả theo từng sheet ── #}
+      {% for sheet in sheets %}
+      {% if sheet.total > 0 or sheet.failed > 0 %}
+      <div style="margin-top:14px;border:1px solid var(--line);border-radius:8px;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:var(--paper-2);border-bottom:1px solid var(--line);">
+          <div style="font-size:13px;font-weight:600;">
+            <span class="ico" style="vertical-align:-3px;">table_view</span>
+            {{ sheet.title }}
+          </div>
+          <div style="font-size:12px;color:var(--ink-500);">
+            <span style="color:var(--cand-green-deep,#15803d);font-weight:600;">{{ sheet.success }}</span> thành công
+            ·
+            <span style="color:var(--cand-red-deep,#b91c1c);font-weight:600;">{{ sheet.failed }}</span> lỗi
+            / {{ sheet.total }} dòng
+          </div>
+        </div>
+        {% if sheet.notes %}
+        <div style="padding:8px 14px;font-size:12px;color:var(--cand-green-deep,#15803d);background:var(--cand-green-soft);border-bottom:1px solid var(--line);">
+          {% for note in sheet.notes %}
+          <div><span class="ico" style="vertical-align:-3px;font-size:16px;">hub</span> {{ note }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if sheet.errors %}
+        <div style="max-height:200px;overflow-y:auto;">
           <table class="tbl">
             <thead>
               <tr>
-                <th>Dòng</th>
+                <th style="width:70px;">Dòng</th>
                 <th>Nội dung lỗi</th>
               </tr>
             </thead>
             <tbody>
-              {% for err in errors %}
+              {% for err in sheet.errors %}
               <tr>
                 <td class="mono">{{ err.row }}</td>
                 <td>{{ err.msg }}</td>
@@ -48,8 +69,10 @@
             </tbody>
           </table>
         </div>
+        {% endif %}
       </div>
       {% endif %}
+      {% endfor %}
 
       {% if success > 0 %}
       <div style="display:flex;justify-content:flex-end;margin-top:18px;">
