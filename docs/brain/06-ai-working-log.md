@@ -18,6 +18,25 @@
 
 ---
 
+## [2026-06-20] P3: zip-bomb, ẩn lỗi, mật khẩu cũ, partial-commit, xóa dead code
+
+- **Agent:** Claude Code
+- **Thay đổi:**
+  - **Zip-bomb:** `_check_xlsx_bomb` (đọc tổng uncompressed-size từ metadata ZIP, ngưỡng 200MB)
+    chặn file `.xlsx` bung quá lớn trước khi pandas parse (`services/nhap_excel.py`).
+  - **Ẩn lỗi:** thay thông báo exception thô bằng message chung ở `routes/nhap_excel.py` và
+    2 handler `routes/bao_cao.py`; chi tiết chỉ vào log.
+  - **Đổi mật khẩu:** yêu cầu `current_password` + verify trước khi đổi
+    (`services/auth.py`, `routes/auth.py`, `templates/auth/change_password.html`).
+  - **Partial-commit:** ghi rõ trong docstring `import_workbook`.
+  - **Dead code:** xóa cả thư mục `backend/utils/bulk_import/`.
+- **File đã sửa:** `services/nhap_excel.py`, `routes/nhap_excel.py`, `routes/bao_cao.py`,
+  `services/auth.py`, `routes/auth.py`, `templates/auth/change_password.html`, `Review.md`,
+  `docs/brain/04-current-tasks.md`; xóa `backend/utils/bulk_import/**`.
+- **Lý do:** Xử lý các mục P3 từ bản review 2026-06-20.
+- **Kiểm tra:** `python -m py_compile` 5 file → sạch; test `_check_xlsx_bomb` (template=False,
+  non-zip=False); `change_password` đổi chữ ký, đã rà chỉ 1 caller.
+
 ## [2026-06-20] P2: Dedup nhập Excel + document ngoại lệ fetch()/KI-02
 
 - **Agent:** Claude Code

@@ -35,12 +35,11 @@
 - **Liên quan:** `backend/utils/bulk_import/`. Chi tiết: `Review.md`.
 - **Ưu tiên:** Thấp — dọn dẹp.
 
-### (P3) Cải thiện còn lại (xem Review.md 2026-06-20)
-- Zip-bomb: giảm cap upload Excel / giới hạn số dòng trước parse (`config.py`, `routes/nhap_excel.py`).
-- Rò rỉ chi tiết exception ra client (`routes/nhap_excel.py`, `routes/bao_cao.py`).
-- `change_password` (tài khoản user) nên yêu cầu mật khẩu cũ (`routes/auth.py`).
-- Nhập Excel là partial-commit — ghi rõ trong docstring.
-- **Ưu tiên:** Thấp.
+### Đánh giá chuyên sâu logic backend (chưa review)
+- **Mô tả:** N+1/transaction cho search/fuzzy, network graph, dashboard, deduplication — nhánh
+  review trước bị gián đoạn do giới hạn phiên.
+- **Liên quan:** `backend/services/{search,network,dashboard,quan_he,events}.py`.
+- **Ưu tiên:** TB.
 
 ---
 

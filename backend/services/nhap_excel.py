@@ -10,6 +10,7 @@ import io
 import logging
 import re
 import unicodedata
+import zipfile
 
 import pandas as pd
 from openpyxl import Workbook
@@ -49,6 +50,11 @@ _TEMPLATE_ROWS = 2000
 
 # Giới hạn số lỗi hiển thị mỗi sheet (tránh trả HTML khổng lồ).
 _MAX_ERRORS_SHOWN = 300
+
+# Chống "zip bomb": .xlsx là file ZIP, 10MB nén có thể bung tới hàng GB XML khi
+# pandas nạp toàn bộ sheet vào RAM. Chặn theo TỔNG kích thước bung (đọc từ
+# metadata ZIP, không cần giải nén) trước khi đưa cho pandas.
+_MAX_UNCOMPRESSED_MB = 200
 
 # Cột "Hành động" sheet Đối tượng: THÊM MỚI (mặc định) hoặc CẬP NHẬT hồ sơ có sẵn.
 _ACTION_ADD = "THÊM MỚI"
@@ -455,8 +461,28 @@ def _find_sheets(sheets_raw: dict) -> dict:
     return found
 
 
+def _check_xlsx_bomb(contents: bytes) -> bool:
+    """True nếu tổng kích thước bung của workbook vượt ngưỡng an toàn.
+    Đọc field uncompressed-size trong central directory của ZIP — không giải nén,
+    nên rẻ và an toàn (zip bomb tự khai báo kích thước lớn ở đây)."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(contents)) as zf:
+            total = sum(zi.file_size for zi in zf.infolist())
+    except zipfile.BadZipFile:
+        return False  # không phải ZIP (vd .xls cũ) — để pandas tự xử lý/raise
+    return total > _MAX_UNCOMPRESSED_MB * 1024 * 1024
+
+
 def import_workbook(db: Session, contents: bytes, username: str, filename: str) -> dict:
-    """Import toàn bộ workbook. Trả về report cho template kết quả."""
+    """Import toàn bộ workbook. Trả về report cho template kết quả.
+
+    Lưu ý: import là PARTIAL-COMMIT (commit theo chunk _CHUNK_SIZE để tránh giữ
+    write-lock lâu — yêu cầu CLAUDE.md), KHÔNG nguyên tử. Nếu lỗi hạ tầng xảy ra
+    giữa chừng, các chunk đã commit vẫn còn; lỗi DỮ LIỆU thì được bắt theo từng
+    dòng nên không làm hỏng cả lượt import."""
+    if _check_xlsx_bomb(contents):
+        return {"error": f"File giải nén quá lớn (> {_MAX_UNCOMPRESSED_MB}MB) — "
+                         "nghi ngờ file hỏng hoặc độc hại, đã từ chối xử lý."}
     sheets_raw = pd.read_excel(io.BytesIO(contents), sheet_name=None, dtype=str)
     found = _find_sheets(sheets_raw)
 
