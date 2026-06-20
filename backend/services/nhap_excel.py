@@ -409,6 +409,7 @@ class _SheetReport:
         self.total = 0
         self.success = 0
         self.errors = []
+        self.notes = []  # ghi chú phụ (vd: số quan hệ/hồ sơ nháp tạo thêm)
 
     def err(self, row_num, msg):
         self.errors.append({"row": row_num, "msg": msg})
@@ -425,7 +426,8 @@ class _SheetReport:
                 {"row": "…", "msg": f"(và {hidden} lỗi khác — sửa các lỗi trên rồi import lại)"}
             ]
         return {"title": self.title, "total": self.total,
-                "success": self.success, "failed": self.failed, "errors": errors}
+                "success": self.success, "failed": self.failed,
+                "errors": errors, "notes": self.notes}
 
 
 def _iter_rows(df: pd.DataFrame, colmap: dict):
@@ -894,6 +896,11 @@ def _import_nhan_than(db: Session, df: pd.DataFrame, known_cccd: set) -> _SheetR
     if edges_added or drafts_added:
         logger.info("Nhập Excel nhân thân: tạo %d cạnh quan hệ, %d hồ sơ nháp",
                     edges_added, drafts_added)
+        rep.notes.append(
+            f"Tạo thêm {edges_added} quan hệ trong sơ đồ mạng lưới"
+            + (f" và {drafts_added} hồ sơ nháp (CCCD nhân thân chưa có hồ sơ — cần bổ sung sau)"
+               if drafts_added else "")
+        )
     return rep
 
 

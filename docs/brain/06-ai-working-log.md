@@ -18,6 +18,24 @@
 
 ---
 
+## [2026-06-20] Hoàn thiện UI nhập Excel + review chuyên sâu backend
+
+- **Agent:** Claude Code
+- **Thay đổi:**
+  - **UI nhập Excel (hoàn thiện WIP):** `_results.html` hiển thị kết quả theo từng sheet (WIP cũ),
+    cập nhật hướng dẫn đa sheet ở `index.html`, alias font icon `.material-symbols-outlined`
+    (`cand-theme.css`). Bổ sung phản hồi: số quan hệ + hồ sơ nháp tạo từ sheet Nhân thân — thêm
+    `_SheetReport.notes`, `_import_nhan_than` ghi note, template render note (`services/nhap_excel.py`,
+    `_results.html`).
+  - **Review chuyên sâu backend:** soát search/fuzzy, network graph, dashboard, deduplication,
+    events (fan-out 3 agent). Không có lỗ hổng bảo mật mới; ghi findings vào `Review.md` +
+    backlog `04-current-tasks.md` (CHƯA sửa — theo yêu cầu chỉ review).
+- **File đã sửa:** `backend/services/nhap_excel.py`, `frontend/templates/nhap_excel/{index,_results}.html`,
+  `frontend/static/css/cand-theme.css`, `Review.md`, `docs/brain/04-current-tasks.md`.
+- **Lý do:** Hoàn thiện vòng phản hồi UI cho tính năng nhập Excel (P1#3) + lấp khoảng trống review backend.
+- **Kiểm tra:** `py_compile` sạch; test tích hợp 14/14 PASS (DB tạm cùng mật khẩu); render
+  `_results.html` qua Jinja2 (notes + per-sheet + nhánh lỗi) OK.
+
 ## [2026-06-20] P3: zip-bomb, ẩn lỗi, mật khẩu cũ, partial-commit, xóa dead code
 
 - **Agent:** Claude Code

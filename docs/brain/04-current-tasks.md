@@ -35,11 +35,19 @@
 - **Liên quan:** `backend/utils/bulk_import/`. Chi tiết: `Review.md`.
 - **Ưu tiên:** Thấp — dọn dẹp.
 
-### Đánh giá chuyên sâu logic backend (chưa review)
-- **Mô tả:** N+1/transaction cho search/fuzzy, network graph, dashboard, deduplication — nhánh
-  review trước bị gián đoạn do giới hạn phiên.
-- **Liên quan:** `backend/services/{search,network,dashboard,quan_he,events}.py`.
-- **Ưu tiên:** TB.
+### (TB) Sửa bug logic backend từ review 2026-06-20 (xem Review.md)
+- Tìm SĐT ở `search_profiles` chưa `normalize_phone` → sót kết quả (đồng bộ với danh bạ).
+- Cache dashboard không invalidate sau ghi (`services/dashboard.py`).
+- Bỏ dấu chữ "Đ" lệch giữa `fuzzy_matching` (NFKD) và `text_utils` (NFD+Đ→D).
+- Validate `page`/`page_size` ở `routes/tra_cuu.py`.
+- `get_multi_bfs` dedup link thiếu `loai_quan_he` (`services/network.py`).
+- **Ưu tiên:** TB (bug logic, chưa chặn vận hành).
+
+### (Thấp) Hiệu năng khi dữ liệu tăng (xem Review.md)
+- N+1 trong BFS graph (`services/network.py` — pattern fix có sẵn ở `quan_he.py`).
+- Fuzzy/khử trùng load toàn bảng + O(n²) (`utils/deduplication.py`, `fuzzy_matching.py`, `routes/ra_soat.py`).
+- `count_upcoming_events` dùng `func.count`; gỡ index `ngay_ket_thuc` khai trùng.
+- **Ưu tiên:** Thấp — ổn ở ~400 hồ sơ.
 
 ---
 

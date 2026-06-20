@@ -27,7 +27,7 @@
 
       <div style="padding-top:18px;">
         <p style="font-size:13px;color:var(--ink-500);margin-bottom:16px;">
-          File Excel cần có tối thiểu các cột <strong>cccd</strong> và <strong>ho_ten</strong>. Kết quả xử lý sẽ hiển thị ngay bên dưới sau khi upload.
+          Dùng file mẫu gồm nhiều sheet: chỉ sheet <strong>1. Đối tượng</strong> là bắt buộc; các sheet Liên hệ, Tài chính, Phương tiện, Nhân thân, Quá trình, Hồ sơ đặc thù dùng để bổ sung thông tin (nối bằng cột CCCD). Cột <strong>Hành động</strong> ở sheet Đối tượng cho phép chọn <strong>THÊM MỚI</strong> (mặc định) hoặc <strong>CẬP NHẬT</strong> hồ sơ đã có (chỉ ô điền mới ghi đè, ô trống giữ nguyên). Đọc kỹ sheet <strong>HƯỚNG DẪN</strong> trong file mẫu trước khi điền. Kết quả xử lý hiển thị theo từng sheet ngay bên dưới sau khi upload.
         </p>
 
         <form hx-post="/nhap-excel/upload"
