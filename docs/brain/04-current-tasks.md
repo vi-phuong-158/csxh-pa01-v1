@@ -35,11 +35,12 @@
 - **Liên quan:** `backend/utils/bulk_import/`. Chi tiết: `Review.md`.
 - **Ưu tiên:** Thấp — dọn dẹp.
 
-### (P2) Thống nhất dedup khi nhập Excel
-- **Mô tả:** `nhan_than`/`qua_trinh`/`dac_thu` chưa chống trùng khi upload lại file (khác
-  lien_he/tai_chinh/phuong_tien). Thêm khóa dedup hợp lý hoặc comment giải thích.
-- **Liên quan:** `backend/services/nhap_excel.py`.
-- **Ưu tiên:** TB.
+### (P3) Cải thiện còn lại (xem Review.md 2026-06-20)
+- Zip-bomb: giảm cap upload Excel / giới hạn số dòng trước parse (`config.py`, `routes/nhap_excel.py`).
+- Rò rỉ chi tiết exception ra client (`routes/nhap_excel.py`, `routes/bao_cao.py`).
+- `change_password` (tài khoản user) nên yêu cầu mật khẩu cũ (`routes/auth.py`).
+- Nhập Excel là partial-commit — ghi rõ trong docstring.
+- **Ưu tiên:** Thấp.
 
 ---
 

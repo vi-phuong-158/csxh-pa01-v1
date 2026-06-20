@@ -64,6 +64,19 @@
   khi ĐT chính không rõ giới tính mặc định "Cha-Con". Hồ sơ nháp cần cán bộ bổ sung sau.
 - **Người quyết định:** Claude (theo yêu cầu user).
 
+## [2026-06-20] Ngoại lệ [UI-1]: dùng `fetch()` cho dữ liệu ECharts/đồ thị
+
+- **Quyết định:** Chấp nhận `fetch()` thuần ở 3 chỗ nạp **JSON cho thư viện vẽ JS**:
+  `network/index.html` (typeahead + dữ liệu đồ thị mạng lưới),
+  `profile/_tab_mang_luoi.html`, `static/js/app/bao_cao_charts.js` (ECharts). Mọi thao tác
+  CRUD/partial-reload khác vẫn BẮT BUỘC dùng HTMX.
+- **Lý do:** HTMX swap HTML, không nạp JSON để feed ECharts/đồ thị. Ép HTMX ở đây sẽ phức tạp
+  hóa code đang chạy mà không đạt mục tiêu của [UI-1] (mục tiêu là không bypass HTMX cho
+  CRUD/điều hướng, không phải cấm JS cho thư viện biểu đồ).
+- **Đánh đổi:** Lệch câu chữ [UI-1]. Nếu sau này muốn tuyệt đối tuân thủ, có thể chuyển riêng
+  typeahead (`searchProfiles`) sang `hx-get` trả HTML dropdown; phần dữ liệu ECharts giữ JSON.
+- **Người quyết định:** Claude (theo review; user có thể yêu cầu refactor HTMX nếu muốn).
+
 ---
 
 ## Known Issues (xem README(VCFE).md)

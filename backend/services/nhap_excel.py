@@ -798,6 +798,9 @@ def _import_nhan_than(db: Session, df: pd.DataFrame, known_cccd: set) -> _SheetR
                   if _CCCD_RE.fullmatch(c := _fix_cccd(get("cccd")))}
     gender = _load_genders(db, main_cccds)
     existing_edges = _load_edges_touching(db, main_cccds)
+    # Chống nhập trùng bản ghi nhân thân: cùng (CCCD, loại quan hệ, họ tên).
+    existing_keys = _load_satellite_keys(
+        db, (NhanThan.cccd, NhanThan.loai_quan_he, NhanThan.ho_ten), known_cccd)
     seen_edges: set = set()
 
     pending = 0
@@ -818,6 +821,11 @@ def _import_nhan_than(db: Session, df: pd.DataFrame, known_cccd: set) -> _SheetR
         if not ok:
             rep.err(row_num, f"Ngày sinh không hợp lệ ({get('ngay_sinh')!r}) — cần dd/mm/yyyy")
             continue
+        nt_key = (cccd, loai, ho_ten.upper())
+        if nt_key in existing_keys:
+            rep.err(row_num, "Nhân thân trùng (cùng CCCD/loại quan hệ/họ tên) đã có")
+            continue
+        existing_keys.add(nt_key)
         cccd_nt = _fix_cccd(get("cccd_nhan_than")) if get("cccd_nhan_than") else None
         db.add(NhanThan(
             cccd=cccd, loai_quan_he=loai, ho_ten=ho_ten.upper(),
@@ -868,6 +876,10 @@ def _import_qua_trinh(db: Session, df: pd.DataFrame, known_cccd: set) -> _SheetR
     rep = _SheetReport(sdef["title"])
     colmap = _build_colmap(df, sdef["cols"])
     _resolve_satellite_refs(db, df, colmap, known_cccd)
+
+    # Chống nhập trùng khi upload lại: cùng (CCCD, nội dung, ngày bắt đầu).
+    existing_keys = _load_satellite_keys(
+        db, (QuaTrinhHoatDong.cccd, QuaTrinhHoatDong.noi_dung, QuaTrinhHoatDong.ngay_bat_dau), known_cccd)
     pending = 0
 
     for row_num, get in _iter_rows(df, colmap):
@@ -884,6 +896,11 @@ def _import_qua_trinh(db: Session, df: pd.DataFrame, known_cccd: set) -> _SheetR
         if not ok1 or not ok2:
             rep.err(row_num, "Từ ngày / Đến ngày không hợp lệ — cần dd/mm/yyyy")
             continue
+        qt_key = (cccd, noi_dung, ngay_bd)
+        if qt_key in existing_keys:
+            rep.err(row_num, "Quá trình trùng (cùng CCCD/nội dung/ngày bắt đầu) đã có")
+            continue
+        existing_keys.add(qt_key)
         db.add(QuaTrinhHoatDong(
             cccd=cccd, ngay_bat_dau=ngay_bd, ngay_ket_thuc=ngay_kt,
             thoi_gian=get("thoi_gian") or None, noi_dung=noi_dung,
@@ -909,6 +926,10 @@ def _import_dac_thu(db: Session, df: pd.DataFrame, known_cccd: set) -> _SheetRep
     rep = _SheetReport(sdef["title"])
     colmap = _build_colmap(df, sdef["cols"])
     _resolve_satellite_refs(db, df, colmap, known_cccd)
+
+    # Chống nhập trùng khi upload lại: cùng (CCCD, loại hình, nội dung chi tiết).
+    existing_keys = _load_satellite_keys(
+        db, (HoSoDacThu.cccd, HoSoDacThu.loai_hinh, HoSoDacThu.noi_dung_chi_tiet), known_cccd)
     pending = 0
 
     for row_num, get in _iter_rows(df, colmap):
@@ -921,9 +942,15 @@ def _import_dac_thu(db: Session, df: pd.DataFrame, known_cccd: set) -> _SheetRep
         if loai not in constants.LOAI_HINH_DAC_THU:
             rep.err(row_num, f"Loại hình không hợp lệ ({loai_raw!r}) — chọn từ danh mục xổ xuống")
             continue
+        noi_dung_ct = get("noi_dung_chi_tiet") or None
+        dt_key = (cccd, loai, noi_dung_ct)
+        if dt_key in existing_keys:
+            rep.err(row_num, "Hồ sơ đặc thù trùng (cùng CCCD/loại hình/nội dung) đã có")
+            continue
+        existing_keys.add(dt_key)
         db.add(HoSoDacThu(
             cccd=cccd, loai_hinh=loai,
-            noi_dung_chi_tiet=get("noi_dung_chi_tiet") or None,
+            noi_dung_chi_tiet=noi_dung_ct,
             ghi_chu=get("ghi_chu") or None,
         ))
         rep.success += 1

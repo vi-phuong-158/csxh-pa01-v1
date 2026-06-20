@@ -18,6 +18,22 @@
 
 ---
 
+## [2026-06-20] P2: Dedup nhập Excel + document ngoại lệ fetch()/KI-02
+
+- **Agent:** Claude Code
+- **Thay đổi:**
+  - **Dedup:** `_import_nhan_than`/`_import_qua_trinh`/`_import_dac_thu` (`services/nhap_excel.py`)
+    nay chống trùng khi upload lại file qua `_load_satellite_keys` + check khóa:
+    nhân thân `(cccd, loai_quan_he, ho_ten)`, quá trình `(cccd, noi_dung, ngay_bat_dau)`,
+    đặc thù `(cccd, loai_hinh, noi_dung_chi_tiet)`. Dòng trùng báo lỗi thay vì nhân đôi.
+  - **fetch():** ghi nhận ngoại lệ có chủ ý cho ECharts/đồ thị vào `03-decisions.md` (không
+    refactor code viz đang chạy). **KI-02:** xác nhận là vấn đề tài liệu (đổi mật khẩu DB ngoài
+    app), đã có ở README + decisions — không sửa nhầm form đổi mật khẩu tài khoản user.
+- **File đã sửa:** `backend/services/nhap_excel.py`, `Review.md`,
+  `docs/brain/03-decisions.md`, `docs/brain/04-current-tasks.md`.
+- **Lý do:** Xử lý các mục P2 từ bản review 2026-06-20.
+- **Kiểm tra:** `python -m py_compile` sạch; khóa dedup khớp thứ tự cột select của `_load_satellite_keys`.
+
 ## [2026-06-20] P1 #3: Khôi phục quan hệ graph khi nhập Excel + cập nhật Review.md
 
 - **Agent:** Claude Code
