@@ -191,9 +191,10 @@ def add_lien_he(db: Session, cccd: str, data: Dict) -> Tuple[bool, str]:
     return True, "Đã thêm liên hệ"
 
 
-def delete_lien_he(db: Session, item_id: int) -> bool:
+def delete_lien_he(db: Session, cccd: str, item_id: int) -> bool:
+    # Ràng buộc item phải thuộc đúng hồ sơ cccd (chống IDOR: xoá item của hồ sơ khác).
     item = db.get(LienHe, item_id)
-    if item:
+    if item and item.cccd == cccd:
         db.delete(item)
         db.commit()
         return True
@@ -206,9 +207,9 @@ def add_tai_chinh(db: Session, cccd: str, data: Dict) -> Tuple[bool, str]:
     return True, "Đã thêm tài chính"
 
 
-def delete_tai_chinh(db: Session, item_id: int) -> bool:
+def delete_tai_chinh(db: Session, cccd: str, item_id: int) -> bool:
     item = db.get(TaiChinh, item_id)
-    if item:
+    if item and item.cccd == cccd:
         db.delete(item)
         db.commit()
         return True
@@ -221,9 +222,9 @@ def add_phuong_tien(db: Session, cccd: str, data: Dict) -> Tuple[bool, str]:
     return True, "Đã thêm phương tiện"
 
 
-def delete_phuong_tien(db: Session, item_id: int) -> bool:
+def delete_phuong_tien(db: Session, cccd: str, item_id: int) -> bool:
     item = db.get(PhuongTien, item_id)
-    if item:
+    if item and item.cccd == cccd:
         db.delete(item)
         db.commit()
         return True
@@ -283,9 +284,9 @@ def add_ho_so_dac_thu(db: Session, cccd: str, data: Dict) -> Tuple[bool, str]:
     return True, "Đã thêm hồ sơ đặc thù"
 
 
-def delete_ho_so_dac_thu(db: Session, item_id: int) -> bool:
+def delete_ho_so_dac_thu(db: Session, cccd: str, item_id: int) -> bool:
     item = db.get(HoSoDacThu, item_id)
-    if item:
+    if item and item.cccd == cccd:
         db.delete(item)
         db.commit()
         return True
@@ -305,18 +306,18 @@ def add_qua_trinh(db: Session, cccd: str, data: Dict) -> Tuple[bool, str]:
     return True, "Đã thêm quá trình"
 
 
-def delete_qua_trinh(db: Session, item_id: int) -> bool:
+def delete_qua_trinh(db: Session, cccd: str, item_id: int) -> bool:
     item = db.get(QuaTrinhHoatDong, item_id)
-    if item:
+    if item and item.cccd == cccd:
         db.delete(item)
         db.commit()
         return True
     return False
 
 
-def delete_tai_lieu(db: Session, item_id: int) -> bool:
+def delete_tai_lieu(db: Session, cccd: str, item_id: int) -> bool:
     item = db.get(TaiLieu, item_id)
-    if item:
+    if item and item.cccd == cccd:
         if item.duong_dan:
             fp = Path(settings.BASE_DIR) / item.duong_dan
             if fp.exists():

@@ -236,7 +236,7 @@ def delete_lien_he(
     user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
-    profile_svc.delete_lien_he(db, item_id)
+    profile_svc.delete_lien_he(db, cccd, item_id)
     return _tab_response(request, db, cccd, user, "profile/_tab_lien_he.html")
 
 
@@ -259,7 +259,7 @@ def delete_tai_chinh(
     user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
-    profile_svc.delete_tai_chinh(db, item_id)
+    profile_svc.delete_tai_chinh(db, cccd, item_id)
     return _tab_response(request, db, cccd, user, "profile/_tab_tai_chinh.html")
 
 
@@ -282,7 +282,7 @@ def delete_phuong_tien(
     user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
-    profile_svc.delete_phuong_tien(db, item_id)
+    profile_svc.delete_phuong_tien(db, cccd, item_id)
     return _tab_response(request, db, cccd, user, "profile/_tab_phuong_tien.html")
 
 
@@ -305,7 +305,7 @@ def delete_dac_thu(
     user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
-    profile_svc.delete_ho_so_dac_thu(db, item_id)
+    profile_svc.delete_ho_so_dac_thu(db, cccd, item_id)
     return _tab_response(request, db, cccd, user, "profile/_tab_ho_so_dac_thu.html")
 
 
@@ -328,7 +328,7 @@ def delete_qua_trinh(
     user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
-    profile_svc.delete_qua_trinh(db, item_id)
+    profile_svc.delete_qua_trinh(db, cccd, item_id)
     return _tab_response(request, db, cccd, user, "profile/_tab_qua_trinh.html")
 
 
@@ -428,7 +428,7 @@ def delete_tai_lieu(
     user: dict = Depends(require_profile_access),
     db: Session = Depends(get_db),
 ):
-    profile_svc.delete_tai_lieu(db, item_id)
+    profile_svc.delete_tai_lieu(db, cccd, item_id)
     return _tab_response(request, db, cccd, user, "profile/_tab_tai_lieu.html")
 
 
